@@ -1,0 +1,109 @@
+.tables-section {
+  width: fit-content;
+  @media (min-width: 768px) and (max-width: 1200px) {
+    display: flex;
+    flex-direction: row;
+  }
+  .top-row,
+  .bottom-row {
+    width: fit-content;
+    justify-content: flex-start;
+    .top-row-chair,
+    .bottom-row-chair {
+      padding: 0 10px;
+      .chairNotBooked {
+        background: var(--color-lighter-green5);
+        color: var(--color-white);
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 100%;
+        height: 35px;
+      }
+      .chairBooked {
+        background: var(--color-light-red-3);
+        color: var(--color-white);
+        opacity: 0.5;
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 100%;
+        height: 35px;
+      }
+      &:disabled {
+        opacity: 0.5;
+      }
+    }
+  }
+  .tables {
+    padding: 15px 20px;
+    border: 1px solid #c68748;
+    display: flex;
+    justify-content: center;
+    //   align-items: center;
+    min-height: 100px;
+    background-color: #d3c598;
+    background-image: url("../../assets/images/food-table-top-view-two-roasted.svg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+    @media (min-width: 768px) and (max-width: 1200px) {
+    
+    }
+
+    h6 {
+      font-size: 15px;
+      font-weight: 500;
+      line-height: 100%;
+    }
+  }
+}
+.scroll-inner {
+  max-height: calc(100vh - 190px);
+  overflow-y: auto;
+  // background: var(--color-light-light-gray);
+  border-radius: 6px;
+  padding: 0px;
+  &::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+    background-color: var(--color-light-light-gray);
+    border-radius: 10px;
+  }
+  &::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 5px var(--color-light-light-gray);
+    border-radius: 10px;
+    background-color: var(--color-light-light-gray);
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    -webkit-box-shadow: inset 0 0 5px var(--color-oldSilver);
+    background-color: var(--color-oldSilver);
+  }
+  .table-box {
+    border: 1px solid #f5f296;
+    border-radius: 6px;
+    .table-heading {
+      color: #ebe6e2;
+      background: #736f6d;
+      width: fit-content;
+      margin: 0px auto 10px;
+      padding: 4px 9px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 20px;
+    }
+  }
+}
+
+/* Default (desktop): rows side by side */
+.table-wrapper .chair-row {
+  flex-direction: row;
+}
+
+/* Below 800px: force vertical stacking */
+@media (max-width: 800px) {
+  .table-wrapper .chair-row {
+    flex-direction: column !important;
+    align-items: center;
+  }
+}

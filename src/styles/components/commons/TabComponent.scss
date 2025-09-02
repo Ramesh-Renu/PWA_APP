@@ -1,0 +1,32 @@
+.tabs-container {
+  display: inline-flex;
+  background-color: var(--color-light-ghost-white);
+  border-radius: 12px;
+  height: 57;
+  opacity: 1;
+  gap: 12px;
+  border-radius: 12px;
+  padding: 8px;
+
+  .tab-button {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 100%;
+    letter-spacing: 0%;
+    vertical-align: middle;
+    padding: 11px 28px;
+    height: 41px;
+    border: none;
+    background: none;
+    color: var(--color-darkLiver);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+  .tab-button.active {
+    background-color: var(--color-primary-dark);
+    color: var(--color-white);
+    box-shadow: 0 1px 3px var(--color-primary-dark-180);
+  }
+}

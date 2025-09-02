@@ -1,0 +1,51 @@
+{
+  "translation": {
+    "common": {
+      "welcome": "Welcome",
+      "loading": "Loading",
+      "calendar": "Calendar",
+      "create": "Create",
+      "edit": "Edit",
+      "edited": "Edited",
+      "update": "Update",
+      "hey": "Hey",
+      "keyword": "Keyword",
+      "members": "Members"
+    },
+    "login": {
+      "inprogress": "Logging in progress",
+      "login": "Login",
+      "resend": "Resend",
+      "forgot_password": "Forgot Password?",
+      "success_msg": "You have successfully logged in to your account",
+      "inactive_user": "You are inactive state. Kindly contact administrator.",
+      "no_account": "Don't have an account",
+      "mobile_number": "Mobile Number",
+      "have_account": "Already have an account",
+      "signup": "Signup",
+      "signup_access_orion": "Signup to access Orion",
+      "sign_up": "Sign Up",
+      "successfully_registered": "Successfully registered",
+      "waiting_for_response": "Waiting for admin to respond",
+      "error": {
+        "firstname": "Please enter your first name.",
+        "lastname": "Please enter your last name.",
+        "email": "Please enter your email address.",
+        "invalidEmail": "Please enter a valid email address.",
+        "phone": "Please enter a valid phone number."
+      },
+      "label": {
+        "firstname": "First name",
+        "lastname": "Last name",
+        "email": "Email",
+        "phone": "Phone"
+      }
+    },
+    "unauthorized": {
+      "401": "401",
+      "unauthorized": "UserId is invalid or not approved.",
+      "content": "The UserId you are looking for might have been removed, had its name changed, or is temporarily unavailable.",
+      "back_to_login": "Back To Login"
+    }
+  }
+}

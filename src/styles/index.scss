@@ -1,0 +1,22 @@
+@use "./fonts/Montserrat.scss";
+@use "bootstrap/scss/bootstrap";
+@use "./variables-style.css";
+@use "./components";
+@use "./pages";
+
+body {
+  margin: 0;
+  font-family: var(--default-font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+}
+
+.input-error {
+  border: 1px solid red !important;
+}
+
+.mandatory {
+  margin-left: 3px;
+  color: var(--color-light-red);
+}

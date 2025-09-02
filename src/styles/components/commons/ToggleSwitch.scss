@@ -1,0 +1,64 @@
+.toggle-switch{
+  display:flex;
+  align-content: center;
+  justify-content: center;
+  
+  &-label{
+    position: relative;
+    display: inline-block;
+    width: 52px;
+    height: 30px;
+    justify-content: center;
+
+    input[type="checkbox"] {
+      display: none;
+    }
+
+    .switch {
+      position: absolute;
+      cursor: pointer;
+      background-color: var(--color-light-light-gray);
+      border-radius: 25px;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      transition: background-color 0.2s ease;
+    }
+
+    .switch::before {
+      position: absolute;
+      content: "";
+      left: 3px;
+      top: 3px;
+      width: 24px;
+      height: 24px;
+      // background-color: var(--color-oldSilver);
+      background: var(--color-oldSilver) url(../../../assets/images/close-icon.svg) no-repeat;
+      border-radius: 50%;
+      transition: transform 0.3s ease;
+      background-position: center;
+      background-size: 8px;
+    }
+
+    input[type="checkbox"]:checked + .switch::before {
+      transform: translateX(25px);
+      background: var(--color-light-light-gray) url(../../../assets/images/close-icon.svg) no-repeat;
+      background-position: center;
+      background-size: 8px;
+      left: 0px;
+      top: 3px;
+    }
+
+    input[type="checkbox"]:checked + .switch {
+      background: var(--color-primary-dark);
+    }
+  }
+
+  .disable{
+    opacity: 0.1;
+    .switch {
+      background-color: var(--color-primary-dark-120);
+    }
+  }
+}

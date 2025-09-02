@@ -1,0 +1,19 @@
+.popupModal {
+  .modalActions {
+    button {
+      border-radius: 8px;
+      min-width: 100px;
+      font-weight: bold;
+    }
+
+    .modalDelete_btn {
+      background-color: var(--color-light-red);
+      color: var(--color-white);
+    }
+
+    .modalCancel_btn {
+      background-color: var(--color-light-light-gray);
+      color: var(--color-btn-text-gray);
+    }
+  }
+}

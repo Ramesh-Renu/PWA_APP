@@ -1,0 +1,19 @@
+.layout-container {
+  display: flex;
+  justify-content: center;
+//   align-items: center;
+  min-height: 100vh;
+  background-color: #d3c598;
+//   background-image: url('../../assets/images/home-background.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
+}
+
+.top-content {
+  margin: auto;
+}
+.body-content {
+  margin: auto;
+
+}

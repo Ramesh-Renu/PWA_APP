@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "baseUrl": "src",
+    "allowSyntheticDefaultImports": true,
+    "paths": {
+      "@core/*": ["core/*"],
+      "@hooks/*": ["hooks/*"],
+      "@shared/*": ["shared/*"],
+      "@assets/*": ["assets/*"]
+    }
+  },
+  "include": ["src"]
+}

@@ -1,0 +1,187 @@
+.rdtPicker {
+  background-color: var(--color-light-gray) !important;
+  padding: 12px 8px !important;
+  border-radius: 24px !important;
+  border: 1px solid var(--color-light-light-gray) !important;
+  box-shadow: -2px 0px 7px 2px var(--color-light-light-gray) !important;
+  margin: 8px 0 0 !important;
+  td,
+  .rdtPicker th {
+    padding: 10px;
+    position: relative;
+  }
+  th {
+    font-size: 15px;
+  }
+  td {
+    font-size: 14px;
+  }
+  th {
+    border-bottom: none !important;
+    font-weight: 500 !important;
+  }
+  thead tr:last-child th {
+    padding-top: 15px !important;
+  }
+  thead tr:last-child th:first-child {
+    padding-left: 25px !important;
+  }
+  .button-container {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: flex-end !important;
+    column-gap: 10px !important;
+  }
+  thead tr:last-child th:last-child {
+    padding-right: 25px !important;
+  }
+  tbody tr td:first-child {
+    padding-left: 25px !important;
+  }
+  tbody tr td:last-child {
+    padding-right: 25px !important;
+  }
+  .rdtNext span,
+  .rdtPrev span {
+    font-size: 29px !important;
+    line-height: 20px !important;
+    font-weight: 400 !important;
+  }
+  .rdtTimeToggle {
+    padding: 8px 4px !important;
+  }
+  .time-picker-wrapper {
+    padding: 5px 25px 5px 15px !important;
+  }
+  .rdtDay.rdtActive {
+    position: relative !important;
+  }
+  td.rdtActive:hover,
+  td.rdtActive {
+    background-color: transparent !important;
+  }
+  td.rdtActive:after {
+    content: "" !important;
+    display: inline-block !important;
+    background-color: var(--color-primary-dark) !important;
+    position: absolute !important;
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 50px !important;
+    z-index: -1 !important;
+    left: 5px !important;
+    right: 3px !important;
+    top: 6px !important;
+    text-shadow: 0.5px 0px 0px var(--color-light-ghost-white) !important;
+  }
+  tbody tr td.rdtActive:last-child:after {
+    left: 5px !important;
+  }
+  tbody tr td.rdtActive:first-child:after {
+    left: 19px !important;
+  }
+  .button-container button {
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    line-height: 15.73px !important;
+    text-align: center !important;
+    padding: 4px 8px !important;
+    border-radius: 6px !important;
+  }
+  .rdtMonths tbody tr td.rdtMonth.rdtActive:after {
+    height: 25px !important;
+    width: 43px !important;
+    border-radius: 6px !important;
+    top: 13px !important;
+    margin: auto;
+  }
+  .rdtMonths tbody tr td.rdtMonth.rdtActive:last-child:after {
+    right: 13px !important;
+    left: 0 !important;
+  }
+  .rdtMonths tbody tr td.rdtMonth.rdtActive:first-child:after {
+    left: 16px !important;
+    right: 0 !important;
+  }
+  .rdtYears tbody tr td.rdtYear.rdtActive:after {
+    background-color: var(--color-primary-dark) !important;
+    top: 11px !important;
+    height: 30px !important;
+    width: 45px !important;
+    border-radius: 6px !important;
+  }
+  td.rdtDisabled {
+    position: relative;
+    .disabled-date-error-show {
+      display: block;
+      position: absolute;
+      max-width: 200px;
+      min-width: 100px;
+      width: fit-content;
+      font-size: 11px;
+      text-align: left;
+      text-transform: none;
+      border-radius: 12px;
+      background: var(--color-white);
+      box-shadow: -1px 3px 10px 6px rgba(27, 31, 53, 0.12);
+      padding: 8px;
+      z-index: 1000;
+      color: var(--color-red);
+    }
+    &:last-child {
+      .disabled-date-error-show {
+        right: 0;
+      }
+    }
+  }
+  .rdtDay.rdtToday.rdtDisabled:after {
+    content: "" !important;
+    display: inline-block !important;
+    background-color: var(--color-light-light-gray) !important;
+    position: absolute !important;
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 50px !important;
+    z-index: -1 !important;
+    left: 5px !important;
+    right: 3px !important;
+    top: 6px !important;
+    text-shadow: 0.5px 0px 0px var(--color-light-ghost-white) !important;
+  }
+}
+.calendar-position-top .rdtPicker {
+  bottom: 100%;
+  top: auto;
+  margin-bottom: 10px !important;
+}
+
+.calendar-position-bottom .rdtPicker {
+  top: 100%;
+  bottom: auto;
+  margin-top: 10px !important;
+}
+
+.calendar-position-auto .rdtPicker {
+  top: auto;
+  bottom: auto;
+}
+.picker-date [class^="calendar-position-"] .icon-ss-calendar {
+  display: block;
+  position: absolute;
+  right: 8px;
+  top: 10px;
+  font-size: 21px;
+  z-index: 0;
+  &:before {
+    color: var(--color-oldSilver);
+  }
+}
+
+.disabled {
+  .calendar-position-auto {
+    input {
+      opacity: 0.5;
+      background-color: #ffff;
+    }
+  }
+}
