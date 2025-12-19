@@ -1,0 +1,177 @@
+import { useEffect, useRef, useState } from "react";
+import { orionLogo, appLogo, WavingHand } from "assets/images";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import * as menu from "assets/images";
+import packageJson from "./../../../../package.json";
+import LogoAvatarShowLetter from "components/common/LogoAvatarShowLetter";
+import useAuth from "hooks/useAuth";
+
+const SideNav = ({ onChange }) => {
+  const navigate = useNavigate();
+  const [collaps, setCollaps] = useState(false);
+  const [{ data: auth }, { setAuth }] = useAuth();
+  const popupRef = useRef(null);
+  const [showInfo, setShowInfo] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const location = useLocation();
+
+  /** INITIAL CALL */
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        ((popupRef.current && !popupRef.current.contains(event.target)) ||
+          popupRef.current == null) &&
+        event.target.id !== "show_more_boards"
+      ) {
+        setShowInfo(false);
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
+
+  /** HANDLE SHOW/HIDE MENU ITEM BASED ON USER CLICK */
+  const handleMenuItem = (e) => {
+    const showPopup = showInfo ? !showInfo : true;
+    if (e.type === "click" || e.key === "Enter") {
+      setShowInfo(showPopup);
+    }
+  };
+
+  /** CLEARS TOKEN & LOGOUT USER */
+  const userLogout = () => {
+    setShowInfo(false);
+    navigate("/");
+  };
+
+  const handleMouseEnter = () => {
+    if (!collaps) {
+      setCollaps(true);
+      onChange(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (collaps) {
+      setCollaps(false);
+      onChange(false);
+    }
+  };
+
+  const toggleDropdown = (key) => {
+    setActiveDropdown((prev) => (prev === key ? null : key));
+  };
+
+  return (
+    <>
+      <div
+        className={`sidenav-content ${collaps ? "expanded" : ""}`}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <>
+          <div className="sidenav-content__headings">
+            <div className={`header-content__logo ${collaps ? "collaps" : ""}`}>
+              <img
+                src={collaps ? appLogo : appLogo}
+                alt="orion-logo"
+                className={!collaps ? "orionLogo" : ""}
+              /> 
+            </div>
+
+            <div
+              className={
+                !collaps
+                  ? "sidenav-content__headings-lists collaps"
+                  : "sidenav-content__headings-lists"
+              }
+            >
+              {/* Workspaces */}
+              <h5
+                className="sidenav-content__headings-lists--title"
+                title="Workspaces"
+              >
+                 <NavLink to="/dashboard" className="link-tag">
+                      {({ isActive, isPending }) => (
+                        <>
+                          <img
+                            src={
+                              isActive ? menu.dashboardIcon : menu.dashboardIcon
+                            }
+                          />
+                          {collaps && "Dashboard"}
+                        </>
+                      )}
+                    </NavLink>
+              </h5>
+            </div>
+          </div>
+
+          <div
+            className={!collaps ? "others__options collaps" : "others__options"}
+          >
+            <div className="header-user-info" ref={popupRef}>
+              <div className="user-info" onClick={handleMenuItem}>
+                {auth?.details?.displayName && (
+                  <LogoAvatarShowLetter
+                    genaralData={auth.details}
+                    profilePhotoName={"photo"}
+                    profileName={"displayName"}
+                    outerClassName={"user-info__profile-pic"}
+                    innerClassName={"user-icon-photo"}
+                  ></LogoAvatarShowLetter>
+                )}
+                {collaps && (
+                  <div
+                    className={`user-info__details ${
+                      auth.details?.displayName
+                        ? auth.details?.displayName
+                        : "none"
+                    }`}
+                  >
+                    <p className="user-info__details-welcome-back">
+                      Welcome back{" "}
+                     
+                    </p>
+                    <p
+                      className="user-info__details-name"
+                      title={auth.details?.displayName || "User Name"}
+                    >
+                      {auth.details?.displayName || "User Name"}
+                    </p>
+                    <p className="user-info__details-role" title={"Guest"}>
+                      {"Guest"}
+                    </p>
+                  </div>
+                )}
+              </div>
+              {showInfo && (
+                <div className="user-info__popup">
+                  <div className="user-info__popup-profile">
+                    <p>
+                      <button
+                        className="user-info__popup-logout-btn"
+                        onClick={userLogout}
+                      >
+                        {"Logout"}
+                      </button>
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+            <p className="version-info">
+              {collaps ? "Version " : "v"}
+              {packageJson.version}
+            </p>
+          </div>
+        </>
+      </div>
+    </>
+  );
+};
+
+export default SideNav;

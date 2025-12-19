@@ -2,20 +2,20 @@ import React, { useState, useEffect, useRef, Fragment } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginBanner } from "../../assets/images/index";
 import Spinner from "components/spinner/spinner.component";
-import { useTranslation } from "react-i18next";
 import appConstants from "constant/common";
 import useToast from "hooks/useToast";
-
+import useAuth from "hooks/useAuth";
+import { createUser, getOTp } from "services";
 export default function Login() {
   const { showToast } = useToast();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [{ data }, { setAuth, getAuth }] = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const [activateSignUpSuccess, setActivateSignUpSuccess] = useState(false);
   const [inProgress, setInProgress] = useState(false);
-  const [data, setData] = useState([]);
   const [mobile, setMobile] = useState("");
+  const [isTokenSuccess, setIsTokenSuccess] = useState();
   const [getOTPnumber, setGetOTPnumber] = useState("");
   const [showOTPSent, setShowOTPSent] = useState(false);
   const [enableOTPsent, setEnableOTPsent] = useState(true);
@@ -25,17 +25,36 @@ export default function Login() {
     firstName: "",
     lastName: "",
     email: "",
-    phone: "",
+    mobilenumber: "",
+    location: "",
   });
   const [errorMsg, setErrorMsg] = useState({
     firstName: false,
     lastName: false,
     email: false,
-    phone: false,
+    mobilenumber: false,
+    location: false,
   });
   const handleSendOtp = (e) => {
     e.preventDefault();
     setShowOTPSent(true);
+    try {
+      const response = getOTp({
+        mobilenumber: mobile,
+      });
+      response.then((res) => {
+        console.log("response", res);
+
+        if (res.success) {
+          showToast({ message: res.message, variant: "success" });
+        } else {
+          showToast({ message: res.message, variant: "danger" });
+        }
+      });
+    } catch (error) {
+      // Handle errors
+      showToast({ message: error, variant: "danger" });
+    }
   };
 
   const handleCheckMobilenumber = (value) => {
@@ -72,23 +91,33 @@ export default function Login() {
     console.log("getOTPnumber", getOTPnumber);
     setInProgress(true);
     if (Number(getOTPnumber) === 123456) {
+      setIsTokenSuccess(true);
       showToast({
-        title: `${t("common.welcome")}!`,
-        message: `${t("login.success_msg")}!`,
+        title: `${"Welcome"}!`,
+        message: `${"You have successfully logged in to your account"}!`,
         variant: "success",
       });
+
       setActivateSignUpSuccess(true);
     } else {
       setInProgress(false);
+      setIsTokenSuccess(false);
       showToast({
-        title: `${t("common.welcome")}!`,
-        message: `${t("login.inactive_user")}!`,
+        title: `${"Welcome"}!`,
+        message: `${"Inactive User"}!`,
         variant: "danger",
       });
     }
   };
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    if (isTokenSuccess) {
+      getAuth({
+        mobilenumber: mobile,
+        otp: getOTPnumber,
+      });
+    }
+  }, [isTokenSuccess]);
 
   useEffect(() => {
     if (activateSignUpSuccess) {
@@ -106,36 +135,37 @@ export default function Login() {
   const handleSubmitForm = (e) => {
     e.preventDefault();
     setIsSubmitted(true);
-
-    // TRIGGER API CALL TO REGISTER AGENCY USER
-    // try {
-    const requestData = {
-      firstname: formData.firstName,
-      lastname: formData.lastName,
-      email: formData.email,
-      phone_number: formData.phone,
+    const updatedFormData = {
+      ...formData, // Keep the existing properties
+      mobilenumber: mobile,
+      name: formData.firstName + " " + formData.lastName, // Combine firstName and lastName into name
     };
-    // const response = userSignUp(requestData);
-    //   response.then((res) => {
-    //     if (res.data.status) {
-    //       dispatch(
-    //         showToast({ message: res.data.message, variant: "success" })
-    //       );
-    //       setActivateSignUpSuccess(true);
-    //       setTimeout(() => {
-    //         setActivateSignUpSuccess(false);
-    //         setActiveForm("login")
-    //       }, [5000]);
-    //     } else {
-    //       dispatch(
-    //         showToast({ message: res.data.message, variant: "danger" })
-    //       );
-    //     }
-    //   });
-    // } catch (error) {
-    //   // Handle errors
-    //   dispatch(showToast({ message: error, variant: "danger" }));
-    // }
+    delete updatedFormData.firstName; // Remove firstName
+    delete updatedFormData.lastName; // Remove lastName
+    // TRIGGER API CALL TO REGISTER AGENCY USER
+    try {
+      // localStorage.setItem("token","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibW9iaWxlbnVtYmVyIjoiOTg3NjU0MzIxMCIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzY2MTM5ODYzLCJleHAiOjE3NjYxNDA3NjN9.7HNbuciiOysoDkHEMMG46HPiewzWBJqtGd8ZIEF_4bo", updatedFormData);
+
+      const response = createUser(updatedFormData);
+      response.then((res) => {
+        if (res.success) {
+          showToast({ message: res.message, variant: "success" });
+          setFormData({
+            firstName: "",
+            lastName: "",
+            email: "",
+            mobilenumber: "",
+            location: "",
+          });
+          setActiveForm(true);
+        } else {
+          showToast({ message: res.data.message, variant: "danger" });
+        }
+      });
+    } catch (error) {
+      // Handle errors
+      showToast({ message: error, variant: "danger" });
+    }
   };
   return (
     <>
@@ -146,7 +176,7 @@ export default function Login() {
           </div>
           <div className="login-form-container">
             {" "}
-            <p className="login-form-container-title">{t("common.welcome")}!</p>
+            <p className="login-form-container-title">{"Welcome"}!</p>
             {!activeForm && (
               <>
                 <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
@@ -159,7 +189,7 @@ export default function Login() {
               <div className="form-row">
                 <div className="form-col">
                   <label className="input-label">
-                    {t("login.mobile_number")} <sup>*</sup>{" "}
+                    {"Mobile Number"} <sup>*</sup>{" "}
                   </label>
                   <input
                     ref={inputRef}
@@ -191,7 +221,7 @@ export default function Login() {
                   <div className="form-row mt-3">
                     <div className="form-col">
                       <label className="input-label">
-                        {t("login.label.firstname")} <sup>*</sup>{" "}
+                        {"First name"} <sup>*</sup>{" "}
                       </label>
                       <input
                         className="input-type"
@@ -203,20 +233,16 @@ export default function Login() {
                           })
                         }
                         style={{ height: "45px" }}
-                        placeholder={t("login.label.firstname")}
+                        placeholder={"First name"}
                         maxLength={"50"}
                         autofocus
                       />
                       <label className="error-msg">
-                        {errorMsg.firstName === true &&
-                          t("login.error.firstname")}
+                        {errorMsg.firstName === true && "First name"}
                       </label>
                     </div>
                     <div className="form-col">
-                      <label className="input-label">
-                        {" "}
-                        {t("login.label.lastname")}{" "}
-                      </label>
+                      <label className="input-label"> {"Last name"} </label>
                       <input
                         className="input-type"
                         value={formData.lastName}
@@ -228,7 +254,7 @@ export default function Login() {
                         }
                         style={{ height: "45px" }}
                         maxLength={"50"}
-                        placeholder={t("login.label.lastname")}
+                        placeholder={"Last name"}
                       />
                     </div>
                   </div>
@@ -236,7 +262,7 @@ export default function Login() {
                     <div className="form-col">
                       <label className="input-label">
                         {" "}
-                        {t("login.label.email")} <sup>*</sup>{" "}
+                        {"Email"} <sup>*</sup>{" "}
                       </label>
                       <input
                         className="input-type"
@@ -248,16 +274,45 @@ export default function Login() {
                           })
                         }
                         style={{ height: "45px" }}
-                        placeholder={t("login.label.email")}
+                        placeholder={"Email"}
                       />
                       <label className="error-msg">
                         {errorMsg.email === true &&
                           formData.email === "" &&
-                          t("login.error.email")}
+                          "Please enter your email address."}
                         {errorMsg.email === true &&
                           formData.email !== "" &&
                           errorMsg.invalidEmail === true &&
-                          t("login.error.invalidEmail")}
+                          "Please enter a valid email address."}
+                      </label>
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-col">
+                      <label className="input-label">
+                        {" "}
+                        {"location"} <sup>*</sup>{" "}
+                      </label>
+                      <input
+                        className="input-type"
+                        value={formData.location}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            location: e.target?.value,
+                          })
+                        }
+                        style={{ height: "45px" }}
+                        placeholder={"Email"}
+                      />
+                      <label className="error-msg">
+                        {errorMsg.email === true &&
+                          formData.email === "" &&
+                          "Please enter your location."}
+                        {errorMsg.email === true &&
+                          formData.email !== "" &&
+                          errorMsg.invalidEmail === true &&
+                          "Please enter a valid location."}
                       </label>
                     </div>
                   </div>
@@ -265,7 +320,7 @@ export default function Login() {
                     className="login-form-container-button-common mt-10"
                     onClick={handleSubmitForm}
                   >
-                    {t("login.sign_up")}
+                    {"Sign Up"}
                   </button>{" "}
                 </Fragment>
               )}
@@ -297,7 +352,7 @@ export default function Login() {
                       marginTop: "20px",
                     }}
                   >
-                    <span>{t("common.loading")}...</span>
+                    <span>{"Loading"}...</span>
                   </button>
                 )}
                 {!inProgress && !activeForm && (
@@ -320,7 +375,7 @@ export default function Login() {
                         onClick={(e) => handleLogin(e)}
                         disabled={getOTPnumber.length > 0 ? false : true}
                       >
-                        {t("login.login")}
+                        {"Login"}
                       </button>
                     </div>
                     <div className="col-6">
@@ -340,7 +395,7 @@ export default function Login() {
                         onClick={(e) => handleLogin(e)}
                         disabled={getOTPnumber.length > 0 ? false : true}
                       >
-                        {t("login.resend")}
+                        {"Resend"}
                       </button>
                     </div>
                   </div>
@@ -348,9 +403,16 @@ export default function Login() {
               </>
             )}
             <p className="login-form-container-signupbtn">
-              {!activeForm ? t("login.no_account") : t("login.have_account")}{" "}
-              <span onClick={() => {setActiveForm(!activeForm); setShowOTPSent(false)}}>
-                {!activeForm ? t("login.signup") : t("login.login")}
+              {!activeForm
+                ? "Don't have an account"
+                : "Already have an account"}{" "}
+              <span
+                onClick={() => {
+                  setActiveForm(!activeForm);
+                  setShowOTPSent(false);
+                }}
+              >
+                {!activeForm ? "Signup" : "Login"}
               </span>{" "}
               ?
             </p>

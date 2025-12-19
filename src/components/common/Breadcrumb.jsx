@@ -1,6 +1,5 @@
 /** This component created by Sukumar J ***/
 import React from "react";
-import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 function Breadcrumb({
   previousTitle,
@@ -12,8 +11,7 @@ function Breadcrumb({
 }) {
   const location = useLocation();
   const pathnames = location.pathname.split("/").filter((x) => x);
-  const { t } = useTranslation();
-
+  
   const getRoote = (routeTo) => {
     if (getLocation) {
       getLocation(routeTo); // Pass getTicketId along with the routeTo
@@ -82,7 +80,7 @@ function Breadcrumb({
                         labelId: getTicketId?.labelId,
                       }}
                     >
-                      {t("common.home")}
+                      {"Home"}
                     </Link>
                   ) : index + 1 === pathnames.length - 1 && previousTitle ? (
                     <Link
