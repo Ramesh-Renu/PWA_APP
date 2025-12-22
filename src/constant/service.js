@@ -5,6 +5,7 @@ export const API = {
   CREATE_USER: "/api/users/register",
   LOGOUT: "/api/logout",
   GET_USER_INFO: "/api/users/profile",
+  GET_REFRESH_TOCKEN: "/api/auth/refresh",
   GET_PHOTO_SYNC: "/master/api/AdManagement/ad-user-photosync",
   
   /** NOTIFICATION */

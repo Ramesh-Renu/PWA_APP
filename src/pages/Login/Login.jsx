@@ -86,45 +86,33 @@ export default function Login() {
     }
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    console.log("getOTPnumber", getOTPnumber);
     setInProgress(true);
-    if (Number(getOTPnumber) === 123456) {
+    const response = await getAuth({
+      mobilenumber: mobile,
+      otp: getOTPnumber,
+    });
+
+    if (response.data.success) {
       setIsTokenSuccess(true);
       showToast({
         title: `${"Welcome"}!`,
-        message: `${"You have successfully logged in to your account"}!`,
+        message: response.data.message,
         variant: "success",
       });
-
+       navigate("/home");
       setActivateSignUpSuccess(true);
     } else {
       setInProgress(false);
       setIsTokenSuccess(false);
       showToast({
-        title: `${"Welcome"}!`,
-        message: `${"Inactive User"}!`,
+        message: response.data.message,
         variant: "danger",
       });
     }
   };
 
-  useEffect(() => {
-    if (isTokenSuccess) {
-      getAuth({
-        mobilenumber: mobile,
-        otp: getOTPnumber,
-      });
-    }
-  }, [isTokenSuccess]);
-
-  useEffect(() => {
-    if (activateSignUpSuccess) {
-      // const hasOrdersAccess = isSuperAdmin || isAdmin;
-      navigate("/home");
-    }
-  }, [activateSignUpSuccess]);
   /** AUTO FOCUS ON FIRST INPUT FIELD */
   const inputRef = useRef(null);
   useEffect(() => {

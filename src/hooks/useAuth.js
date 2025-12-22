@@ -12,41 +12,44 @@ const useAuth = () => {
       try {
         const response = await getLogin(params);
         const token = response.data.accessToken;
-
+        const refreshToken = response.data.refreshToken;
         localStorage.setItem("token", token);
+        localStorage.setItem("refreshToken", refreshToken);
         dispatch({ type: "SET_AUTH", payload: token });
+        return response;
       } catch (error) {
         dispatch({ type: "SET_ERROR", payload: error });
+        // ✅ RETURN BACKEND RESPONSE
+        return error.response; // ⭐⭐⭐ THIS FIXES IT
+      } finally {
+        dispatch({ type: "SET_LOADING", payload: false });
       }
     },
     [dispatch]
   );
-  // 🔄 AUTO LOGIN (RUN ONCE)
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      dispatch({ type: "SET_AUTH", payload: token });
-    }
-  }, [dispatch]);
 
-  // const getUserInfoData = useCallback(
-  //   async (params) => {
-  //     dispatch({ type: "SET_LOADING" });
-  //     try {
-  //       const response = await getUserInfo(params);
-  //       const token = response.data.accessToken;
-
-  //       localStorage.setItem("token", token);
-  //       dispatch({ type: "SET_AUTH", payload: token });
-  //     } catch (error) {
-  //       dispatch({ type: "SET_ERROR", payload: error });
-  //     }
-  //   },
-  //   [dispatch]
-  // );
+  const getUserInfoData = useCallback(
+    async (params) => {
+      dispatch({ type: "SET_LOADING" });
+      try {
+        const response = await getUserInfo(params);
+        const data = response.user;
+        localStorage.setItem("userInfo", JSON.stringify(data));
+        dispatch({ type: "SET_ACTIVE_USER_INFO", payload: data });
+      } catch (error) {
+        dispatch({ type: "SET_ERROR", payload: error });
+        localStorage.setItem("token" , null);
+      } finally {
+        dispatch({ type: "SET_LOADING", payload: false });
+      }
+    },
+    [dispatch]
+  );
   // 🚪 LOGOUT
   const logoutUser = useCallback(() => {
     localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userInfo");
     dispatch({ type: "LOGOUT" });
   }, [dispatch]);
 
@@ -61,7 +64,7 @@ const useAuth = () => {
     {
       getAuth,
       logoutUser,
-      // getUserInfoData
+      getUserInfoData,
     },
   ];
 };

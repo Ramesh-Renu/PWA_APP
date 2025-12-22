@@ -5,16 +5,18 @@ import * as menu from "assets/images";
 import packageJson from "./../../../../package.json";
 import LogoAvatarShowLetter from "components/common/LogoAvatarShowLetter";
 import useAuth from "hooks/useAuth";
+import { useGlobalContext } from "store/context/GlobalProvider";
 
 const SideNav = ({ onChange }) => {
   const navigate = useNavigate();
-  const [collaps, setCollaps] = useState(false);
+  const [collaps, setCollaps] = useState(true);
   const [{ data: auth }, { setAuth }] = useAuth();
   const popupRef = useRef(null);
   const [showInfo, setShowInfo] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const location = useLocation();
+  const { authState, dispatch } = useGlobalContext();
 
   /** INITIAL CALL */
   useEffect(() => {
@@ -45,21 +47,25 @@ const SideNav = ({ onChange }) => {
   const userLogout = () => {
     setShowInfo(false);
     navigate("/");
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userInfo");
+    dispatch({ type: "LOGOUT" });
   };
 
-  const handleMouseEnter = () => {
-    if (!collaps) {
-      setCollaps(true);
-      onChange(true);
-    }
-  };
+  // const handleMouseEnter = () => {
+  //   if (!collaps) {
+  //     setCollaps(true);
+  //     onChange(true);
+  //   }
+  // };
 
-  const handleMouseLeave = () => {
-    if (collaps) {
-      setCollaps(false);
-      onChange(false);
-    }
-  };
+  // const handleMouseLeave = () => {
+  //   if (collaps) {
+  //     setCollaps(false);
+  //     onChange(false);
+  //   }
+  // };
 
   const toggleDropdown = (key) => {
     setActiveDropdown((prev) => (prev === key ? null : key));
@@ -69,8 +75,8 @@ const SideNav = ({ onChange }) => {
     <>
       <div
         className={`sidenav-content ${collaps ? "expanded" : ""}`}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+        // onMouseEnter={handleMouseEnter}
+        // onMouseLeave={handleMouseLeave}
       >
         <>
           <div className="sidenav-content__headings">
@@ -79,7 +85,7 @@ const SideNav = ({ onChange }) => {
                 src={collaps ? appLogo : appLogo}
                 alt="orion-logo"
                 className={!collaps ? "orionLogo" : ""}
-              /> 
+              />
             </div>
 
             <div
@@ -94,18 +100,16 @@ const SideNav = ({ onChange }) => {
                 className="sidenav-content__headings-lists--title"
                 title="Workspaces"
               >
-                 <NavLink to="/dashboard" className="link-tag">
-                      {({ isActive, isPending }) => (
-                        <>
-                          <img
-                            src={
-                              isActive ? menu.dashboardIcon : menu.dashboardIcon
-                            }
-                          />
-                          {collaps && "Dashboard"}
-                        </>
-                      )}
-                    </NavLink>
+                <NavLink to="/dashboard" className="link-tag">
+                  {({ isActive, isPending }) => (
+                    <>
+                      <img
+                        src={isActive ? menu.dashboardIcon : menu.dashboardIcon}
+                      />
+                      {collaps && "Dashboard"}
+                    </>
+                  )}
+                </NavLink>
               </h5>
             </div>
           </div>
@@ -115,11 +119,11 @@ const SideNav = ({ onChange }) => {
           >
             <div className="header-user-info" ref={popupRef}>
               <div className="user-info" onClick={handleMenuItem}>
-                {auth?.details?.displayName && (
+                {auth?.details?.name && (
                   <LogoAvatarShowLetter
                     genaralData={auth.details}
                     profilePhotoName={"photo"}
-                    profileName={"displayName"}
+                    profileName={"name"}
                     outerClassName={"user-info__profile-pic"}
                     innerClassName={"user-icon-photo"}
                   ></LogoAvatarShowLetter>
@@ -127,23 +131,20 @@ const SideNav = ({ onChange }) => {
                 {collaps && (
                   <div
                     className={`user-info__details ${
-                      auth.details?.displayName
-                        ? auth.details?.displayName
-                        : "none"
+                      auth.details?.name ? auth.details?.name : "none"
                     }`}
                   >
                     <p className="user-info__details-welcome-back">
                       Welcome back{" "}
-                     
                     </p>
                     <p
                       className="user-info__details-name"
-                      title={auth.details?.displayName || "User Name"}
+                      title={auth.details?.name || "User Name"}
                     >
-                      {auth.details?.displayName || "User Name"}
+                      {auth.details?.name || "User Name"}
                     </p>
                     <p className="user-info__details-role" title={"Guest"}>
-                      {"Guest"}
+                      {auth.details?.role || "Gust"}
                     </p>
                   </div>
                 )}
@@ -163,10 +164,10 @@ const SideNav = ({ onChange }) => {
                 </div>
               )}
             </div>
-            <p className="version-info">
+            {/* <p className="version-info">
               {collaps ? "Version " : "v"}
               {packageJson.version}
-            </p>
+            </p> */}
           </div>
         </>
       </div>
