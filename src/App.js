@@ -14,11 +14,10 @@ const Login = lazy(() => import("pages/Login/Login"));
 // Order Orion Pages
 
 const Home = lazy(() => import("pages/HomePage"));
-
+const CreateHotel = lazy(() => import("pages/Hotel/CreateHotel"));
 const NotFound = lazy(() => import("pages/NotFound/NotFound"));
 
 const App = () => {
-
   const [hasOrdersAccess, setHasOrdersAccess] = useState(false);
   return (
     <Suspense fallback={<Spinner />}>
@@ -31,9 +30,9 @@ const App = () => {
           path="/"
           element={<UserLayout hasOrdersAccess={hasOrdersAccess} />}
         >
-          <Route path="/" element={<Home />}>
-            <Route path="*" element={<NotFound />} />
-          </Route>
+          <Route path="/dashboard" element={<Home />}></Route>
+          <Route path="/create-hotel" element={<CreateHotel />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </Suspense>

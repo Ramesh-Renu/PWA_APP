@@ -95,10 +95,13 @@ const SideNav = ({ onChange }) => {
                   : "sidenav-content__headings-lists"
               }
             >
-              {/* Workspaces */}
+              {auth?.details?.role === "Admin" && (
+                <>
+                  {/* Dashboard */}
+              {/* Dashboard */}
               <h5
                 className="sidenav-content__headings-lists--title"
-                title="Workspaces"
+                title="Dashboard"
               >
                 <NavLink to="/dashboard" className="link-tag">
                   {({ isActive, isPending }) => (
@@ -111,6 +114,26 @@ const SideNav = ({ onChange }) => {
                   )}
                 </NavLink>
               </h5>
+
+               {/* Create Table */}
+              <h5
+                className="sidenav-content__headings-lists--title"
+                title="Dashboard"
+              >
+                <NavLink to="/create-hotel" className="link-tag">
+                  {({ isActive, isPending }) => (
+                    <>
+                      <img
+                        src={isActive ? menu.tablesIcon : menu.tablesIcon}
+                      />
+                      {collaps && "Create Table"}
+                    </>
+                  )}
+                </NavLink>
+              </h5>
+                </>
+              )}                   
+
             </div>
           </div>
 

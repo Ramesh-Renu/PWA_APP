@@ -6,9 +6,15 @@ export const API = {
   LOGOUT: "/api/logout",
   GET_USER_INFO: "/api/users/profile",
   GET_REFRESH_TOCKEN: "/api/auth/refresh",
-  GET_PHOTO_SYNC: "/master/api/AdManagement/ad-user-photosync",
-  
+  HOTEL_API: "/api/hotel",
+  TABLE_API: "/api/tables/hotel",
+  DELETE_TABLE_API: "/api/tables",
+  FLOOR_API: "/api/floors/hotel",
+  DELETE_FLOOR_API: "/api/floors",
+  SEAT_API: "/api/seats/table",
+  DELETE_SEAT_API: "/api/seats",
+  RESERVATION_API: "/api/reservations",
+
   /** NOTIFICATION */
-  GET_RECENT_NOTIFICATION:
-    "/master/TicketManagement/getnotification",
+  GET_RECENT_NOTIFICATION: "/master/TicketManagement/getnotification",
 };
