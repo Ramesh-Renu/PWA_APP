@@ -1,4 +1,3 @@
-import { classNames } from "@euroland/libs";
 import React, { useEffect, useRef, useState } from "react";
 import {
   flexRender,
@@ -120,7 +119,7 @@ export default function Table({
   }, [rows.length, onScrollEnd]);
 
   return (
-    <div className={classNames("main-table ", className)}>
+    <div className={className ? className :"main-table "}>
       <div
         className={`table-container position-relative  rounded`}
         ref={parentRef}

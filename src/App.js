@@ -15,6 +15,7 @@ const Login = lazy(() => import("pages/Login/Login"));
 
 const Home = lazy(() => import("pages/HomePage"));
 const CreateHotel = lazy(() => import("pages/Hotel/CreateHotel"));
+const CreateTables = lazy(() => import("pages/Tables/CreateTables"));
 const NotFound = lazy(() => import("pages/NotFound/NotFound"));
 
 const App = () => {
@@ -32,6 +33,7 @@ const App = () => {
         >
           <Route path="/dashboard" element={<Home />}></Route>
           <Route path="/create-hotel" element={<CreateHotel />} />
+          <Route path="/create-table" element={<CreateTables />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

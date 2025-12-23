@@ -115,7 +115,7 @@ const SideNav = ({ onChange }) => {
                 </NavLink>
               </h5>
 
-               {/* Create Table */}
+               {/* Create Hotel */}
               <h5
                 className="sidenav-content__headings-lists--title"
                 title="Dashboard"
@@ -125,8 +125,27 @@ const SideNav = ({ onChange }) => {
                     <>
                       <img
                         src={isActive ? menu.tablesIcon : menu.tablesIcon}
+                        alt="icon"
                       />
-                      {collaps && "Create Table"}
+                      {collaps && "Hotels"}
+                    </>
+                  )}
+                </NavLink>
+              </h5>
+
+                {/* Create Table */}
+              <h5
+                className="sidenav-content__headings-lists--title"
+                title="Dashboard"
+              >
+                <NavLink to="/create-table" className="link-tag">
+                  {({ isActive, isPending }) => (
+                    <>
+                      <img
+                        src={isActive ? menu.tablesIcon : menu.tablesIcon}
+                        alt="icon"
+                      />
+                      {collaps && "Table"}
                     </>
                   )}
                 </NavLink>

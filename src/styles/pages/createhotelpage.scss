@@ -1,0 +1,112 @@
+.create-hotel-page {
+  margin: 0;
+  padding: 20px 10px 0px 10px;
+  &-flex {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  &-flex-column {
+    flex: 1;
+    text-align: left;
+  }
+  .createHotel {
+    border: none;
+    color: var(--color-white);
+    background-color: var(--color-green-7);
+    padding: 2px 16px;
+    line-height: 40px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .search-hotel {
+    border: 1px solid var(--color-light-light-gray);
+    border-radius: 6px;
+    color: var(--color-light-black-2);
+    display: block;
+    font-size: 14px;
+    overflow: hidden;
+    padding: 9px 30px 9px 15px;
+    position: relative;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+    min-height: 50px;
+  }
+}
+
+.create-hotel-page-popup-content {
+  max-width: 100%;
+  min-width: 500px;
+  padding: 10px;
+  .react-dropdown-select.single-select-dropdownRenderer {
+    min-width: 200px;
+    .react-dropdown-select-input {
+      border: 1px solid var(--color-light-gray) !important;
+      border-radius: 6px !important;
+    }
+  }
+  .top-content {
+    display: flex;
+    flex-direction: row;
+    column-gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    .label {
+      color: var(--color-light-black-2);
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 100%;
+      sup {
+        color: var(--color-red);
+      }
+    }
+    .craete-hotel-name {
+      border: 1px solid var(--color-light-light-gray);
+      border-radius: 6px;
+      color: var(--color-light-black-2);
+      display: block;
+      font-size: 14px;
+      overflow: hidden;
+      padding: 9px 30px 9px 15px;
+      position: relative;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: 100%;
+      min-height: 50px;
+    }
+    .btn-cancel {
+      border: 1px solid var(--color-light-gray);
+      background-color: var(--color-white);
+      color: var(--color-light-black-2);
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .btn-cancel:hover {
+      background-color: var(--color-light-gray);
+    }
+    .btn-primary {
+      border: none;
+      background-color: var(--color-green-7);
+      color: var(--color-white);
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .btn-primary:hover {
+      background-color: var(--color-lighter-green4);
+      color: var(--color-green-7);
+    }
+    .error-label {
+      color: var(--color-red);
+      font-size: 12px;
+      font-weight: 400;
+      margin-top: 4px;
+    }
+  }
+}

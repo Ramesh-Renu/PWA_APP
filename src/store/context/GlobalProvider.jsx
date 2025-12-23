@@ -5,15 +5,7 @@ import { orderCreationReducer, initialOrderListState } from "../reducers/orderCr
 import { filterValuesReducer, initialFilterState } from "../reducers/filterValuesReducer";
 import { masterDataReducer, masterDataState } from "../reducers/masterDataReducer";
 import { initialOrderCountState, getOrderCountReducer } from "../reducers/getOrderCount";
-import { workspaceReducer, initialWorkspaceState } from "../reducers/workspaceReducer";
 import { notificationReducer, initialNotificationState } from "../reducers/notificationReducer";
-import { companySearchReducer, initialCompanySearchState } from "../reducers/companySearchReducer";
-import { initialTicketDetailState, getOrderTicketDetailsReducer } from "../reducers/TicketReducers/getOrderTicketDetailsReducer";
-import { initialActiveCommentsTabState, activeCommentsTabReducer } from '../reducers/TicketReducers/activeCommentsTabReducer';
-import { initialInstrumentState, getInstrumentListReducer } from "../reducers/TicketReducers/getInstrumentListReducer";
-import { initialAttachmentState, getAttachmentFileReducer } from "../reducers/TicketReducers/getAttachmentFileReducer";
-import { initialWorkSpaceFilterState, workSpaceFilterValuesReducer } from "../reducers/workspaceFilterReducer";
-import { initialUserBoardPermission, getUserBoardPermissionReducer } from "../reducers/UserReducers/getUserBoardPermissionReducer";
 
 const GlobalContext = createContext();
 
@@ -31,17 +23,9 @@ const rootReducer = combineReducers({
   toastState: toastReducer,
   orderListState: orderCreationReducer,
   filterState: filterValuesReducer,
-  workSpaceFilterState: workSpaceFilterValuesReducer,
   masterState: masterDataReducer,
   orderCountState: getOrderCountReducer,
-  workspaceState: workspaceReducer,
   notificationState: notificationReducer,
-  companySearchState: companySearchReducer,
-  ticketDetails: getOrderTicketDetailsReducer,
-  activeCommentsTab: activeCommentsTabReducer,
-  instrumentData: getInstrumentListReducer,
-  attachmentData: getAttachmentFileReducer,
-  userBoardPermission: getUserBoardPermissionReducer
 });
 
 const initialState = {
@@ -49,17 +33,9 @@ const initialState = {
   toastState: initialToastState,
   orderListState: initialOrderListState,
   filterState: initialFilterState,
-  workSpaceFilterState: initialWorkSpaceFilterState,
   masterState: masterDataState,
   orderCountState: initialOrderCountState,
-  workspaceState: initialWorkspaceState,
   notificationState: initialNotificationState,
-  companySearchState: initialCompanySearchState,
-  ticketDetails: initialTicketDetailState,
-  activeCommentsTab: initialActiveCommentsTabState,
-  instrumentData: initialInstrumentState,
-  attachmentData:initialAttachmentState,
-  userBoardPermission: initialUserBoardPermission,
 };
 
 export const GlobalProvider = ({ children }) => {

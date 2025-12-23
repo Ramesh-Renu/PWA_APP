@@ -257,7 +257,7 @@ const SelectDropDown = ({ options, ...props }) => {
         </div>
       </div>
     );
-  };
+  };  
   return (
     <>
       <Select
@@ -271,6 +271,7 @@ const SelectDropDown = ({ options, ...props }) => {
             : singleSelectDropdown
         }
         contentRenderer={props.contentRenderer}
+        disabled={props.disabled}
       ></Select>
       {props?.isInvalid && (
         <Form.Text className="text-danger">{props?.errorMsg}</Form.Text>

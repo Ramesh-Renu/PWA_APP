@@ -13,7 +13,7 @@ import radioUnChecked from "assets/images/radio-checked.svg";
 import tick from "assets/images/tick.svg";
 import tickeCheck from "assets/images/tick.svg";
 import appLogo from "assets/images/appLogo.svg";
-
+import editPencilIcon from "assets/images/edit-icons.svg";
 
 import dashboardIcon from "assets/images/sidenav/dashboard.svg";
 import queueIcon from "assets/images/sidenav/queue.svg";
@@ -22,6 +22,7 @@ import bellIcon from "assets/images/sidenav/bell_icon.svg";
 export {
   checkedIcon,
   editIcon,
+  editPencilIcon,
   searchIcon,
   unChecked,
   redCrossMark,

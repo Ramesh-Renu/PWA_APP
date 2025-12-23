@@ -4,11 +4,15 @@
 @use "./components";
 @use "./pages";
 
+
+
+
 body {
   margin: 0;
   font-family: var(--default-font);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  
   
 }
 
