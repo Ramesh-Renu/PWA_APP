@@ -5,20 +5,27 @@ import {
   getAllHotel,
   updateHotelbyid,
   searchHotelbyNameLocation,
+  deleteHotel,
 } from "services";
 import useGlobalMaster from "hooks/useGlobalMaster";
 import PopupModal from "components/common/PopupModal";
 import Table from "components/common/Table";
+import TableDetails from "pages/TableDetails/TableDetails";
 import { createColumnHelper } from "@tanstack/react-table";
 import { createHotelAPi } from "services";
 import useToast from "hooks/useToast";
 import * as images from "../../assets/images/index";
+import { useNavigate } from "react-router-dom";
+import ToolTipPopup from "components/common/ToolTipPopup";
+import { renderArea, renderLocation } from "utils/common";
 
 const CreateTables = () => {
   const [listOfHotel, setListOfHotel] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState([]);
   const [selectedArea, setSelectedArea] = useState([]);
   const [showCreateHotelForm, setShowCreateHotelForm] = useState(false);
+  const [showDeleteHotel, setShowDeleteHotel] = useState(false);
+  const [loadingHotelListApp, setLoadingHotelListApp] = useState(false);
   const { areaList, locationList, getAllArea, getAllLocation } =
     useGlobalMaster();
   const [getLocationBasedArea, setGetLocationBasedArea] = useState([]);
@@ -50,6 +57,10 @@ const CreateTables = () => {
     chairsPerTable: false,
   });
   const { showToast } = useToast();
+  const navigate = useNavigate();
+  const [selectedId, setSelectedId] = useState(null);
+  const [reloadTable, setReloadTable] = useState(false);
+
   useEffect(() => {
     if (areaList.data.length === 0) {
       getAllArea();
@@ -60,9 +71,11 @@ const CreateTables = () => {
   }, []);
   const [updateHotel, setUpdateHotel] = useState(false);
   const fetchHotels = async () => {
+    setLoadingHotelListApp(true);
     try {
       const hotels = await getAllHotel();
       setListOfHotel(hotels.data); // <-- changed from `value` to `hotels`
+      setLoadingHotelListApp(false);
     } catch (err) {
       console.error("fetchHotels error", err);
     }
@@ -83,6 +96,7 @@ const CreateTables = () => {
   }, [selectedLocation]);
 
   const fetchCreateHotel = async (hotelData) => {
+    setLoadingHotelListApp(true);
     try {
       const response = await createHotelAPi(hotelData);
       // Optionally, refresh the hotel list or provide user feedback here
@@ -93,6 +107,7 @@ const CreateTables = () => {
       if (response) {
         const hotels = await getAllHotel();
         setListOfHotel(hotels);
+        setLoadingHotelListApp(false);
       }
     } catch (error) {
       console.error("Error creating hotel:", error);
@@ -105,6 +120,7 @@ const CreateTables = () => {
     }
   };
   const fetchUpdateHotel = async (hotelData, hotelId) => {
+    setLoadingHotelListApp(true);
     try {
       const response = await updateHotelbyid(hotelData, hotelId);
       showToast({
@@ -114,6 +130,7 @@ const CreateTables = () => {
       if (response) {
         const hotels = await getAllHotel();
         setListOfHotel(hotels);
+        setLoadingHotelListApp(false);
       }
     } catch (error) {
       console.error("Error updating hotel:", error);
@@ -127,11 +144,13 @@ const CreateTables = () => {
   };
 
   const fetchSearchHotel = async (value) => {
+    setLoadingHotelListApp(true);
     try {
       const response = await searchHotelbyNameLocation(value);
       if (response.success) {
         const hotels = response.data;
         setListOfHotel(hotels);
+        setLoadingHotelListApp(false);
       }
     } catch (error) {
       console.error("Error updating hotel:", error);
@@ -166,16 +185,6 @@ const CreateTables = () => {
       chairsPerTable: false,
     });
   };
-
-  const renderLocation = (id, data) => {
-    const location = data.filter((loc) => loc.id === id);
-    return location ? location : "N/A";
-  };
-
-  const renderArea = (id, data) => {
-    const area = data.filter((area) => area.id === id);
-    return area ? area : "N/A";
-  };
   const handleUpdateHotel = (hotelData) => {
     // Logic to update hotel
     setShowCreateHotelForm(!showCreateHotelForm);
@@ -190,10 +199,49 @@ const CreateTables = () => {
     setHotelChairsPerTable(hotelData[0].chairs_per_table);
   };
 
+  /** HANDLE HOTEL TABLE VIEW */
+  const handleOrderView = (hotelId, hotelData, isEditable) => {
+    if (hotelId) {
+      navigate(`/hotel/details/${hotelId}`, {
+        state: { hotelData, isEditable },
+      });
+    }
+  };
+
+  /** HANDLE EDIT OR DELETE TABLE  VALUE */
+  const handleEditDeleteValue = (e, getVal, rowData) => {
+    if (rowData?.isProcessOrder && e.name.props.children.includes("Delete"))
+      return;
+    if (e.id === 2) {
+      deleteConfirmation(getVal);
+    } else {
+      handleOrderView(getVal, rowData, true);
+    }
+  };
+
+  /** DELETE CONFIRMATION POPUP */
+  const deleteConfirmation = (id) => {
+    setSelectedId(id);
+    setShowDeleteHotel(true);
+  };
+
   /** COLUMNS DEFINITION */
   const columns = [
     columnHelper.accessor("hotel_name", {
       header: () => <span className="customHeader">Hotel Name</span>,
+      cell: (info) => {
+        const rowData = info.row.original;
+        return (
+          <div
+            tabIndex={0}
+            className="truncate-2-lines"
+            title={info.getValue()}
+            onClick={() => handleOrderView(rowData?.id, rowData)}
+          >
+            {info.getValue()}
+          </div>
+        );
+      },
     }),
     columnHelper.accessor("location_id", {
       header: () => <span className="customHeader">Location</span>,
@@ -218,7 +266,7 @@ const CreateTables = () => {
       //   return renderArea(info.getValue(), areaList?.data || [])[0]?.name || "N/A";
       // },
     }),
-    columnHelper.accessor("floor", {
+    columnHelper.accessor("floorCount", {
       header: () => <span className="customHeader">Number of Floor</span>,
     }),
     columnHelper.accessor("tableCount", {
@@ -233,23 +281,66 @@ const CreateTables = () => {
     columnHelper.accessor("id", {
       header: () => <span className="customHeader">Action</span>,
       cell: (info) => {
-        const getHotelId = info.getValue();
-        const getHotelData = listOfHotel.filter(
-          (hotel) => hotel.id === getHotelId
-        );
+        const rowData = info.row.original;
         return (
-          <span
-            className="edit-icon"
-            onClick={() => {
-              handleUpdateHotel(getHotelData);
-              setSeletedHotelId(getHotelData);
-              setUpdateHotel(true);
-            }}
-          >
-            <img src={images.editPencilIcon} alt="Edit" />
-          </span>
+          <div className="mx-auto w-100">
+            <ToolTipPopup
+              toolTipDatas={[
+                {
+                  name: (
+                    <button className="btn btn-0 p-0 border-0 m-0 w-100 d-flex justify-content-between">
+                      Edit
+                      <img
+                        src={images.pencilSimpleLine}
+                        alt="pencilSimpleLine"
+                      />
+                    </button>
+                  ),
+                  id: 1,
+                },
+                {
+                  name: (
+                    <button
+                      className="btn btn-0 p-0 m-0 w-100 border-0 text-danger d-flex justify-content-between"
+                      disabled={rowData?.isProcessOrder}
+                    >
+                      Delete
+                      <img src={images.trashIcon} alt="Remove Instrument" />
+                    </button>
+                  ),
+                  id: 2,
+                },
+              ]}
+              labelField="name"
+              valueField="id"
+              getSeletedVal={(e) =>
+                handleEditDeleteValue(e, info.getValue(), rowData)
+              }
+              canEdit={true}
+              isCustomFieldswithFilter={false}
+              arrow={true}
+            />
+          </div>
         );
       },
+      // cell: (info) => {
+      //   const getHotelId = info.getValue();
+      //   const getHotelData = listOfHotel.filter(
+      //     (hotel) => hotel.id === getHotelId
+      //   );
+      //   return (
+      //     <span
+      //       className="edit-icon"
+      //       onClick={() => {
+      //         handleUpdateHotel(getHotelData);
+      //         setSeletedHotelId(getHotelData);
+      //         setUpdateHotel(true);
+      //       }}
+      //     >
+      //       <img src={images.editPencilIcon} alt="Edit" />
+      //     </span>
+      //   );
+      // },
     }),
   ];
 
@@ -269,7 +360,7 @@ const CreateTables = () => {
     const getValue = e.target.value;
     if (getValue?.length > 2) {
       fetchSearchHotel(getValue);
-    } else if(getValue?.length ===0) {
+    } else if (getValue?.length === 0) {
       fetchHotels();
     }
   };
@@ -371,6 +462,33 @@ const CreateTables = () => {
     });
   };
 
+  /** HANDLE DELETE ORDER */
+  const handleDeleteOrder = async (param) => {
+    setShowDeleteHotel(false);
+    try {
+      const response = await deleteHotel({
+        ticket_id: param,
+      });
+      if (response?.status) {
+        showToast({
+          message: response.data.message,
+          variant: "success",
+        });
+        setReloadTable(true);
+      } else {
+        showToast({
+          message: response.data.message,
+          variant: "danger",
+        });
+      }
+    } catch (error) {
+      showToast({
+        message: error?.message || "Something went wrong",
+        variant: "danger",
+      });
+    }
+  };
+
   return (
     <Fragment>
       <div className="create-hotel-page">
@@ -385,6 +503,11 @@ const CreateTables = () => {
           <div className="create-hotel-page-flex-column"></div>
         </div>
       </div>
+      {seletedHotelId && seletedHotelId.length > 0 && (
+        <div className="table-details-preview p-2">
+          <TableDetails data={seletedHotelId[0]} />
+        </div>
+      )}
       {listOfHotel?.length > 0 && (
         <Table
           columns={columns}
@@ -395,8 +518,8 @@ const CreateTables = () => {
           setSorting={setSorting}
           tableName="Order_list"
           noDataContent={"Do not render any no data content while loading"}
-          tableHeight={"80vh"}
-          //loading={props?.loading}
+          tableHeight={"calc(100vh - 115px)"}
+          // loading={loadingHotelListApp}
           //onScrollEnd={handleInfiniteScroll}
         />
       )}
@@ -571,6 +694,36 @@ const CreateTables = () => {
           </Fragment>
         </PopupModal>
       )}
+
+      {/* DELETE CONFIRMATION POPUP */}
+
+      <PopupModal
+        show={showDeleteHotel}
+        onClose={() => setShowDeleteHotel(false)}
+        className={"popupModal bg-white rounded-4"}
+        width={"40vh"}
+      >
+        <div>
+          <h5 className="text-center">Do you want to Delete this Hotel ?</h5>
+          <div className="d-flex flex-row justify-content-center gap-3 mt-4 modalActions">
+            <button
+              className="btn btn-0 modalDelete_btn px-3"
+              onClick={() => handleDeleteOrder(selectedId)}
+            >
+              Yes
+            </button>
+            <button
+              className="btn btn-0 modalCancel_btn px-3"
+              onClick={() => {
+                setShowDeleteHotel(false);
+                setSeletedHotelId(null);
+              }}
+            >
+              No
+            </button>
+          </div>
+        </div>
+      </PopupModal>
     </Fragment>
   );
 };

@@ -73,7 +73,7 @@ const UserLayout = () => {
       {/* <Header /> */}
       <div className={`layout-container ${collapseNav ? "" : "left-sidebar"}`}>
         <SideNav onChange={tempChange} />
-        <div className="container">
+        <div className="container layout-page">
           <Outlet />
         </div>
       </div>

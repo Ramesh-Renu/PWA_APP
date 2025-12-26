@@ -13,13 +13,35 @@ import radioUnChecked from "assets/images/radio-checked.svg";
 import tick from "assets/images/tick.svg";
 import tickeCheck from "assets/images/tick.svg";
 import appLogo from "assets/images/appLogo.svg";
+import appLogoPng from "assets/images/appLogo.png";
 import editPencilIcon from "assets/images/edit-icons.svg";
+import appIcon from "assets/images/appIcon.svg";
+import trashIcon from "assets/images/trash_full.svg";
+import pencilSimpleLine from "assets/images/pencil_simple_line.svg";
+import chairBooked from "assets/images/booked_char.svg";
+import chairNotBooked from "assets/images/available_char.svg";
+import cleaningChar from "assets/images/cleaning_char.svg";
 
 import dashboardIcon from "assets/images/sidenav/dashboard.svg";
 import queueIcon from "assets/images/sidenav/queue.svg";
 import tablesIcon from "assets/images/sidenav/tables.svg";
 import bellIcon from "assets/images/sidenav/bell_icon.svg";
+import dashboardIconActive from "assets/images/sidenav/dashboard_active.svg";
+import queueIconActive from "assets/images/sidenav/queue_active.svg";
+import tablesIconActive from "assets/images/sidenav/tables_active.svg";
+import bellIconActive from "assets/images/sidenav/bell_icon_active.svg";
+import hotelCreateActive from "assets/images/sidenav/hotel_create_active.svg";
+import hotelCreate from "assets/images/sidenav/hotel_create.svg";
+
 export {
+  chairBooked,
+  chairNotBooked,
+  cleaningChar,
+  trashIcon,
+  pencilSimpleLine,
+  appIcon,
+  hotelCreateActive,
+  hotelCreate,
   checkedIcon,
   editIcon,
   editPencilIcon,
@@ -39,5 +61,10 @@ export {
   queueIcon,
   tablesIcon,
   bellIcon,
-  appLogo
+  appLogo,
+  appLogoPng,
+  dashboardIconActive,
+  queueIconActive,
+  tablesIconActive,
+  bellIconActive,
 };

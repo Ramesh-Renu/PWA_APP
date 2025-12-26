@@ -50,8 +50,8 @@
     }
     &.collaps {
       img {
-        width: 133px;
-        height: 48px;
+        width: 80px;
+        height: 70px;
       }
     }
     &-agent {
@@ -629,6 +629,10 @@
   }
 }
 
+.layout-page {
+  max-width: 100%;
+}
+
 .sidenav-content {
   position: fixed;
   // top: 70px;
@@ -644,7 +648,7 @@
   opacity: 1;
   box-shadow: -2px 3px 8px 1px #e0e0e0;
   justify-content: flex-start;
-  background-color: var(--color-blue-4);
+  background-color: var(--color-sidebar-bg);
   transition: height 0.5s;
   transition: opacity 1s;
   transition: overflow 1s;
@@ -672,76 +676,74 @@
         }
       }
       &--title {
-        margin: 0;
-        padding: 0;
-
-        & a,
-        div {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        column-gap: 8px;
+        font-size: 15px;
+        font-style: normal;
+        font-weight: 500;
+        line-height: normal;
+        padding: 8px;
+        margin: 0 0 8px 0;
+        border-radius: 20px;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        // max-height: 40px;
+        & a {
           display: flex;
           flex-direction: row;
           align-items: center;
           column-gap: 8px;
-          font-size: 15px;
-          font-style: normal;
-          font-weight: 500;
-          line-height: normal;
-          padding: 8px;
-          margin: 0 0 8px 0;
-          border-radius: 20px;
-          color: var(--color-text-muted);
           text-decoration: none;
           width: 95%;
-          cursor: pointer;
-          // max-height: 40px;
-
+          color: var(--color-text-muted);
           &.active {
             background-color: var(--color-background-muted) !important;
             color: var(--color-white);
           }
-
           &:hover {
             background-color: rgba(8, 43, 69, 0.2);
           }
-        }
 
-        &[disabled] {
-          pointer-events: none;
-        }
-
-      .menu-dropdown {
-        margin-left: 5px;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      
-        a {
-          position: relative;
-          padding-left: 20px; // space for the dot
-          font-size: 0.875rem;
-          margin-bottom: 2px;
-          text-decoration: none;
-          display: block;
-      
-          &::before {
-            content: "•";
-            position: absolute;
-            left: 6px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 1rem;
-            color: var(--color-text-muted);
+          &[disabled] {
+            pointer-events: none;
           }
-      
-          &:hover {
-            color: var(--color-white);
-      
+        }
+
+        .menu-dropdown {
+          margin-left: 5px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+
+          a {
+            position: relative;
+            padding-left: 20px; // space for the dot
+            font-size: 0.875rem;
+            margin-bottom: 2px;
+            text-decoration: none;
+            display: block;
+
             &::before {
+              content: "•";
+              position: absolute;
+              left: 6px;
+              top: 50%;
+              transform: translateY(-50%);
+              font-size: 1rem;
+              color: var(--color-text-muted);
+            }
+
+            &:hover {
               color: var(--color-white);
+
+              &::before {
+                color: var(--color-white);
+              }
             }
           }
         }
-      }
-
       }
     }
   }
@@ -814,7 +816,7 @@
           max-height: 40px;
 
           &.active {
-            background-color: var(--color-primary-dark) !important;;
+            background-color: var(--color-primary-dark) !important;
             color: var(--color-white);
           }
 
@@ -988,14 +990,14 @@
           text-align: center;
           border-radius: 22px;
           border: 1px solid var(--color-primary);
-          height: 44px;
+          height: 35px;
           display: flex;
           align-items: center;
           justify-content: center;
           background: var(--color-primary);
 
           img {
-            max-width: 44px;
+            max-width: 100%;
             border-radius: 22px;
           }
         }
@@ -1565,7 +1567,8 @@
 
                         &::-webkit-scrollbar-thumb {
                           border-radius: 10px;
-                          -webkit-box-shadow: inset 0 0 6px var(--color-oldSilver);
+                          -webkit-box-shadow: inset 0 0 6px
+                            var(--color-oldSilver);
                           background-color: var(--color-oldSilver);
                         }
 
@@ -2388,6 +2391,7 @@
   z-index: 999;
   min-height: 140px;
 }
+
 .workspaceSwitch {
   .dropdownLabel {
     margin: 5px;

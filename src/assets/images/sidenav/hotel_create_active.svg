@@ -1,0 +1,49 @@
+<svg
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- Roof -->
+  <path
+    d="M4 8L12 3L20 8"
+    stroke="white"
+    stroke-width="1.6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Building -->
+  <rect
+    x="5"
+    y="8"
+    width="14"
+    height="13"
+    rx="2"
+    stroke="white"
+    stroke-width="1.6"
+  />
+
+  <!-- Door -->
+  <rect
+    x="10"
+    y="14"
+    width="4"
+    height="7"
+    rx="1"
+    stroke="white"
+    stroke-width="1.6"
+  />
+
+  <!-- Windows -->
+  <rect x="7" y="10" width="2" height="2" rx="0.5" fill="white"/>
+  <rect x="11" y="10" width="2" height="2" rx="0.5" fill="white"/>
+  <rect x="15" y="10" width="2" height="2" rx="0.5" fill="white"/>
+
+  <!-- Star (Luxury Touch) -->
+  <path
+    d="M12 5.2L12.8 6.8L14.6 7.1L13.3 8.3L13.6 10.1L12 9.3L10.4 10.1L10.7 8.3L9.4 7.1L11.2 6.8Z"
+    fill="white"
+  />
+</svg>

@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Spinner from "components/spinner/spinner.component";
 import "styles/index.scss";
+import useAuth from "hooks/useAuth";
 
 /** LAYOUTS */
 const UserLayout = lazy(() =>
@@ -16,9 +17,11 @@ const Login = lazy(() => import("pages/Login/Login"));
 const Home = lazy(() => import("pages/HomePage"));
 const CreateHotel = lazy(() => import("pages/Hotel/CreateHotel"));
 const CreateTables = lazy(() => import("pages/Tables/CreateTables"));
+const HotelDetails = lazy(() => import("pages/TableDetails/HotelDetails"));
 const NotFound = lazy(() => import("pages/NotFound/NotFound"));
 
 const App = () => {
+  const [{ data: auth }, { setAuth }] = useAuth();
   const [hasOrdersAccess, setHasOrdersAccess] = useState(false);
   return (
     <Suspense fallback={<Spinner />}>
@@ -32,8 +35,13 @@ const App = () => {
           element={<UserLayout hasOrdersAccess={hasOrdersAccess} />}
         >
           <Route path="/dashboard" element={<Home />}></Route>
-          <Route path="/create-hotel" element={<CreateHotel />} />
-          <Route path="/create-table" element={<CreateTables />} />
+          {auth?.details?.role === "Admin" && (
+            <>
+              <Route path="/create-hotel" element={<CreateHotel />} />
+              <Route path="/create-table" element={<CreateTables />} />
+              <Route path="/hotel/details/:id" element={<HotelDetails />} />
+            </>
+          )}
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

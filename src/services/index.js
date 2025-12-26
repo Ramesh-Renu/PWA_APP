@@ -23,13 +23,13 @@ export const getAllHotel = (params) => baseAPI.GET(API.HOTEL_API, params);
 export const getHotelbyid = (params) => baseAPI.GET(API.HOTEL_API, +"/"+params.hotel_id);
 export const searchHotelbyNameLocation = (search) => baseAPI.GET(API.HOTEL_API, { search });
 export const updateHotelbyid = (body, hotelId) => baseAPI.PUT(`${API.HOTEL_API}/${hotelId}`, body);
-export const deleteHotel = (params) => baseAPI.DELETE(API.HOTEL_API, +"/"+params.hotel_id);
+export const deleteHotel = (params) => baseAPI.DELETE(API.HOTEL_API+"/"+params.hotel_id);
 
 /** Table **/
-export const createTable = (params) => baseAPI.POST(API.TABLE_API, params);
+export const createTable = (body, hotelId) => baseAPI.POST(`${API.TABLE_API}/${hotelId}`, body);
 export const getAllTable = (params) => baseAPI.GET(API.TABLE_API, params);
-export const getTablebyid = (params) => baseAPI.GET(API.TABLE_API, +"/"+params.id);
-export const deleteTable = (params) => baseAPI.DELETE(API.DELETE_TABLE_API, +"/"+params.table_id);
+export const getTablebyid = (params) => baseAPI.GET(API.TABLE_API+"/"+params.hotel_id);
+export const deleteTable = (params) => baseAPI.DELETE(API.DELETE_TABLE_API +"/"+params.table_id);
 
 /** Floor **/
 export const createFloor = (params) => baseAPI.POST(API.FLOOR_API, +"/"+params.hotel_id, params);

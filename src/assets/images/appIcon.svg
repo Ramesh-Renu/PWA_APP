@@ -1,0 +1,48 @@
+<svg
+  width="300"
+  height="360"
+  viewBox="0 0 300 360"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- Map Pin -->
+  <defs>
+    <linearGradient id="pinGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFB347"/>
+      <stop offset="100%" stop-color="#FF5F6D"/>
+    </linearGradient>
+  </defs>
+
+  <path
+    d="M150 20
+       C95 20 55 60 55 115
+       C55 185 150 310 150 310
+       C150 310 245 185 245 115
+       C245 60 205 20 150 20Z"
+    fill="url(#pinGradient)"
+  />
+
+  <!-- Circle -->
+  <circle cx="150" cy="120" r="70" fill="#ffffff"/>
+
+  <!-- Hotel Building -->
+  <rect x="115" y="90" width="70" height="80" rx="6" fill="#FFC83D"/>
+  <rect x="135" y="120" width="30" height="50" rx="4" fill="#2C7BE5"/>
+
+  <!-- Windows -->
+  <rect x="125" y="100" width="10" height="10" fill="#2C7BE5"/>
+  <rect x="145" y="100" width="10" height="10" fill="#2C7BE5"/>
+  <rect x="165" y="100" width="10" height="10" fill="#2C7BE5"/>
+
+  <!-- Star -->
+  <polygon
+    points="150,55 155,68 170,68 158,77 163,90 150,82 137,90 142,77 130,68 145,68"
+    fill="#FFD700"
+  />
+
+  <!-- Text -->
+  <text x="150" y="340" text-anchor="middle"
+        font-size="28" font-weight="700"
+        fill="#1F2D3D" font-family="Arial, sans-serif">
+    HOTEL APP
+  </text>
+</svg>

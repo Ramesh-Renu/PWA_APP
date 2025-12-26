@@ -15,6 +15,7 @@ const CreateHotel = () => {
   const [selectedLocation, setSelectedLocation] = useState([]);
   const [selectedArea, setSelectedArea] = useState([]);
   const [showCreateHotelForm, setShowCreateHotelForm] = useState(false);
+  const [loadingHotelListApp, setLoadingHotelListApp] = useState(true);
   const { areaList, locationList, getAllArea, getAllLocation } =
     useGlobalMaster();
   const [getLocationBasedArea, setGetLocationBasedArea] = useState([]);
@@ -58,9 +59,11 @@ const CreateHotel = () => {
 
   useEffect(() => {
     const fetchHotels = async () => {
+      setLoadingHotelListApp(true);
       try {
         const hotels = await getAllHotel();
         setListOfHotel(hotels); // <-- changed from `value` to `hotels`
+        setLoadingHotelListApp(false);
       } catch (err) {
         console.error("fetchHotels error", err);
       }
@@ -78,6 +81,7 @@ const CreateHotel = () => {
   }, [selectedLocation]);
  
   const fetchCreateHotel = async (hotelData) => {
+    setLoadingHotelListApp(true);
     try {
       const response = await createHotelAPi(hotelData);
       // Optionally, refresh the hotel list or provide user feedback here
@@ -88,6 +92,7 @@ const CreateHotel = () => {
       if (response) {
         const hotels = await getAllHotel();
         setListOfHotel(hotels);
+        setLoadingHotelListApp(false);
       }
     } catch (error) {
       console.error("Error creating hotel:", error);
@@ -100,6 +105,7 @@ const CreateHotel = () => {
     }
   };
   const fetchUpdateHotel = async (hotelData, hotelId) => {
+    setLoadingHotelListApp(true);
     try {
       const response = await updateHotelbyid(hotelData, hotelId);
       showToast({
@@ -109,6 +115,7 @@ const CreateHotel = () => {
       if (response) {
         const hotels = await getAllHotel();
         setListOfHotel(hotels);
+        setLoadingHotelListApp(false);
       }
     } catch (error) {
       console.error("Error updating hotel:", error);
@@ -196,7 +203,7 @@ const CreateHotel = () => {
       //   return renderArea(info.getValue(), areaList?.data || [])[0]?.name || "N/A";
       // },
     }),
-    columnHelper.accessor("floor", {
+    columnHelper.accessor("floorCount", {
       header: () => <span className="customHeader">Number of Floor</span>,
     }),
     columnHelper.accessor("tableCount", {
@@ -299,7 +306,7 @@ const CreateHotel = () => {
         location_id: selectedLocation[0]?.id, // Assuming single selection
         area_id: selectedArea[0]?.id, // Assuming single selection
         address: hotelAddress,
-        floor: parseInt(hotelFloorCount, 10),
+        floor_per_hotel: parseInt(hotelFloorCount, 10),
         tables_per_floor: parseInt(hotelTableCount, 10),
         chairs_per_table: parseInt(hotelChairsPerTable, 10),
       };
@@ -350,7 +357,7 @@ const CreateHotel = () => {
       chairsPerTable: false,
     });
   };
-
+  
   return (
     <Fragment>
       <div className="create-hotel-page">
@@ -373,8 +380,8 @@ const CreateHotel = () => {
           setSorting={setSorting}
           tableName="Order_list"
           noDataContent={"Do not render any no data content while loading"}
-          tableHeight={"80vh"}
-          //loading={props?.loading}
+          tableHeight={"calc(100vh - 85px)"}
+          loading={loadingHotelListApp}
           //onScrollEnd={handleInfiniteScroll}
         />
       )}

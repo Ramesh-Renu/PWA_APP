@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { orionLogo, appLogo, WavingHand } from "assets/images";
+import { appIcon } from "assets/images";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import * as menu from "assets/images";
 import packageJson from "./../../../../package.json";
@@ -82,9 +82,9 @@ const SideNav = ({ onChange }) => {
           <div className="sidenav-content__headings">
             <div className={`header-content__logo ${collaps ? "collaps" : ""}`}>
               <img
-                src={collaps ? appLogo : appLogo}
-                alt="orion-logo"
-                className={!collaps ? "orionLogo" : ""}
+                src={collaps ? appIcon : appIcon}
+                alt="app-logo"
+                className={!collaps ? "appLogo" : ""}
               />
             </div>
 
@@ -98,61 +98,70 @@ const SideNav = ({ onChange }) => {
               {auth?.details?.role === "Admin" && (
                 <>
                   {/* Dashboard */}
-              {/* Dashboard */}
-              <h5
-                className="sidenav-content__headings-lists--title"
-                title="Dashboard"
-              >
-                <NavLink to="/dashboard" className="link-tag">
-                  {({ isActive, isPending }) => (
-                    <>
-                      <img
-                        src={isActive ? menu.dashboardIcon : menu.dashboardIcon}
-                      />
-                      {collaps && "Dashboard"}
-                    </>
-                  )}
-                </NavLink>
-              </h5>
+                  <h5
+                    className="sidenav-content__headings-lists--title"
+                    title="Dashboard"
+                  >
+                    <NavLink to="/dashboard" className="link-tag">
+                      {({ isActive, isPending }) => (
+                        <>
+                          <img
+                            src={
+                              isActive
+                                ? menu.dashboardIconActive
+                                : menu.dashboardIcon
+                            }
+                            alt="icon"
+                          />
+                          {collaps && "Dashboard"}
+                        </>
+                      )}
+                    </NavLink>
+                  </h5>
 
-               {/* Create Hotel */}
-              <h5
-                className="sidenav-content__headings-lists--title"
-                title="Dashboard"
-              >
-                <NavLink to="/create-hotel" className="link-tag">
-                  {({ isActive, isPending }) => (
-                    <>
-                      <img
-                        src={isActive ? menu.tablesIcon : menu.tablesIcon}
-                        alt="icon"
-                      />
-                      {collaps && "Hotels"}
-                    </>
-                  )}
-                </NavLink>
-              </h5>
+                  {/* Create Hotel */}
+                  <h5
+                    className="sidenav-content__headings-lists--title"
+                    title="Dashboard"
+                  >
+                    <NavLink to="/create-hotel" className="link-tag">
+                      {({ isActive, isPending }) => (
+                        <>
+                          <img
+                            src={
+                              isActive
+                                ? menu.hotelCreateActive
+                                : menu.hotelCreate
+                            }
+                            alt="icon"
+                          />
+                          {collaps && "Hotels"}
+                        </>
+                      )}
+                    </NavLink>
+                  </h5>
 
-                {/* Create Table */}
-              <h5
-                className="sidenav-content__headings-lists--title"
-                title="Dashboard"
-              >
-                <NavLink to="/create-table" className="link-tag">
-                  {({ isActive, isPending }) => (
-                    <>
-                      <img
-                        src={isActive ? menu.tablesIcon : menu.tablesIcon}
-                        alt="icon"
-                      />
-                      {collaps && "Table"}
-                    </>
-                  )}
-                </NavLink>
-              </h5>
+                  {/* Create Table */}
+                  <h5
+                    className="sidenav-content__headings-lists--title"
+                    title="Dashboard"
+                  >
+                    <NavLink to="/create-table" className="link-tag">
+                      {({ isActive, isPending }) => (
+                        <>
+                          <img
+                            src={
+                              isActive ? menu.tablesIconActive : menu.tablesIcon
+                            }
+                            alt="icon"
+                          />
+                          {collaps && "Table"}
+                        </>
+                      )}
+                    </NavLink>
+                  </h5>
                 </>
-              )}                   
-
+              )}
             </div>
           </div>
 

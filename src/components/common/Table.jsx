@@ -119,7 +119,7 @@ export default function Table({
   }, [rows.length, onScrollEnd]);
 
   return (
-    <div className={className ? className :"main-table "}>
+    <div className={className ? className : "main-table "}>
       <div
         className={`table-container position-relative  rounded`}
         ref={parentRef}
