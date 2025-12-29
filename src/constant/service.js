@@ -12,7 +12,7 @@ export const API = {
   FLOOR_API: "/api/floors/hotel",
   DELETE_FLOOR_API: "/api/floors",
   SEAT_API: "/api/seats/table",
-  DELETE_SEAT_API: "/api/seats",
+  DELETE_SEAT_API: "/api/seats/table",
   RESERVATION_API: "/api/reservations",
   CREATE_AREA_API: "/api/areas",
   GETALL_AREA_API: "/api/areas",

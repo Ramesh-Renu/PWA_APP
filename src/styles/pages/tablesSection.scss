@@ -1,102 +1,3 @@
-.tables-section {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  // @media (min-width: 768px) and (max-width: 1200px) {
-  //   display: flex;
-  //   flex-direction: row;
-  // }
-  .top-row,
-  .bottom-row {
-    width: fit-content;
-    justify-content: flex-start;
-    .top-row-chair,
-    .bottom-row-chair {
-      padding: 0 10px;
-
-      .chairs {
-        height: 25px;
-        width: 40px;
-        padding: 0px;
-        display: inline-flex;
-        flex-direction: row;
-        align-items: center;
-        border: none;
-        background: none;
-        position: relative;
-        &.chairNotBooked {
-          color: var(--color-white);
-          font-size: 13px;
-          font-weight: 500;
-          line-height: 100%;
-          // background-color: var(--color-dark-green);
-        }
-        &.chairBooked {
-          color: var(--color-white);
-          font-size: 13px;
-          font-weight: 500;
-          line-height: 100%;
-          // background-color: var(--color-red);
-        }
-        &:disabled {
-          opacity: 0.5;
-        }
-        .char-number {
-          position: absolute;
-          color: var(--color-white);
-          font-size: 12px;
-          font-weight: 600;
-          line-height: 100%;
-          left: 0;
-          right: 0;
-          top: 15px;
-        }
-        .charsimage {
-          width: 36px;
-        }
-      }
-    }
-    .bottom-row-chair {
-      .charsimage {
-        transform: rotate(180deg);
-      }
-      .char-number {
-        top: 1px !important;
-      }
-    }
-  }
-  .tables {
-    padding: 15px 20px;
-    display: flex;
-    justify-content: center;
-    //   align-items: center
-    width: 100%;
-    min-height: 50px;
-    min-width: 80px;
-    background-color: var(--color-light-gray-12);
-    &.chairNotBooked {
-      color: var(--color-white);
-      font-size: 13px;
-      font-weight: 500;
-      line-height: 100%;
-      background-color: var(--color-dark-green);
-    }
-    &.chairBooked {
-      color: var(--color-white);
-      font-size: 13px;
-      font-weight: 500;
-      line-height: 100%;
-      background-color: var(--color-red);
-    }
-    h6 {
-      font-size: 15px;
-      font-weight: 500;
-      line-height: 100%;
-    }
-  }
-}
 .scroll-inner {
   max-height: calc(100vh - 190px);
   overflow-y: auto;
@@ -133,6 +34,122 @@
       font-size: 14px;
       font-weight: 400;
       line-height: 20px;
+    }
+    .save-seats {
+      background: var(--color-light-gray-12);
+      &:hover {
+        background: var(--color-blue);
+        color: var(--color-white);
+      }
+    }
+    .addseats {
+      height: 27px;
+    }
+    .removeseats {
+      height: 27px;
+    }
+    .tables-section {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      // @media (min-width: 768px) and (max-width: 1200px) {
+      //   display: flex;
+      //   flex-direction: row;
+      // }
+      .top-row,
+      .bottom-row {
+        width: fit-content;
+        justify-content: flex-start;
+        .top-row-chair,
+        .bottom-row-chair {
+          padding: 0 10px;
+
+          .chairs {
+            height: 25px;
+            width: 40px;
+            padding: 8px 0px;
+            display: inline-flex;
+            flex-direction: row;
+            align-items: center;
+            border: none;
+            background: none;
+            position: relative;
+            height: 38px;
+            &.chairNotBooked {
+              color: var(--color-white);
+              font-size: 13px;
+              font-weight: 500;
+              line-height: 100%;
+              // background-color: var(--color-dark-green);
+            }
+            &.chairBooked {
+              color: var(--color-white);
+              font-size: 13px;
+              font-weight: 500;
+              line-height: 100%;
+              // background-color: var(--color-red);
+            }
+            &.chairNew {
+              border: 1px solid var(--color-red);
+            }
+            &:disabled {
+              opacity: 0.5;
+            }
+            .char-number {
+              position: absolute;
+              color: var(--color-white);
+              font-size: 12px;
+              font-weight: 600;
+              line-height: 100%;
+              left: 0;
+              right: 0;
+              top: 21px;
+            }
+            .charsimage {
+              width: 36px;
+            }
+          }
+        }
+        .bottom-row-chair {
+          .charsimage {
+            transform: rotate(180deg);
+          }
+          .char-number {
+            top: 6px !important;
+          }
+        }
+      }
+      .tables {
+        padding: 15px 20px;
+        display: flex;
+        justify-content: center;
+        //   align-items: center
+        width: 100%;
+        min-height: 50px;
+        min-width: 80px;
+        background-color: var(--color-light-gray-12);
+        &.chairNotBooked {
+          color: var(--color-white);
+          font-size: 13px;
+          font-weight: 500;
+          line-height: 100%;
+          background-color: var(--color-dark-green);
+        }
+        &.chairBooked {
+          color: var(--color-white);
+          font-size: 13px;
+          font-weight: 500;
+          line-height: 100%;
+          background-color: var(--color-red);
+        }
+        h6 {
+          font-size: 15px;
+          font-weight: 500;
+          line-height: 100%;
+        }
+      }
     }
   }
 }

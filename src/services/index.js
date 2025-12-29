@@ -26,7 +26,7 @@ export const updateHotelbyid = (body, hotelId) => baseAPI.PUT(`${API.HOTEL_API}/
 export const deleteHotel = (params) => baseAPI.DELETE(API.HOTEL_API+"/"+params.hotel_id);
 
 /** Table **/
-export const createTable = (body, hotelId) => baseAPI.POST(`${API.TABLE_API}/${hotelId}`, body);
+export const createTable = (body, hotelId, floorId) => baseAPI.POST(`${API.TABLE_API}/${hotelId}/${floorId}`, body);
 export const getAllTable = (params) => baseAPI.GET(API.TABLE_API, params);
 export const getTablebyid = (params) => baseAPI.GET(API.TABLE_API+"/"+params.hotel_id);
 export const deleteTable = (params) => baseAPI.DELETE(API.DELETE_TABLE_API +"/"+params.table_id);
@@ -37,9 +37,9 @@ export const getAllFloor = (params) => baseAPI.GET(API.FLOOR_API, +"/"+params.ho
 export const deleteFloor = (params) => baseAPI.DELETE(API.DELETE_FLOOR_API, +"/"+params.floor_id);
 
 /** Seat **/
-export const createSeat = (params) => baseAPI.POST(API.SEAT_API, params);
-export const getAllSeat = (params) => baseAPI.GET(API.SEAT_API, +"/"+  params.table_id);
-export const deleteSeat = (params) => baseAPI.DELETE(API.DELETE_SEAT_API, +"/"+params.seat_id);
+export const addSeatInTable = (body, tableId) => baseAPI.POST(`${API.SEAT_API}/${tableId}/add`, body);
+export const getAllSeatInTable = (params) => baseAPI.GET(API.SEAT_API, +"/"+  params.table_id);
+export const deleteSeatInTable = (body, tableId) => baseAPI.DELETE(`${API.DELETE_SEAT_API}/${tableId}/remove`, body);
 
 /** Reservation **/
 export const createReservation = (params) => baseAPI.POST(API.RESERVATION_API, params);
