@@ -229,10 +229,14 @@
     font-weight: 500;
     font-size: 14px;
     line-height: 24px;
-    background: #1b4332;
-    color: var(--color-white);
-    border: none;
+    background: var(--color-white);
+    color: #1b4332;
+    border: 1px solid #1b4332;
     border-radius: 4px;
     padding: 10px;
+    &:hover {
+      color: var(--color-white);
+      background: #1b4332;
+    }
   }
 }

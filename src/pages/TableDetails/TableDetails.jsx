@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Fragment } from "react";
+import React, { useState, useEffect, Fragment, useMemo } from "react";
 import { Card, Row, Col } from "react-bootstrap";
 import {
   chairBooked,
@@ -55,7 +55,7 @@ const normalizeFloors = (data) => {
   return buildFromCounts(data || {});
 };
 
-const TableDetails = ({ data, onChange }) => {
+const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
   const [selectedFloorIndex, setSelectedFloorIndex] = useState(0);
   const [floorsState, setFloorsState] = useState([]);
   const [getloading, setLoading] = useState(false);
@@ -63,13 +63,13 @@ const TableDetails = ({ data, onChange }) => {
   const [showDeleteSeats, setshowDeleteSeats] = useState(false);
   const [seletedSeatId, setSeletedSeatId] = useState(null);
   const [seletedTableId, setSeletedTableId] = useState(null);
+  const [enbaleBoooking, setEnbaleBoooking] = useState(false);
 
   const fetchHotelbyId = async (hotelData) => {
     try {
       const response = await getTablebyid({ hotel_id: hotelData.id });
       // Optionally, refresh the hotel list or provide user feedback here
       if (response) {
-        console.log("setLoading(false);", response);
         setFloorsState(response.data[0].floors);
       }
     } catch (error) {
@@ -120,8 +120,6 @@ const TableDetails = ({ data, onChange }) => {
       setLoading(false);
     }
   };
-
-  if (!data) return null;
 
   const floors = floorsState;
   const floorToShow = floors[selectedFloorIndex] || floors[0];
@@ -195,7 +193,6 @@ const TableDetails = ({ data, onChange }) => {
   };
 
   const handleAddSeat = (floorIndex, table) => {
-    // fetchAddSeatsInTable();
     const floorToShow = floors[floorIndex] || floors[0];
     updateFloors((prev) =>
       prev.map((f) => {
@@ -264,6 +261,100 @@ const TableDetails = ({ data, onChange }) => {
     setshowDeleteSeats(true);
   };
 
+  const fetchBookTableinSeats = async (hotelData) => {
+    const body = {
+      tableCount: 1,
+    };
+    const floorToShow = floors[selectedFloorIndex] || floors[0];
+    console.log("selectedFloorIndex", floorToShow);
+
+    setLoading(true);
+    // try {
+    //   const response = await createTable(
+    //     body,
+    //     hotelData.id,
+    //     floorToShow.floor_id
+    //   );
+    //   // Optionally, refresh the hotel list or provide user feedback here
+    //   showToast({
+    //     message: response.message || "Table created successfully",
+    //     variant: "success",
+    //   });
+    //   if (response.success) {
+    //     fetchHotelbyId(hotelData);
+    //     setLoading(false);
+    //   }
+    // } catch (error) {
+    //   console.error("Error creating hotel:", error);
+    //   showToast({
+    //     message: error,
+    //     variant: "danger",
+    //   });
+    // } finally {
+    //   setLoading(false);
+    // }
+  };
+
+  const handleAddBookingSeat = (floorIndex, table, seats) => {
+    const floorToShow = floors[floorIndex] || floors[0];
+
+    updateFloors((prev) =>
+      prev.map((f) => {
+        // ❌ Skip other floors
+        if (f.floor_id !== floorToShow.floor_id) return f;
+
+        return {
+          ...f,
+          tables: f.tables.map((t) => {
+            // 🟢 CURRENT TABLE (clicked one)
+            if (t.table_id === table.table_id) {
+              return {
+                ...t,
+                seats: t.seats.map((s) =>
+                  s.seat_id === seats.seat_id
+                    ? {
+                        ...s,
+                        is_booked: !s.is_booked,
+                        is_booking: !s.is_booking,
+                        notAccess: false,
+                      }
+                    : {
+                        ...s,
+                        notAccess: false,
+                      }
+                ),
+              };
+            }
+            if (t.table_id === table.table_id) {
+            }
+
+            // 🔴 OTHER TABLES
+            return {
+              ...t,
+              seats: t.seats.map((s) =>
+                s.is_booked
+                  ? s // booked seats remain unchanged
+                  : {
+                      ...s,
+                      notAccess: true,
+                    }
+              ),
+            };
+          }),
+        };
+      })
+    );
+  };
+
+  useEffect(() => {
+    const floorToShow = floors[selectedFloorIndex] || floors[0];
+    const hasNewSeats = floorToShow?.tables?.some((table) =>
+      table.seats?.some((seat) => seat.is_booking === true)
+    );
+    setEnbaleBoooking(hasNewSeats);
+  }, [floorToShow, floorsState, floors, selectedFloorIndex]);
+  // console.log('floorsState',floorToShow);
+
   return (
     <Fragment>
       <Card className="mb-3 table-details-card">
@@ -300,12 +391,22 @@ const TableDetails = ({ data, onChange }) => {
                   </h5>
                 </Col>{" "}
                 <Col xs={6} className="">
-                  <button
-                    className="addNewTable"
-                    onClick={() => fetchCreateTable(data)}
-                  >
-                    + Add New Table
-                  </button>
+                  {isEditable && (
+                    <button
+                      className="addNewTable"
+                      onClick={() => fetchCreateTable(data)}
+                    >
+                      + Add New Table
+                    </button>
+                  )}
+                  {isBooking && enbaleBoooking && (
+                    <button
+                      className="addNewTable"
+                      onClick={() => fetchBookTableinSeats(data)}
+                    >
+                      Book Table
+                    </button>
+                  )}
                 </Col>
               </Row>
 
@@ -316,7 +417,6 @@ const TableDetails = ({ data, onChange }) => {
                     const hasNewSeats = table.seats?.some(
                       (seat) => seat.is_new === true
                     );
-
                     let topRow = [];
                     let bottomRow = [];
 
@@ -329,45 +429,48 @@ const TableDetails = ({ data, onChange }) => {
                         else bottomRow.push(chair);
                       });
                     }
+
                     return (
                       <div
                         key={tIndex}
                         className="p-3 m-2 text-center table-box"
                         style={{ minWidth: "200px" }}
                       >
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                          <div className="d-flex justify-content-between gap-1 align-items-center w-100">
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-success addseats"
-                              onClick={() =>
-                                handleAddSeat(selectedFloorIndex, table)
-                              }
-                            >
-                              +
-                            </button>
-                            {hasNewSeats && (
+                        {isEditable && (
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <div className="d-flex justify-content-between gap-1 align-items-center w-100">
                               <button
                                 type="button"
-                                className="btn btn-sm btn-outline-success save-seats"
-                                onClick={() => fetchAddSeatsInTable(table)}
-                              >
-                                Save
-                              </button>
-                            )}
-                            {hasNewSeats && (
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-danger removeseats"
+                                className="btn btn-sm btn-outline-success addseats"
                                 onClick={() =>
-                                  handleRemoveSeat(selectedFloorIndex, table)
+                                  handleAddSeat(selectedFloorIndex, table)
                                 }
                               >
-                                -
+                                +
                               </button>
-                            )}
+                              {hasNewSeats && (
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-success save-seats"
+                                  onClick={() => fetchAddSeatsInTable(table)}
+                                >
+                                  Save
+                                </button>
+                              )}
+                              {hasNewSeats && (
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-danger removeseats"
+                                  onClick={() =>
+                                    handleRemoveSeat(selectedFloorIndex, table)
+                                  }
+                                >
+                                  -
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
+                        )}
                         <div className="tables-section">
                           <Row className="top-row mb-2">
                             {topRow.map((chair, cIndex) => (
@@ -386,15 +489,28 @@ const TableDetails = ({ data, onChange }) => {
                                       ? "Save seats before removing"
                                       : "Remove seat"
                                   }
-                                  disabled={chair.is_booked || chair.is_new}
-                                  onClick={() =>
-                                    handleRemoveThisSeat(table, chair)
+                                  disabled={
+                                    chair.is_booking !== true &&
+                                    (chair.is_booked ||
+                                      chair.notAccess ||
+                                      chair.is_new)
                                   }
+                                  onClick={() => {
+                                    if (isEditable) {
+                                      handleRemoveThisSeat(table, chair);
+                                    } else if (isBooking) {
+                                      handleAddBookingSeat(
+                                        selectedFloorIndex,
+                                        table,
+                                        chair
+                                      );
+                                    }
+                                  }}
                                 >
                                   <img
                                     className="charsimage"
                                     src={`${
-                                      chair.is_booked
+                                      chair.is_booked || chair.is_booking
                                         ? chairBooked
                                         : chairNotBooked
                                     }`}
@@ -438,15 +554,28 @@ const TableDetails = ({ data, onChange }) => {
                                       ? "Save seats before removing"
                                       : "Remove seat"
                                   }
-                                  disabled={chair.is_booked || chair.is_new}
-                                  onClick={() =>
-                                    handleRemoveThisSeat(table, chair)
+                                  disabled={
+                                    chair.is_booking !== true &&
+                                    (chair.is_booked ||
+                                      chair.notAccess ||
+                                      chair.is_new)
                                   }
+                                  onClick={() => {
+                                    if (isEditable) {
+                                      handleRemoveThisSeat(table, chair);
+                                    } else if (isBooking) {
+                                      handleAddBookingSeat(
+                                        selectedFloorIndex,
+                                        table,
+                                        chair
+                                      );
+                                    }
+                                  }}
                                 >
                                   <img
                                     className="charsimage"
                                     src={`${
-                                      chair.is_booked
+                                      chair.is_booked || chair.is_booking
                                         ? chairBooked
                                         : chairNotBooked
                                     }`}

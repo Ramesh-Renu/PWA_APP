@@ -1,6 +1,14 @@
 import React from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
-import { Button, Breadcrumb, Row, Col, Badge, Card, Image } from "react-bootstrap";
+import {
+  Button,
+  Breadcrumb,
+  Row,
+  Col,
+  Badge,
+  Card,
+  Image,
+} from "react-bootstrap";
 import TableDetails from "pages/TableDetails/TableDetails";
 import BreadcrumbArrow from "components/common/BreadcrumbArrow";
 import { renderLocation } from "utils/common";
@@ -22,11 +30,14 @@ const HotelDetails = () => {
       getAllLocation();
     }
   }, []);
-
   const computeTotals = (hd) => {
     const floorCount = parseInt(hd?.floorCount ?? hd?.floorCount ?? 0, 10) || 0;
-    const tables_per_floor = parseInt(hd?.tables_per_floor ?? hd?.chairs_per_table ?? 0, 10) || 0;
-    const totalTables = floorCount && tables_per_floor ? floorCount * tables_per_floor : hd?.tableCount || 0;
+    const tables_per_floor =
+      parseInt(hd?.tables_per_floor ?? hd?.chairs_per_table ?? 0, 10) || 0;
+    const totalTables =
+      floorCount && tables_per_floor
+        ? floorCount * tables_per_floor
+        : hd?.tableCount || 0;
     const seatCount = hd?.seatCount || 0;
     return { floorCount, tables_per_floor, totalTables, seatCount };
   };
@@ -37,11 +48,15 @@ const HotelDetails = () => {
     <div className="p-3">
       <div className="mb-3">
         <Breadcrumb className="mb-1 p-0">
-          <Breadcrumb.Item onClick={() => navigate(-1)}>Hotel Table</Breadcrumb.Item>
+          <Breadcrumb.Item onClick={() => navigate(-1)}>
+            Hotel Table
+          </Breadcrumb.Item>
           <span className="breadcrumb-item-divider">
             <BreadcrumbArrow />
           </span>
-          <Breadcrumb.Item active>{hotelData?.hotel_name || `Hotel ${id}`}</Breadcrumb.Item>
+          <Breadcrumb.Item active>
+            {hotelData?.hotel_name || `Hotel ${id}`}
+          </Breadcrumb.Item>
         </Breadcrumb>
       </div>
 
@@ -49,22 +64,38 @@ const HotelDetails = () => {
         <Card.Body>
           <Row className="align-items-center">
             <Col md={3} className="text-center mb-3 mb-md-0">
-              <Image src={"/assets/images/appLogo.png"} rounded fluid style={{ maxHeight: 120, objectFit: 'contain' }} />
+              <Image
+                src={"/assets/images/appLogo.png"}
+                rounded
+                fluid
+                style={{ maxHeight: 120, objectFit: "contain" }}
+              />
             </Col>
             <Col md={6}>
               <h2 className="mb-1">{hotelData?.hotel_name || `Hotel ${id}`}</h2>
               <div className="mb-2">
                 <Badge bg="info" className="me-2">
-                  {renderLocation(hotelData.location_id, locationList.data)[0]?.name || hotelData.location_name || "Location"}
+                  {renderLocation(hotelData.location_id, locationList.data)[0]
+                    ?.name ||
+                    hotelData.location_name ||
+                    "Location"}
                 </Badge>
-                <Badge bg="secondary">{hotelData.area_name || hotelData.area || "Area"}</Badge>
+                <Badge bg="secondary">
+                  {hotelData.area_name || hotelData.area || "Area"}
+                </Badge>
               </div>
-              <p className="mb-1 text-muted">{hotelData.address || "Address not available"}</p>
-              <div className="d-flex gap-2 mt-2">
-                <Button variant="primary" onClick={() => navigate(-1)}>Back</Button>
-                <Button variant="outline-primary">Edit</Button>
-                <Button variant="outline-secondary">Export</Button>
-              </div>
+              <p className="mb-1 text-muted">
+                {hotelData.address || "Address not available"}
+              </p>
+              {location?.state?.isEditable && (
+                <div className="d-flex gap-2 mt-2">
+                  <Button variant="primary" onClick={() => navigate(-1)}>
+                    Back
+                  </Button>
+                  <Button variant="outline-primary">Edit</Button>
+                  <Button variant="outline-secondary">Export</Button>
+                </div>
+              )}
             </Col>
             <Col md={3} xs={12}>
               <Row>
@@ -106,7 +137,11 @@ const HotelDetails = () => {
         </Card.Body>
       </Card>
 
-      <TableDetails data={hotelData || { id }} onChange={(updated) => console.log('floors updated', updated)} />
+      <TableDetails
+        data={hotelData || { id }}
+        isEditable={location?.state?.isEditable}
+        isBooking={location?.state?.isBooking}
+      />
     </div>
   );
 };

@@ -16,7 +16,7 @@ const Login = lazy(() => import("pages/Login/Login"));
 
 const Home = lazy(() => import("pages/HomePage"));
 const CreateHotel = lazy(() => import("pages/Hotel/CreateHotel"));
-const CreateTables = lazy(() => import("pages/Tables/CreateTables"));
+const BookTables = lazy(() => import("pages/BookTables"));
 const HotelDetails = lazy(() => import("pages/TableDetails/HotelDetails"));
 const NotFound = lazy(() => import("pages/NotFound/NotFound"));
 
@@ -38,10 +38,10 @@ const App = () => {
           {auth?.details?.role === "Admin" && (
             <>
               <Route path="/create-hotel" element={<CreateHotel />} />
-              <Route path="/create-table" element={<CreateTables />} />
-              <Route path="/hotel/details/:id" element={<HotelDetails />} />
             </>
           )}
+          <Route path="/book-table" element={<BookTables />} />
+          <Route path="/hotel/details/:id" element={<HotelDetails />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
