@@ -262,14 +262,14 @@ const BookTables = () => {
     <Fragment>
       <div className="create-hotel-page">
         <div className="create-hotel-page-flex">
-          <div className="create-hotel-page-flex-column">
+          <div className="create-hotel-page-flex-column-one">
             <input
               className="search-hotel"
               onChange={handleSearchHotel}
               placeholder="Search Hotel name/location"
             />
           </div>
-          <div className="create-hotel-page-flex-column"></div>
+          <div className="create-hotel-page-flex-column-two"></div>
         </div>
       </div>
       {seletedHotelId && seletedHotelId.length > 0 && (

@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useRef, Fragment } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginBanner } from "../../assets/images/index";
-import Spinner from "components/spinner/spinner.component";
 import appConstants from "constant/common";
 import useToast from "hooks/useToast";
 import useAuth from "hooks/useAuth";
 import { createUser, getOTp } from "services";
+
 export default function Login() {
   const { showToast } = useToast();
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [{ data }, { setAuth, getAuth }] = useAuth();
   const navigate = useNavigate();
   const [activateSignUpSuccess, setActivateSignUpSuccess] = useState(false);
@@ -101,7 +99,7 @@ export default function Login() {
         message: response.data.message,
         variant: "success",
       });
-       navigate("/home");
+       navigate("/hotel");
       setActivateSignUpSuccess(true);
     } else {
       setInProgress(false);

@@ -4,7 +4,7 @@ import { toastReducer, initialToastState } from "../reducers/toastReducer";
 import { orderCreationReducer, initialOrderListState } from "../reducers/orderCreationReducer";
 import { filterValuesReducer, initialFilterState } from "../reducers/filterValuesReducer";
 import { masterDataReducer, masterDataState } from "../reducers/masterDataReducer";
-import { initialOrderCountState, getOrderCountReducer } from "../reducers/getOrderCount";
+import { initialReservationData, getReservationDataReducer } from "../reducers/getOrderCount";
 import { notificationReducer, initialNotificationState } from "../reducers/notificationReducer";
 
 const GlobalContext = createContext();
@@ -24,7 +24,7 @@ const rootReducer = combineReducers({
   orderListState: orderCreationReducer,
   filterState: filterValuesReducer,
   masterState: masterDataReducer,
-  orderCountState: getOrderCountReducer,
+  reservationData: getReservationDataReducer,
   notificationState: notificationReducer,
 });
 
@@ -34,7 +34,7 @@ const initialState = {
   orderListState: initialOrderListState,
   filterState: initialFilterState,
   masterState: masterDataState,
-  orderCountState: initialOrderCountState,
+  reservationData: initialReservationData,
   notificationState: initialNotificationState,
 };
 

@@ -14,6 +14,7 @@ export const API = {
   SEAT_API: "/api/seats/table",
   DELETE_SEAT_API: "/api/seats/table",
   RESERVATION_API: "/api/reservations",
+  GET_RESERVATION_HOTEL: "/api/reservations/hotel",
   CREATE_AREA_API: "/api/areas",
   GETALL_AREA_API: "/api/areas",
   CREATE_LOCATION_API: "/api/locations",

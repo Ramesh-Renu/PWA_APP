@@ -1,21 +1,25 @@
-import React, { Fragment, useState } from "react";
-import { Col, Row } from "react-bootstrap";
-const HomePage = () => {
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import useAuth from "hooks/useAuth";
 
-  return (
-    <Fragment>
-      <Row className="p-2 top-content">
-        <Row>
-          <Col lg={12} md={12} xs={12}>
-            <h3> Dashboard</h3>
-            {/* Dining */}
-          </Col>
-        </Row>
-        
-      </Row>
-      
-    </Fragment>
-  );
+const HomePage = () => {
+  const [{ data: auth }, { getUserInfoData }] = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (auth.details === null) {
+      getUserInfoData();
+      return;
+    }
+
+    if (auth?.details?.role === "Admin") {
+      navigate("/dashboard", { replace: true });
+    } else {
+      navigate("/book-table", { replace: true });
+    }
+  }, [auth.details, navigate, getUserInfoData]);
+
+  return null;
 };
 
 export default HomePage;

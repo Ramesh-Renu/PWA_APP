@@ -147,11 +147,13 @@ const SideNav = ({ onChange }) => {
                 className="sidenav-content__headings-lists--title"
                 title="Dashboard"
               >
-                <NavLink to="/book-table" className="link-tag">
+                <NavLink to="/book-table" className={({ isActive }) =>
+                      `link-tag ${isActive || location.pathname.includes("/hotel") ? "active" : ""}`
+                    }>
                   {({ isActive, isPending }) => (
                     <>
                       <img
-                        src={isActive ? menu.tablesIconActive : menu.tablesIcon}
+                        src={isActive || location.pathname.includes("/hotel") ? menu.tablesIconActive : menu.tablesIcon}
                         alt="icon"
                       />
                       {collaps && "Book Table"}

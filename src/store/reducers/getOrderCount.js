@@ -1,13 +1,13 @@
-export const initialOrderCountState = {
-  orderCount: null,
+export const initialReservationData = {
+  data: [],
   loading: false,
   error: null,
 };
 
-export const getOrderCountReducer = (state, action) => {
+export const getReservationDataReducer = (state, action) => {
   switch (action?.type) {
-    case "SET_ORDER_COUNT":
-      return { ...state, orderCount: action.payload };
+    case "SET_RESERVATION_DATA":
+      return { ...state, data: action.payload };
     case "SET_LOADING":
       return { ...state, loading: action.payload };
     case "SET_ERROR":

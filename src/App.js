@@ -15,6 +15,7 @@ const Login = lazy(() => import("pages/Login/Login"));
 // Order Orion Pages
 
 const Home = lazy(() => import("pages/HomePage"));
+const Dashboard = lazy(() => import("pages/Dashboard"));
 const CreateHotel = lazy(() => import("pages/Hotel/CreateHotel"));
 const BookTables = lazy(() => import("pages/BookTables"));
 const HotelDetails = lazy(() => import("pages/TableDetails/HotelDetails"));
@@ -22,7 +23,6 @@ const NotFound = lazy(() => import("pages/NotFound/NotFound"));
 
 const App = () => {
   const [{ data: auth }, { setAuth }] = useAuth();
-  const [hasOrdersAccess, setHasOrdersAccess] = useState(false);
   return (
     <Suspense fallback={<Spinner />}>
       <Routes>
@@ -32,11 +32,12 @@ const App = () => {
         {/* HEADER WITH SIDE MENU LAYOUT */}
         <Route
           path="/"
-          element={<UserLayout hasOrdersAccess={hasOrdersAccess} />}
+          element={<UserLayout/>}
         >
-          <Route path="/dashboard" element={<Home />}></Route>
+          <Route path="/hotel" element={<Home />}></Route>
           {auth?.details?.role === "Admin" && (
             <>
+              <Route path="/dashboard" element={<Dashboard />}></Route>
               <Route path="/create-hotel" element={<CreateHotel />} />
             </>
           )}

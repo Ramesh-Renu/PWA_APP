@@ -10,9 +10,14 @@ import {
   getTablebyid,
   addSeatInTable,
   deleteSeatInTable,
+  createReservation,
+  updateReservation,
 } from "services";
 import useToast from "hooks/useToast";
 import PopupModal from "components/common/PopupModal";
+import useAuth from "hooks/useAuth";
+import dayjs from "dayjs";
+import { useGlobalContext } from "store/context/GlobalProvider";
 
 const buildFromCounts = (data) => {
   const floorCount = parseInt(data.floor ?? data.floorCount ?? 1, 10) || 1;
@@ -56,14 +61,20 @@ const normalizeFloors = (data) => {
 };
 
 const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
+  const [{ data: auth }, { setAuth }] = useAuth();
+  const { reservationData, dispatch } = useGlobalContext();
   const [selectedFloorIndex, setSelectedFloorIndex] = useState(0);
   const [floorsState, setFloorsState] = useState([]);
   const [getloading, setLoading] = useState(false);
   const { showToast } = useToast();
   const [showDeleteSeats, setshowDeleteSeats] = useState(false);
+  const [showCancelBookingSeats, setShowCancelBookingSeats] = useState(false);
+  const [cancelBookingSeats, setCancelBookingSeats] = useState(null);
   const [seletedSeatId, setSeletedSeatId] = useState(null);
   const [seletedTableId, setSeletedTableId] = useState(null);
   const [enbaleBoooking, setEnbaleBoooking] = useState(false);
+  const [seletedSeatCount, setSeletedSeatCount] = useState(null);
+  const [seletedTableCount, setSeletedTableCount] = useState(null);
 
   const fetchHotelbyId = async (hotelData) => {
     try {
@@ -261,60 +272,70 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
     setshowDeleteSeats(true);
   };
 
-  const fetchBookTableinSeats = async (hotelData) => {
-    const body = {
-      tableCount: 1,
-    };
+  const createBookingTableinSeats = async (hotelData) => {
     const floorToShow = floors[selectedFloorIndex] || floors[0];
-    console.log("selectedFloorIndex", floorToShow);
+    const bookingSeatsByTable = floorToShow?.tables
+      .map((table) => {
+        const seatIds = table.seats
+          .filter((seat) => seat.is_booking === true)
+          .map((seat) => seat.seat_id);
 
+        return seatIds.length > 0
+          ? { table_id: table.table_id, seat_ids: seatIds }
+          : null;
+      })
+      .filter(Boolean);
+    const getCurretnTime = new Date();
+
+    const param = {
+      hotel_id: hotelData.id,
+      floor_id: floorToShow.floor_id,
+      seat_status: bookingSeatsByTable,
+      customer_name: auth?.details?.name,
+      customer_mobile: auth?.details.mobilenumber,
+      reservation_date: dayjs(getCurretnTime).format("YYYY-MM-DD"),
+      reservation_time: dayjs(getCurretnTime).format("HH:mm"),
+    };
     setLoading(true);
-    // try {
-    //   const response = await createTable(
-    //     body,
-    //     hotelData.id,
-    //     floorToShow.floor_id
-    //   );
-    //   // Optionally, refresh the hotel list or provide user feedback here
-    //   showToast({
-    //     message: response.message || "Table created successfully",
-    //     variant: "success",
-    //   });
-    //   if (response.success) {
-    //     fetchHotelbyId(hotelData);
-    //     setLoading(false);
-    //   }
-    // } catch (error) {
-    //   console.error("Error creating hotel:", error);
-    //   showToast({
-    //     message: error,
-    //     variant: "danger",
-    //   });
-    // } finally {
-    //   setLoading(false);
-    // }
+    try {
+      const response = await createReservation(param);
+      if (response.success) {
+        showToast({
+          message: response.message || "Table created successfully",
+          variant: "success",
+        });
+        fetchHotelbyId(hotelData);
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Error creating hotel:", error);
+      showToast({
+        message: error,
+        variant: "danger",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAddBookingSeat = (floorIndex, table, seats) => {
     const floorToShow = floors[floorIndex] || floors[0];
-
     updateFloors((prev) =>
       prev.map((f) => {
         // ❌ Skip other floors
         if (f.floor_id !== floorToShow.floor_id) return f;
-
+        let setNotAccess = true;
         return {
           ...f,
           tables: f.tables.map((t) => {
             // 🟢 CURRENT TABLE (clicked one)
             if (t.table_id === table.table_id) {
-              return {
+              const setData = {
                 ...t,
                 seats: t.seats.map((s) =>
                   s.seat_id === seats.seat_id
                     ? {
                         ...s,
-                        is_booked: !s.is_booked,
                         is_booking: !s.is_booking,
                         notAccess: false,
                       }
@@ -324,6 +345,15 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                       }
                 ),
               };
+              const bookedCount = setData.seats.filter(
+                (s) => s.is_booked
+              ).length;
+              const bookingCount = setData.seats.filter(
+                (s) => s.is_booking
+              ).length;
+              setNotAccess =
+                bookingCount === setData.seats.length ? false : true;
+              return setData;
             }
             if (t.table_id === table.table_id) {
             }
@@ -336,7 +366,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                   ? s // booked seats remain unchanged
                   : {
                       ...s,
-                      notAccess: true,
+                      notAccess: setNotAccess,
                     }
               ),
             };
@@ -346,14 +376,86 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
     );
   };
 
+  const updateBookingTableinSeats = async (hotelData) => {
+    const getCurretnTime = new Date();
+    const reservationId = cancelBookingSeats.seat_ids.reservation_id;
+    const cancelSeats = [
+      {
+        table_id: cancelBookingSeats.table_id,
+        seat_ids: [cancelBookingSeats.seat_ids.seat_id],
+      },
+    ];
+    const body = {
+      cancel_seats: cancelSeats,
+      cancel_date: dayjs(getCurretnTime).format("YYYY-MM-DD"),
+      cancel_time: dayjs(getCurretnTime).format("HH:mm"),
+    };
+    console.log("param", cancelBookingSeats);
+    console.log("body",body);
+    
+    setShowCancelBookingSeats(false);
+    setLoading(true);
+    try {
+      const response = await updateReservation(body, reservationId);
+      console.log("response", response);
+
+      if (response.success) {
+        showToast({
+          message: response.message || "Booked seatscanceld successfully",
+          variant: "success",
+        });
+        fetchHotelbyId(hotelData);
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Error creating hotel:", error);
+      showToast({
+        message: error,
+        variant: "danger",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelThisSeat = (table, seats) => {
+    setShowCancelBookingSeats(!showCancelBookingSeats);
+    setCancelBookingSeats({
+      table_id: table.table_id,
+      seat_ids: seats,
+    });
+  };
+
   useEffect(() => {
     const floorToShow = floors[selectedFloorIndex] || floors[0];
     const hasNewSeats = floorToShow?.tables?.some((table) =>
       table.seats?.some((seat) => seat.is_booking === true)
     );
+
     setEnbaleBoooking(hasNewSeats);
+    const bookingSeatsByTable = floorToShow?.tables
+      .map((table) => {
+        const seatIds = table.seats
+          .filter((seat) => seat.is_booking === true)
+          .map((seat) => seat.seat_id);
+
+        return seatIds.length > 0
+          ? {
+              table_id: table.table_id,
+              table_number: table.table_number,
+              seat_ids: seatIds,
+            }
+          : null;
+      })
+      .filter(Boolean);
+
+    const totalBookingSeats = bookingSeatsByTable?.reduce(
+      (total, table) => total + table.seat_ids.length,
+      0
+    );
+    setSeletedSeatCount(totalBookingSeats);
+    setSeletedTableCount(bookingSeatsByTable?.length);
   }, [floorToShow, floorsState, floors, selectedFloorIndex]);
-  // console.log('floorsState',floorToShow);
 
   return (
     <Fragment>
@@ -400,12 +502,40 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                     </button>
                   )}
                   {isBooking && enbaleBoooking && (
-                    <button
-                      className="addNewTable"
-                      onClick={() => fetchBookTableinSeats(data)}
-                    >
-                      Book Table
-                    </button>
+                    <Row className="justify-content-between align-items-center w-100">
+                      <Col md={4} xs={12}>
+                        <button
+                          className="addNewTable"
+                          onClick={() => createBookingTableinSeats(data)}
+                        >
+                          Book Table
+                        </button>
+                      </Col>
+                      <Col md={8} xs={12}>
+                        <Row>
+                          <Col xs={6} className="mb-2">
+                            <Card className="text-center border-0">
+                              <Card.Body>
+                                <div className="h4 mb-0">
+                                  {seletedSeatCount || "-"}
+                                </div>
+                                <small className="text-muted">Seats</small>
+                              </Card.Body>
+                            </Card>
+                          </Col>
+                          <Col xs={6} className="mb-2">
+                            <Card className="text-center border-0">
+                              <Card.Body>
+                                <div className="h4 mb-0">
+                                  {seletedTableCount || "-"}
+                                </div>
+                                <small className="text-muted">Tables</small>
+                              </Card.Body>
+                            </Card>
+                          </Col>
+                        </Row>
+                      </Col>
+                    </Row>
                   )}
                 </Col>
               </Row>
@@ -491,13 +621,19 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                                   }
                                   disabled={
                                     chair.is_booking !== true &&
-                                    (chair.is_booked ||
+                                    ((chair.status === 1 &&
+                                      chair.user_id !== auth?.details?.id) ||
                                       chair.notAccess ||
                                       chair.is_new)
                                   }
                                   onClick={() => {
                                     if (isEditable) {
                                       handleRemoveThisSeat(table, chair);
+                                    } else if (
+                                      chair.status === 1 &&
+                                      chair.user_id === auth?.details?.id
+                                    ) {
+                                      handleCancelThisSeat(table, chair);
                                     } else if (isBooking) {
                                       handleAddBookingSeat(
                                         selectedFloorIndex,
@@ -510,7 +646,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                                   <img
                                     className="charsimage"
                                     src={`${
-                                      chair.is_booked || chair.is_booking
+                                      chair.status === 1 || chair.is_booking
                                         ? chairBooked
                                         : chairNotBooked
                                     }`}
@@ -556,13 +692,19 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                                   }
                                   disabled={
                                     chair.is_booking !== true &&
-                                    (chair.is_booked ||
+                                    ((chair.status === 1 &&
+                                      chair.user_id !== auth?.details?.id) ||
                                       chair.notAccess ||
                                       chair.is_new)
                                   }
                                   onClick={() => {
                                     if (isEditable) {
                                       handleRemoveThisSeat(table, chair);
+                                    } else if (
+                                      chair.status === 1 &&
+                                      chair.user_id === auth?.details?.id
+                                    ) {
+                                      handleCancelThisSeat(table, chair);
                                     } else if (isBooking) {
                                       handleAddBookingSeat(
                                         selectedFloorIndex,
@@ -575,7 +717,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                                   <img
                                     className="charsimage"
                                     src={`${
-                                      chair.is_booked || chair.is_booking
+                                      chair.status === 1 || chair.is_booking
                                         ? chairBooked
                                         : chairNotBooked
                                     }`}
@@ -620,6 +762,33 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
               onClick={() => {
                 setshowDeleteSeats(false);
                 setSeletedSeatId(null);
+              }}
+            >
+              No
+            </button>
+          </div>
+        </div>
+      </PopupModal>
+
+      <PopupModal
+        show={showCancelBookingSeats}
+        onClose={() => setShowCancelBookingSeats(false)}
+        className={"popupModal bg-white rounded-4"}
+        width={"40vh"}
+      >
+        <div>
+          <h5 className="text-center">Do you want to Cancel Booked Seat ?</h5>
+          <div className="d-flex flex-row justify-content-center gap-3 mt-4 modalActions">
+            <button
+              className="btn btn-0 modalDelete_btn px-3"
+              onClick={() => updateBookingTableinSeats(data)}
+            >
+              Yes
+            </button>
+            <button
+              className="btn btn-0 modalCancel_btn px-3"
+              onClick={() => {
+                setShowCancelBookingSeats(false);
               }}
             >
               No
