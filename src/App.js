@@ -22,32 +22,45 @@ const HotelDetails = lazy(() => import("pages/TableDetails/HotelDetails"));
 const NotFound = lazy(() => import("pages/NotFound/NotFound"));
 
 const App = () => {
-  const [{ data: auth }, { setAuth }] = useAuth();
+  const [{ data: auth }] = useAuth();
+
   return (
     <Suspense fallback={<Spinner />}>
       <Routes>
-        {/* LOGIN */}
+        {/* Login */}
         <Route path="/" element={<Login />} />
 
-        {/* HEADER WITH SIDE MENU LAYOUT */}
-        <Route
-          path="/"
-          element={<UserLayout/>}
-        >
-          <Route path="/hotel" element={<Home />}></Route>
-          {auth?.details?.role === "Admin" && (
-            <>
-              <Route path="/dashboard" element={<Dashboard />}></Route>
-              <Route path="/create-hotel" element={<CreateHotel />} />
-            </>
-          )}
-          <Route path="/book-table" element={<BookTables />} />
-          <Route path="/hotel/details/:id" element={<HotelDetails />} />
+        {/* Layout */}
+        <Route element={<UserLayout />}>
+          
+          {/* Hotel */}
+          <Route path="hotel" element={<Home />}>
+            
+            {/* Default redirect */}
+            <Route
+              index
+              element={
+                auth?.details?.role === "Admin"
+                  ? <Navigate to="dashboard" replace />
+                  : <Navigate to="book-table" replace />
+              }
+            />
+
+            {/* Routes */}
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="create" element={<CreateHotel />} />
+            <Route path="book-table" element={<BookTables />} />
+            <Route path="book-table/details/:id" element={<HotelDetails />} />
+            <Route path="details/:id" element={<HotelDetails />} />
+          </Route>
+
+          {/* Global fallback */}
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </Suspense>
   );
 };
+
 
 export default App;

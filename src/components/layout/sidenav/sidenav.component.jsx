@@ -102,7 +102,7 @@ const SideNav = ({ onChange }) => {
                     className="sidenav-content__headings-lists--title"
                     title="Dashboard"
                   >
-                    <NavLink to="/dashboard" className="link-tag">
+                    <NavLink to="hotel/dashboard" className="link-tag">
                       {({ isActive, isPending }) => (
                         <>
                           <img
@@ -124,12 +124,14 @@ const SideNav = ({ onChange }) => {
                     className="sidenav-content__headings-lists--title"
                     title="Dashboard"
                   >
-                    <NavLink to="/create-hotel" className="link-tag">
+                    <NavLink to="hotel/create" className={({ isActive }) =>
+                      `link-tag ${isActive || location.pathname.includes("hotel/details") ? "active" : ""}`
+                    }>
                       {({ isActive, isPending }) => (
                         <>
                           <img
                             src={
-                              isActive
+                              isActive || location.pathname.includes("hotel/details") 
                                 ? menu.hotelCreateActive
                                 : menu.hotelCreate
                             }
@@ -147,13 +149,13 @@ const SideNav = ({ onChange }) => {
                 className="sidenav-content__headings-lists--title"
                 title="Dashboard"
               >
-                <NavLink to="/book-table" className={({ isActive }) =>
-                      `link-tag ${isActive || location.pathname.includes("/hotel") ? "active" : ""}`
+                <NavLink to="hotel/book-table" className={({ isActive }) =>
+                      `link-tag ${isActive || location.pathname.includes("book-table/details") ? "active" : ""}`
                     }>
                   {({ isActive, isPending }) => (
                     <>
                       <img
-                        src={isActive || location.pathname.includes("/hotel") ? menu.tablesIconActive : menu.tablesIcon}
+                        src={isActive || location.pathname.includes("book-table/details") ? menu.tablesIconActive : menu.tablesIcon}
                         alt="icon"
                       />
                       {collaps && "Book Table"}

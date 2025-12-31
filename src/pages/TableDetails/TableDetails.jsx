@@ -178,19 +178,24 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
     const body = {
       seatIds: [seatData.seat_id],
     };
-
     setshowDeleteSeats(false);
     setLoading(true);
     try {
       const response = await deleteSeatInTable(body, tableData.table_id);
       // Optionally, refresh the hotel list or provide user feedback here
-      showToast({
-        message: response.message || "Table created successfully",
-        variant: "success",
-      });
       if (response.success) {
         fetchHotelbyId(data);
         setLoading(false);
+        showToast({
+          message: response.message || "Table created successfully",
+          variant: "success",
+        });
+      } else {
+        showToast({
+          message: response.message || "Can't remove seat",
+          variant: "danger",
+        });
+
       }
     } catch (error) {
       console.error("Error creating hotel:", error);
@@ -390,15 +395,11 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
       cancel_date: dayjs(getCurretnTime).format("YYYY-MM-DD"),
       cancel_time: dayjs(getCurretnTime).format("HH:mm"),
     };
-    console.log("param", cancelBookingSeats);
-    console.log("body",body);
-    
+
     setShowCancelBookingSeats(false);
     setLoading(true);
     try {
       const response = await updateReservation(body, reservationId);
-      console.log("response", response);
-
       if (response.success) {
         showToast({
           message: response.message || "Booked seatscanceld successfully",
@@ -615,9 +616,11 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                                       : "chairNotBooked"
                                   }  ${chair.is_new ? "chairNew" : ""}`}
                                   title={
-                                    chair.is_new
-                                      ? "Save seats before removing"
-                                      : "Remove seat"
+                                    chair.status === 4
+                                      ? "Available Seat"
+                                      : chair.status === 1
+                                      ? "Booked Seat"
+                                      : "Seat"
                                   }
                                   disabled={
                                     chair.is_booking !== true &&
@@ -686,9 +689,11 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                                       : "chairNotBooked"
                                   }  ${chair.is_new ? "chairNew" : ""}`}
                                   title={
-                                    chair.is_new
-                                      ? "Save seats before removing"
-                                      : "Remove seat"
+                                    chair.status === 4
+                                      ? "Available Seat"
+                                      : chair.status === 1
+                                      ? "Booked Seat"
+                                      : "Seat"
                                   }
                                   disabled={
                                     chair.is_booking !== true &&
