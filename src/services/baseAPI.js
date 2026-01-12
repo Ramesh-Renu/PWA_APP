@@ -43,6 +43,9 @@ export const request = async (method, path, params, body) => {
     case "PUT":
       return axiosBase.put(path, body, { params }).then((res) => res.data);
 
+    case "PATCH":                                                // ⭐ NEW
+      return axiosBase.patch(path, body, { params }).then((res) => res.data);
+
     case "DELETE":
       return axiosBase
         .delete(path, { data: body, params })
@@ -53,9 +56,11 @@ export const request = async (method, path, params, body) => {
   }
 };
 
+
 export default {
   GET: (path, params) => request("GET", path, params),
   POST: (path, body, params) => request("POST", path, params, body),
   PUT: (path, body, params) => request("PUT", path, params, body),
+  PATCH: (path, body, params) => request("PATCH", path, params, body),  // ⭐ NEW
   DELETE: (path, body, params) => request("DELETE", path, params, body),
 };

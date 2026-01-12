@@ -232,6 +232,10 @@ export const isEmpty = (value) => {
   if (typeof value === "object") return Object.keys(value).length === 0;
   return false;
 };
+export const renderBookingStatus = (id, data) => {
+    const location = data.filter((loc) => loc.status_id === id);
+    return location ? location : "N/A";
+  };
 
 export const renderLocation = (id, data) => {
   const location = data.filter((loc) => loc.id === id);

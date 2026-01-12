@@ -198,6 +198,17 @@
             cursor: pointer;
           }
         }
+        .showToolTip {
+          .update-status {
+            border: 1px solid var(--color-light-light-gray);
+            border-radius: 4px;
+          }
+          .popup-content {
+            width: 110px;
+            right: 40px;
+            top: -55px;
+          }
+        }
       }
     }
 

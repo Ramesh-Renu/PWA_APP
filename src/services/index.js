@@ -20,7 +20,7 @@ export const getPhotoSync = (params) => baseAPI.PUT(API.GET_PHOTO_SYNC, params);
 /** Hotel **/
 export const createHotelAPi = (params) => baseAPI.POST(API.HOTEL_API, params);
 export const getAllHotel = (params) => baseAPI.GET(API.HOTEL_API, params);
-export const getHotelbyid = (params) => baseAPI.GET(API.HOTEL_API, +"/"+params.hotel_id);
+export const getHotelbyid = (params) => baseAPI.GET(API.HOTEL_API+"/"+params.hotel_id);
 export const searchHotelbyNameLocation = (search) => baseAPI.GET(API.HOTEL_API, { search });
 export const updateHotelbyid = (body, hotelId) => baseAPI.PUT(`${API.HOTEL_API}/${hotelId}`, body);
 export const deleteHotel = (params) => baseAPI.DELETE(API.HOTEL_API+"/"+params.hotel_id);
@@ -43,15 +43,18 @@ export const deleteSeatInTable = (body, tableId) => baseAPI.DELETE(`${API.DELETE
 
 /** Reservation **/
 export const createReservation = (params) => baseAPI.POST(API.RESERVATION_API, params);
-export const updateReservation = (body, reservationId) => baseAPI.PUT(`${API.RESERVATION_API}/${reservationId}`, body);
+export const updateReservation = (reservationId, body) => baseAPI.PUT(`${API.RESERVATION_API}/${reservationId}`, body);
+export const updateDiningStatus = (reservationId, body) =>baseAPI.PATCH(`${API.RESERVATION_API}/${reservationId}/dining-status`, body);
 export const getReservationByHotel = (params) => baseAPI.GET(API.GET_RESERVATION_HOTEL+"/"+params.hotel_id);
-export const deleteReservation = (params) => baseAPI.DELETE(API.RESERVATION_API, +"/"+params.reservation_id);
+export const getReservationByUser = (params) => baseAPI.GET(API.GET_RESERVATION_USER+"/"+params.user_id);
+export const deleteReservation = (params) => baseAPI.DELETE(API.RESERVATION_API+"/"+params.reservation_id+"/cancel");
 
 /** Masters */
 export const createArea = (params) => baseAPI.POST(API.CREATE_AREA_API, params);
 export const getAllArea = (params) => baseAPI.GET(API.GETALL_AREA_API, params);
 export const createLocation = (params) => baseAPI.POST(API.CREATE_LOCATION_API, params);
 export const getAllLocation = (params) => baseAPI.GET(API.GETALL_LOCATION_API, params);
+export const getDiningStatus = (params) => baseAPI.GET(API.GETALL_DINING_STATUS_API, params);
 
 /** NOTIFICATION */
 export const getRecentNotification = (params) => baseAPI.POST(API.GET_RECENT_NOTIFICATION, params);

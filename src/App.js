@@ -20,7 +20,7 @@ const CreateHotel = lazy(() => import("pages/Hotel/CreateHotel"));
 const BookTables = lazy(() => import("pages/BookTables"));
 const HotelDetails = lazy(() => import("pages/TableDetails/HotelDetails"));
 const NotFound = lazy(() => import("pages/NotFound/NotFound"));
-
+const BookedTableDetails = lazy(()=> import("pages/TableDetails/BookedTableDetails") );
 const App = () => {
   const [{ data: auth }] = useAuth();
 
@@ -49,6 +49,9 @@ const App = () => {
             {/* Routes */}
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="create" element={<CreateHotel />} />
+            {auth?.details &&
+            <Route path="booked-table" element={<BookedTableDetails data={auth}/>} />
+            }
             <Route path="book-table" element={<BookTables />} />
             <Route path="book-table/details/:id" element={<HotelDetails />} />
             <Route path="details/:id" element={<HotelDetails />} />

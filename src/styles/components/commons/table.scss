@@ -264,7 +264,7 @@
       line-height: 20px;
       font-weight: 400;
     }
-   
+
     tbody {
       border: unset !important;
     }
@@ -373,6 +373,73 @@
         img {
           width: 24px;
           height: 24px;
+        }
+      }
+    }
+
+    td {
+      &.dining_date {
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 18px;
+      }
+      &.booking_date {
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 18px;
+      }
+      &.hotel {
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 18px;
+      }
+      &.table_count {
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 18px;
+        text-align: center;
+      }
+      &.seat_count {
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 18px;
+        text-align: center;
+      }
+      &.dining_status {
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 18px;
+        text-align: center;
+      }
+      &.status_update {
+        .showToolTip {
+          .update-status {
+            border: 1px solid var(--color-light-light-gray);
+            border-radius: 4px;
+          }
+          .popup-content {
+            width: 150px;
+            right: 35px;
+            top: -75px;
+          }
+        }
+      }
+      &.booking_action {
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 18px;
+        text-align: center;
+        position: relative;
+        .showToolTip {
+          .update-status {
+            border: 1px solid var(--color-light-light-gray);
+            border-radius: 4px;
+          }
+          .popup-content {
+            width: 120px;
+            right: 35px;
+            top: -55px;
+          }
         }
       }
     }

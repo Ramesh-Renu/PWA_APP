@@ -124,14 +124,23 @@ const SideNav = ({ onChange }) => {
                     className="sidenav-content__headings-lists--title"
                     title="Dashboard"
                   >
-                    <NavLink to="hotel/create" className={({ isActive }) =>
-                      `link-tag ${isActive || location.pathname.includes("hotel/details") ? "active" : ""}`
-                    }>
+                    <NavLink
+                      to="hotel/create"
+                      className={({ isActive }) =>
+                        `link-tag ${
+                          isActive ||
+                          location.pathname.includes("hotel/details")
+                            ? "active"
+                            : ""
+                        }`
+                      }
+                    >
                       {({ isActive, isPending }) => (
                         <>
                           <img
                             src={
-                              isActive || location.pathname.includes("hotel/details") 
+                              isActive ||
+                              location.pathname.includes("hotel/details")
                                 ? menu.hotelCreateActive
                                 : menu.hotelCreate
                             }
@@ -144,18 +153,63 @@ const SideNav = ({ onChange }) => {
                   </h5>
                 </>
               )}
+              {/* Booked List */}
+              <h5
+                className="sidenav-content__headings-lists--title"
+                title="Dashboard"
+              >
+                <NavLink
+                  to="hotel/booked-table"
+                  className={({ isActive }) =>
+                    `link-tag ${
+                      isActive ||
+                      location.pathname.includes("booked-table/details")
+                        ? "active"
+                        : ""
+                    }`
+                  }
+                >
+                  {({ isActive, isPending }) => (
+                    <>
+                      <img
+                        src={
+                          isActive ||
+                          location.pathname.includes("booked-table/details")
+                            ? menu.tableBookedListActive
+                            : menu.tableBookedList
+                        }
+                        alt="icon"
+                      />
+                      {collaps && "Booked List"}
+                    </>
+                  )}
+                </NavLink>
+              </h5>
               {/* Book Table */}
               <h5
                 className="sidenav-content__headings-lists--title"
                 title="Dashboard"
               >
-                <NavLink to="hotel/book-table" className={({ isActive }) =>
-                      `link-tag ${isActive || location.pathname.includes("book-table/details") ? "active" : ""}`
-                    }>
+                <NavLink
+                  to="hotel/book-table"
+                  className={({ isActive }) =>
+                    `link-tag ${
+                      isActive ||
+                      location.pathname.includes("book-table/details")
+                        ? "active"
+                        : ""
+                    }`
+                  }
+                >
                   {({ isActive, isPending }) => (
                     <>
                       <img
-                        src={isActive || location.pathname.includes("book-table/details") ? menu.tablesIconActive : menu.tablesIcon}
+                        src={
+                          isActive ||
+                          location.pathname.includes("book-table/details")
+                            ? menu.tablesIconActive
+                            : menu.tablesIcon
+                        }
                         alt="icon"
                       />
                       {collaps && "Book Table"}

@@ -19,47 +19,6 @@ import useAuth from "hooks/useAuth";
 import dayjs from "dayjs";
 import { useGlobalContext } from "store/context/GlobalProvider";
 
-const buildFromCounts = (data) => {
-  const floorCount = parseInt(data.floor ?? data.floorCount ?? 1, 10) || 1;
-  const tablesPerFloor =
-    parseInt(data.tables_per_floor ?? data.tableCount ?? 1, 10) || 1;
-  const chairsPerTable =
-    parseInt(data.chairs_per_table ?? data.chairsPerTable ?? 4, 10) || 4;
-
-  return Array.from({ length: floorCount }, (_, fi) => ({
-    name: `Floor ${fi + 1}`,
-    tables: Array.from({ length: tablesPerFloor }, (_, ti) => ({
-      id: ti + 1,
-      chairs: Array.from({ length: chairsPerTable }, (_, ci) => ({
-        chairId: ci + 1,
-        booked: false,
-      })),
-    })),
-  }));
-};
-
-const normalizeFloors = (data) => {
-  // Try common keys returned by API
-  const possible =
-    data?.floors ||
-    data?.floorWithTable ||
-    data?.floorList ||
-    data?.floor ||
-    data?.floor_details ||
-    data?.floor_list ||
-    null;
-
-  if (Array.isArray(possible) && possible.length > 0) return possible;
-
-  // if possible is an object with numeric keys, try to convert
-  if (possible && typeof possible === "object") {
-    return Object.values(possible);
-  }
-
-  // Fallback: build from numeric counts
-  return buildFromCounts(data || {});
-};
-
 const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
   const [{ data: auth }, { setAuth }] = useAuth();
   const { reservationData, dispatch } = useGlobalContext();
@@ -103,8 +62,6 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
       tableCount: 1,
     };
     const floorToShow = floors[selectedFloorIndex] || floors[0];
-    console.log("selectedFloorIndex", floorToShow);
-
     setLoading(true);
     try {
       const response = await createTable(
@@ -195,7 +152,6 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
           message: response.message || "Can't remove seat",
           variant: "danger",
         });
-
       }
     } catch (error) {
       console.error("Error creating hotel:", error);
@@ -298,7 +254,8 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
       seat_status: bookingSeatsByTable,
       customer_name: auth?.details?.name,
       customer_mobile: auth?.details.mobilenumber,
-      reservation_date: dayjs(getCurretnTime).format("YYYY-MM-DD"),
+      booking_date: getCurretnTime,
+      dining_date:  getCurretnTime,
       reservation_time: dayjs(getCurretnTime).format("HH:mm"),
     };
     setLoading(true);
@@ -324,62 +281,63 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
   };
 
   const handleAddBookingSeat = (floorIndex, table, seats) => {
-    const floorToShow = floors[floorIndex] || floors[0];
-    updateFloors((prev) =>
-      prev.map((f) => {
-        // ❌ Skip other floors
-        if (f.floor_id !== floorToShow.floor_id) return f;
-        let setNotAccess = true;
-        return {
-          ...f,
-          tables: f.tables.map((t) => {
-            // 🟢 CURRENT TABLE (clicked one)
-            if (t.table_id === table.table_id) {
-              const setData = {
-                ...t,
-                seats: t.seats.map((s) =>
-                  s.seat_id === seats.seat_id
-                    ? {
-                        ...s,
-                        is_booking: !s.is_booking,
-                        notAccess: false,
-                      }
-                    : {
-                        ...s,
-                        notAccess: false,
-                      }
-                ),
-              };
-              const bookedCount = setData.seats.filter(
-                (s) => s.is_booked
-              ).length;
-              const bookingCount = setData.seats.filter(
-                (s) => s.is_booking
-              ).length;
-              setNotAccess =
-                bookingCount === setData.seats.length ? false : true;
-              return setData;
-            }
-            if (t.table_id === table.table_id) {
-            }
+  const floorToShow = floors[floorIndex] || floors[0];
 
-            // 🔴 OTHER TABLES
+  updateFloors((prev) =>
+    prev.map((f) => {
+      if (f.floor_id !== floorToShow.floor_id) return f;
+
+      // STEP 1: find the clicked table and preview what seats would be
+      const targetTable = f.tables.find((t) => t.table_id === table.table_id);
+
+      const previewSeats = targetTable.seats.map((s) =>
+        s.seat_id === seats.seat_id
+          ? { ...s, is_booking: !s.is_booking }
+          : s
+      );
+
+      const bookingCount = previewSeats.filter((s) => s.is_booking).length;
+      const fullCount = previewSeats.length;
+
+      // RULE → If all / none booked = no lock; else lock
+      const setNotAccess =
+        bookingCount === 0 || bookingCount === fullCount ? false : true;
+
+      // STEP 2: update floors
+      return {
+        ...f,
+        tables: f.tables.map((t) => {
+          // CURRENT TABLE (clicked)
+          if (t.table_id === table.table_id) {
             return {
               ...t,
               seats: t.seats.map((s) =>
-                s.is_booked
-                  ? s // booked seats remain unchanged
-                  : {
+                s.seat_id === seats.seat_id
+                  ? {
                       ...s,
-                      notAccess: setNotAccess,
+                      is_booking: !s.is_booking,
+                      notAccess: false,
                     }
+                  : { ...s, notAccess: false }
               ),
             };
-          }),
-        };
-      })
-    );
-  };
+          }
+
+          // OTHER TABLES
+          return {
+            ...t,
+            seats: t.seats.map((s) =>
+              s.is_booking
+                ? s
+                : { ...s, notAccess: setNotAccess }
+            ),
+          };
+        }),
+      };
+    })
+  );
+};
+
 
   const updateBookingTableinSeats = async (hotelData) => {
     const getCurretnTime = new Date();
@@ -458,6 +416,8 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
     setSeletedTableCount(bookingSeatsByTable?.length);
   }, [floorToShow, floorsState, floors, selectedFloorIndex]);
 
+  console.log('floorsState',floorToShow);
+
   return (
     <Fragment>
       <Card className="mb-3 table-details-card">
@@ -477,7 +437,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                       }`}
                       onClick={() => setSelectedFloorIndex(i)}
                     >
-                      {f.name || `Floor ${i + 1}`}
+                      {`Floor ${f.floor_number}` || `Floor ${i + 1}`}
                     </button>
                   ))}
                 </div>
@@ -490,7 +450,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
               <Row className="mb-12 justify-content-between align-items-center w-100">
                 <Col xs={6}>
                   <h5 className="mb-2 floor-name">
-                    {floorToShow.name || `Floor ${selectedFloorIndex + 1}`}
+                    { `Floor ${floorToShow.floor_number}` || `Floor ${selectedFloorIndex + 1}`}
                   </h5>
                 </Col>{" "}
                 <Col xs={6} className="">

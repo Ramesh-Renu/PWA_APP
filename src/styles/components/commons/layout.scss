@@ -631,6 +631,34 @@
 
 .layout-page {
   max-width: 100%;
+  .no-booking-found {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    .main-head {
+      font-size: 32px;
+      font-weight: 500;
+      line-height: 28px;
+      text-align: center;
+      margin: 0 0 10px 0;
+    }
+    .sub-head {
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 18px;
+      text-align: center;
+      margin: 10px 0 15px 0;
+    }
+    .go-to-booking-page {
+      background-color: #f9f9f9;
+      color: var(--color-black);
+      border-radius: 4px;
+      padding: 4px 16px;
+    }
+  }
 }
 
 .sidenav-content {

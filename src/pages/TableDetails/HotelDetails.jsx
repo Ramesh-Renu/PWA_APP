@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import {
   Button,
@@ -14,12 +14,13 @@ import BreadcrumbArrow from "components/common/BreadcrumbArrow";
 import { renderLocation } from "utils/common";
 import useGlobalMaster from "hooks/useGlobalMaster";
 import { useEffect } from "react";
+import { getHotelbyid } from "services";
 
 const HotelDetails = () => {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const hotelData = location.state?.hotelData || null;
+  const [hotelData, setHotelData] = useState(location.state?.hotelData || null);
   const { areaList, locationList, getAllArea, getAllLocation } =
     useGlobalMaster();
   useEffect(() => {
@@ -30,6 +31,25 @@ const HotelDetails = () => {
       getAllLocation();
     }
   }, []);
+
+  const fetchHotelDetailsbyId = async (param) => {
+    try {
+      const response = await getHotelbyid(param);
+      if (response.success) {
+        setHotelData(response.data);
+      }
+    } catch (error) {
+      console.error("Error creating hotel:", error);
+    } finally {
+    }
+  };
+
+  useEffect(() => {
+    if (hotelData === null && location.state.hotel_id) {
+      fetchHotelDetailsbyId({ hotel_id: location.state.hotel_id });
+    }
+  }, [hotelData]);
+
   const computeTotals = (hd) => {
     const floorCount = parseInt(hd?.floorCount ?? hd?.floorCount ?? 0, 10) || 0;
     const tables_per_floor =
@@ -48,14 +68,14 @@ const HotelDetails = () => {
     <div className="p-3">
       <div className="mb-3">
         <Breadcrumb className="mb-1 p-0">
-          <Breadcrumb.Item onClick={() => navigate(-1)}>
+          <Breadcrumb.Item onClick={() => navigate("/hotel/book-table")}>
             Hotel Table
           </Breadcrumb.Item>
           <span className="breadcrumb-item-divider">
             <BreadcrumbArrow />
           </span>
           <Breadcrumb.Item active>
-            {hotelData?.hotel_name || `Hotel ${id}`}
+            {hotelData?.hotel_name}
           </Breadcrumb.Item>
         </Breadcrumb>
       </div>
@@ -72,20 +92,20 @@ const HotelDetails = () => {
               />
             </Col>
             <Col md={6}>
-              <h2 className="mb-1">{hotelData?.hotel_name || `Hotel ${id}`}</h2>
+              <h2 className="mb-1">{hotelData?.hotel_name || `--`}</h2>
               <div className="mb-2">
                 <Badge bg="info" className="me-2">
-                  {renderLocation(hotelData.location_id, locationList.data)[0]
+                  {renderLocation(hotelData?.location_id, locationList?.data)[0]
                     ?.name ||
-                    hotelData.location_name ||
+                    hotelData?.location_name ||
                     "Location"}
                 </Badge>
                 <Badge bg="secondary">
-                  {hotelData.area_name || hotelData.area || "Area"}
+                  {hotelData?.area_name || hotelData?.area || "Area"}
                 </Badge>
               </div>
               <p className="mb-1 text-muted">
-                {hotelData.address || "Address not available"}
+                {hotelData?.address || "Address not available"}
               </p>
               {location?.state?.isEditable && (
                 <div className="d-flex gap-2 mt-2">

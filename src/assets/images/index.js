@@ -32,8 +32,12 @@ import tablesIconActive from "assets/images/sidenav/tables_active.svg";
 import bellIconActive from "assets/images/sidenav/bell_icon_active.svg";
 import hotelCreateActive from "assets/images/sidenav/hotel_create_active.svg";
 import hotelCreate from "assets/images/sidenav/hotel_create.svg";
+import tableBookedList from "assets/images/sidenav/table_booked_list.svg";
+import tableBookedListActive from "assets/images/sidenav/table_booked_list_active.svg";
 
 export {
+  tableBookedList,
+  tableBookedListActive,
   chairBooked,
   chairNotBooked,
   cleaningChar,

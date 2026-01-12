@@ -1,9 +1,10 @@
 .showToolTip {
   position: relative;
-  width: 100%;
+  width: fit-content;
   display: flex;
   flex-direction: row;
   justify-content: flex-end;
+  margin: auto;
   .update-status {
     background-color: transparent;
     border: none;
@@ -81,9 +82,14 @@
             cursor: not-allowed;
             opacity: 0.5;
           }
-          &.active,
           &:hover {
-            background: var(--color-light-ghost-white);
+            background: var(--color-light-light-gray);
+          }
+          &.active {
+            user-select: none;
+            pointer-events: none;
+            background: var(--color-lighter-green5);
+            color: var(--color-white);
           }
           &:first-child {
             border-radius: 12px 12px 0 0;

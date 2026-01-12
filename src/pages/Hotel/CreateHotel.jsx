@@ -16,7 +16,7 @@ import useToast from "hooks/useToast";
 import * as images from "../../assets/images/index";
 import { useNavigate } from "react-router-dom";
 import ToolTipPopup from "components/common/ToolTipPopup";
-
+import { renderArea, renderLocation } from "utils/common";
 const CreateHotel = () => {
   const [listOfHotel, setListOfHotel] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState([]);
@@ -165,15 +165,7 @@ const CreateHotel = () => {
     });
   };
 
-  const renderLocation = (id, data) => {
-    const location = data.filter((loc) => loc.id === id);
-    return location ? location : "N/A";
-  };
 
-  const renderArea = (id, data) => {
-    const area = data.filter((area) => area.id === id);
-    return area ? area : "N/A";
-  };
   const handleUpdateHotel = (hotelData) => {
     // Logic to update hotel
     setShowCreateHotelForm(!showCreateHotelForm);
@@ -278,7 +270,7 @@ const CreateHotel = () => {
       cell: (info) => {
         const rowData = info.row.original;
         return (
-          <div className="mx-auto w-100">
+         
             <ToolTipPopup
               toolTipDatas={[
                 {
@@ -312,7 +304,6 @@ const CreateHotel = () => {
               isCustomFieldswithFilter={false}
               arrow={true}
             />
-          </div>
         );
       },
     }),
@@ -520,7 +511,7 @@ const CreateHotel = () => {
           setSorting={setSorting}
           tableName="Order_list"
           noDataContent={"Do not render any no data content while loading"}
-          tableHeight={"calc(100vh - 85px)"}
+          tableHeight={"calc(100vh - 95px)"}
           loading={loadingHotelListApp}
           //onScrollEnd={handleInfiniteScroll}
         />

@@ -1,5 +1,5 @@
 import { useGlobalContext } from "store/context/GlobalProvider";
-import {getAllArea, getAllLocation} from "services";
+import {getAllArea, getAllLocation, getDiningStatus} from "services";
 
 const useGlobalMaster = () => {
   const { masterState, dispatch } = useGlobalContext();
@@ -37,6 +37,7 @@ const useGlobalMaster = () => {
     ...masterState,
     getAllArea: () => fetchMasterData("areaList", () => getAllArea()),
     getAllLocation: () => fetchMasterData("locationList", () => getAllLocation()),
+    getDiningStatus: () => fetchMasterData("diningStatusList", () => getDiningStatus()),
   };
 };
 
