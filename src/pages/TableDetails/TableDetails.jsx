@@ -56,11 +56,10 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
     }
   };
   useEffect(() => {
-    if (seatsStatusList?.data?.length === 0) {
+    if (seatsStatusList === undefined || seatsStatusList?.data?.length === 0) {
       getSeatsStatusMatsers();
     }
   }, []);
-  console.log("seatsStatusList", seatsStatusList);
 
   useEffect(() => {
     fetchHotelbyId(data);
@@ -580,7 +579,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                                       : "chairNotBooked"
                                   }  ${chair.is_new ? "chairNew" : ""}`}
                                   title={
-                                    seatsStatusList.data.filter(
+                                    seatsStatusList?.data?.filter(
                                       (data) => data.status_id === chair.status,
                                     )[0].name
                                   }
@@ -611,7 +610,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                                   <SVGImage
                                     isTransparent={true}
                                     bgColor={
-                                      seatsStatusList.data.filter(
+                                      seatsStatusList?.data?.filter(
                                         (data) =>
                                           data.status_id === chair.status,
                                       )[0].color_code
@@ -651,11 +650,9 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                                       : "chairNotBooked"
                                   }  ${chair.is_new ? "chairNew" : ""}`}
                                   title={
-                                    chair.status === 4
-                                      ? "Available Seat"
-                                      : chair.status === 1
-                                        ? "Booked Seat"
-                                        : "Seat"
+                                    seatsStatusList?.data?.filter(
+                                      (data) => data.status_id === chair.status,
+                                    )[0].name
                                   }
                                   disabled={
                                     chair.is_booking !== true &&
@@ -681,14 +678,14 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                                     }
                                   }}
                                 >
-                                  <img
-                                    className="charsimage"
-                                    src={`${
-                                      chair.status === 1 || chair.is_booking
-                                        ? chairBooked
-                                        : chairNotBooked
-                                    }`}
-                                    alt="char"
+                                  <SVGImage
+                                    isTransparent={true}
+                                    bgColor={
+                                      seatsStatusList?.data?.filter(
+                                        (data) =>
+                                          data.status_id === chair.status,
+                                      )[0].color_code
+                                    }
                                   />
                                   <span className="char-number">
                                     {chair.seat_number}
