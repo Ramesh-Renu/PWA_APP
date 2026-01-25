@@ -16,6 +16,7 @@ import { renderBookingStatus } from "utils/common";
 import useGlobalMaster from "hooks/useGlobalMaster";
 import * as images from "../../assets/images/index";
 import ToolTipPopup from "components/common/ToolTipPopup";
+import useAuth from "hooks/useAuth";
 
 const BookedTableDetails = ({ data }) => {
   const [bookedData, setBookedData] = useState([]);
@@ -27,6 +28,7 @@ const BookedTableDetails = ({ data }) => {
   const [cancelBookingSeats, setCancelBookingSeats] = useState(null);
   const { diningStatusList, getDiningStatus } = useGlobalMaster();
   const columnHelper = createColumnHelper();
+  const [{ data: auth }, { setAuth }] = useAuth();
   const [sorting, setSorting] = useState([
     {
       id: "hotel_name",
@@ -40,6 +42,7 @@ const BookedTableDetails = ({ data }) => {
   const [selectedId, setSelectedId] = useState(null);
   const [loadingHotelListApp, setLoadingHotelListApp] = useState(true);
   const [hasMoreRecords, setHasMoreRecords] = useState(true);
+  console.log("diningStatusList", diningStatusList);
 
   useEffect(() => {
     if (diningStatusList.data.length === 0) {
@@ -47,7 +50,7 @@ const BookedTableDetails = ({ data }) => {
     }
   }, []);
 
-  const allowedStatuses = ["PENDING", "SEATED", "COMPLETED"];
+  const allowedStatuses = ["CONFIRMED", "PENDING", "SEATED", "COMPLETED"];
 
   const fetchHotelbyId = async (hotelData) => {
     setLoadingHotelListApp(true);
@@ -186,6 +189,13 @@ const BookedTableDetails = ({ data }) => {
         );
       },
     }),
+    columnHelper.accessor("id", {
+      header: () => <span className="customHeader">Reservation Id</span>,
+      cell: (info) => {
+        const rowData = info.row.original.id;
+        return rowData;
+      },
+    }),
     columnHelper.accessor("hotel", {
       header: () => <span className="customHeader">Hotel Name</span>,
       cell: (info) => {
@@ -229,57 +239,57 @@ const BookedTableDetails = ({ data }) => {
               backgroundColor:
                 renderBookingStatus(
                   info.getValue(),
-                  diningStatusList?.data || []
+                  diningStatusList?.data || [],
                 )[0]?.color_code || "#000000",
               color: "var(--color-white)",
               padding: "4px 8px",
               borderRadius: "4px",
             }}
           >
-            {console.log(
-              "data",
-              renderBookingStatus(info.getValue(), diningStatusList?.data || [])
-            )}
-
             {renderBookingStatus(
               info.getValue(),
-              diningStatusList?.data || []
+              diningStatusList?.data || [],
             )[0]?.name || "N/A"}
           </span>
         );
       },
     }),
-    columnHelper.accessor("dining_status", {
-      id: "status_update",
-      header: () => <span className="customHeader">Status Update</span>,
-      cell: (info) => {
-        const rowData = info.row.original;
-        const filteredStatuses = diningStatusList.data.filter((s) =>
-          allowedStatuses.includes(s.name)
-        );
-        return (
-          <ToolTipPopup
-            toolTipDatas={filteredStatuses || []}
-            labelField="name"
-            valueField="status_id"
-            defaultValue={
-              renderBookingStatus(
-                info.getValue(),
-                diningStatusList?.data || []
-              )[0]?.name
-            }
-            getSeletedVal={(e) => handleTableStatusUpdate(e, rowData)}
-            canEdit={
-              rowData?.dining_status === 3 || rowData?.dining_status === 4
-                ? false
-                : true
-            }
-            isCustomFieldswithFilter={false}
-            arrow={true}
-          />
-        );
-      },
-    }),
+    // ---------------- ADMIN ONLY COLUMN ----------------
+    ...(auth?.details?.role === "Admin"
+      ? [
+          columnHelper.accessor("dining_status", {
+            id: "status_update",
+            header: () => <span className="customHeader">Status Update</span>,
+            cell: (info) => {
+              const rowData = info.row.original;
+
+              const filteredStatuses = diningStatusList?.data || [];
+
+              return (
+                <ToolTipPopup
+                  toolTipDatas={filteredStatuses}
+                  labelField="name"
+                  valueField="status_id"
+                  defaultValue={
+                    renderBookingStatus(
+                      info.getValue(),
+                      diningStatusList?.data || [],
+                    )[0]?.name
+                  }
+                  getSeletedVal={(e) => handleTableStatusUpdate(e, rowData)}
+                  canEdit={
+                    rowData?.dining_status === 3 || rowData?.dining_status === 4
+                      ? false
+                      : true
+                  }
+                  isCustomFieldswithFilter={false}
+                  arrow
+                />
+              );
+            },
+          }),
+        ]
+      : []),
     columnHelper.accessor("id", {
       id: "booking_action",
       header: () => <span className="customHeader">Action</span>,

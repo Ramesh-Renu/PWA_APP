@@ -46,7 +46,7 @@ export const createReservation = (params) => baseAPI.POST(API.RESERVATION_API, p
 export const updateReservation = (reservationId, body) => baseAPI.PUT(`${API.RESERVATION_API}/${reservationId}`, body);
 export const updateDiningStatus = (reservationId, body) =>baseAPI.PATCH(`${API.RESERVATION_API}/${reservationId}/dining-status`, body);
 export const getReservationByHotel = (params) => baseAPI.GET(API.GET_RESERVATION_HOTEL+"/"+params.hotel_id);
-export const getReservationByUser = (params) => baseAPI.GET(API.GET_RESERVATION_USER+"/"+params.user_id);
+export const getReservationByUser = (params) => baseAPI.GET(API.GET_RESERVATION_USER);
 export const deleteReservation = (params) => baseAPI.DELETE(API.RESERVATION_API+"/"+params.reservation_id+"/cancel");
 
 /** Masters */
@@ -55,6 +55,7 @@ export const getAllArea = (params) => baseAPI.GET(API.GETALL_AREA_API, params);
 export const createLocation = (params) => baseAPI.POST(API.CREATE_LOCATION_API, params);
 export const getAllLocation = (params) => baseAPI.GET(API.GETALL_LOCATION_API, params);
 export const getDiningStatus = (params) => baseAPI.GET(API.GETALL_DINING_STATUS_API, params);
+export const getSeatsStatusMatsers = (params) => baseAPI.GET(API.GETALL_SEATS_STATUS_MASTER, params);
 
 /** NOTIFICATION */
 export const getRecentNotification = (params) => baseAPI.POST(API.GET_RECENT_NOTIFICATION, params);

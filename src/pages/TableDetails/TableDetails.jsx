@@ -18,10 +18,13 @@ import PopupModal from "components/common/PopupModal";
 import useAuth from "hooks/useAuth";
 import dayjs from "dayjs";
 import { useGlobalContext } from "store/context/GlobalProvider";
+import SVGImage from "./SVGImage";
+import useGlobalMaster from "hooks/useGlobalMaster";
 
 const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
   const [{ data: auth }, { setAuth }] = useAuth();
   const { reservationData, dispatch } = useGlobalContext();
+  const { seatsStatusList, getSeatsStatusMatsers } = useGlobalMaster();
   const [selectedFloorIndex, setSelectedFloorIndex] = useState(0);
   const [floorsState, setFloorsState] = useState([]);
   const [getloading, setLoading] = useState(false);
@@ -52,6 +55,12 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    if (seatsStatusList?.data?.length === 0) {
+      getSeatsStatusMatsers();
+    }
+  }, []);
+  console.log("seatsStatusList", seatsStatusList);
 
   useEffect(() => {
     fetchHotelbyId(data);
@@ -67,7 +76,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
       const response = await createTable(
         body,
         hotelData.id,
-        floorToShow.floor_id
+        floorToShow.floor_id,
       );
       // Optionally, refresh the hotel list or provide user feedback here
       showToast({
@@ -190,7 +199,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
           };
         });
         return { ...f, tables: newTables };
-      })
+      }),
     );
   };
 
@@ -222,7 +231,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
         });
 
         return { ...f, tables: newTables };
-      })
+      }),
     );
   };
 
@@ -255,7 +264,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
       customer_name: auth?.details?.name,
       customer_mobile: auth?.details.mobilenumber,
       booking_date: getCurretnTime,
-      dining_date:  getCurretnTime,
+      dining_date: getCurretnTime,
       reservation_time: dayjs(getCurretnTime).format("HH:mm"),
     };
     setLoading(true);
@@ -281,67 +290,64 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
   };
 
   const handleAddBookingSeat = (floorIndex, table, seats) => {
-  const floorToShow = floors[floorIndex] || floors[0];
+    const floorToShow = floors[floorIndex] || floors[0];
 
-  updateFloors((prev) =>
-    prev.map((f) => {
-      if (f.floor_id !== floorToShow.floor_id) return f;
+    updateFloors((prev) =>
+      prev.map((f) => {
+        if (f.floor_id !== floorToShow.floor_id) return f;
 
-      // STEP 1: find the clicked table and preview what seats would be
-      const targetTable = f.tables.find((t) => t.table_id === table.table_id);
+        // STEP 1: find the clicked table and preview what seats would be
+        const targetTable = f.tables.find((t) => t.table_id === table.table_id);
 
-      const previewSeats = targetTable.seats.map((s) =>
-        s.seat_id === seats.seat_id
-          ? { ...s, is_booking: !s.is_booking }
-          : s
-      );
+        const previewSeats = targetTable.seats.map((s) =>
+          s.seat_id === seats.seat_id ? { ...s, is_booking: !s.is_booking } : s,
+        );
 
-      const bookingCount = previewSeats.filter((s) => s.is_booking).length;
-      const fullCount = previewSeats.length;
+        const bookingCount = previewSeats.filter((s) => s.is_booking).length;
+        const fullCount = previewSeats.length;
 
-      // RULE → If all / none booked = no lock; else lock
-      const setNotAccess =
-        bookingCount === 0 || bookingCount === fullCount ? false : true;
+        // RULE → If all / none booked = no lock; else lock
+        const setNotAccess =
+          bookingCount === 0 || bookingCount === fullCount ? false : true;
 
-      // STEP 2: update floors
-      return {
-        ...f,
-        tables: f.tables.map((t) => {
-          // CURRENT TABLE (clicked)
-          if (t.table_id === table.table_id) {
+        // STEP 2: update floors
+        return {
+          ...f,
+          tables: f.tables.map((t) => {
+            // CURRENT TABLE (clicked)
+            if (t.table_id === table.table_id) {
+              return {
+                ...t,
+                seats: t.seats.map((s) =>
+                  s.seat_id === seats.seat_id
+                    ? {
+                        ...s,
+                        is_booking: !s.is_booking,
+                        notAccess: false,
+                      }
+                    : { ...s, notAccess: false },
+                ),
+              };
+            }
+
+            // OTHER TABLES
             return {
               ...t,
               seats: t.seats.map((s) =>
-                s.seat_id === seats.seat_id
-                  ? {
-                      ...s,
-                      is_booking: !s.is_booking,
-                      notAccess: false,
-                    }
-                  : { ...s, notAccess: false }
+                s.is_booking ? s : { ...s, notAccess: setNotAccess },
               ),
             };
-          }
-
-          // OTHER TABLES
-          return {
-            ...t,
-            seats: t.seats.map((s) =>
-              s.is_booking
-                ? s
-                : { ...s, notAccess: setNotAccess }
-            ),
-          };
-        }),
-      };
-    })
-  );
-};
-
+          }),
+        };
+      }),
+    );
+  };
 
   const updateBookingTableinSeats = async (hotelData) => {
     const getCurretnTime = new Date();
     const reservationId = cancelBookingSeats.seat_ids.reservation_id;
+    console.log("reservationId", reservationId);
+
     const cancelSeats = [
       {
         table_id: cancelBookingSeats.table_id,
@@ -353,11 +359,10 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
       cancel_date: dayjs(getCurretnTime).format("YYYY-MM-DD"),
       cancel_time: dayjs(getCurretnTime).format("HH:mm"),
     };
-
     setShowCancelBookingSeats(false);
     setLoading(true);
     try {
-      const response = await updateReservation(body, reservationId);
+      const response = await updateReservation(reservationId, body);
       if (response.success) {
         showToast({
           message: response.message || "Booked seatscanceld successfully",
@@ -388,7 +393,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
   useEffect(() => {
     const floorToShow = floors[selectedFloorIndex] || floors[0];
     const hasNewSeats = floorToShow?.tables?.some((table) =>
-      table.seats?.some((seat) => seat.is_booking === true)
+      table.seats?.some((seat) => seat.is_booking === true),
     );
 
     setEnbaleBoooking(hasNewSeats);
@@ -410,13 +415,11 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
 
     const totalBookingSeats = bookingSeatsByTable?.reduce(
       (total, table) => total + table.seat_ids.length,
-      0
+      0,
     );
     setSeletedSeatCount(totalBookingSeats);
     setSeletedTableCount(bookingSeatsByTable?.length);
   }, [floorToShow, floorsState, floors, selectedFloorIndex]);
-
-  console.log('floorsState',floorToShow);
 
   return (
     <Fragment>
@@ -450,7 +453,8 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
               <Row className="mb-12 justify-content-between align-items-center w-100">
                 <Col xs={6}>
                   <h5 className="mb-2 floor-name">
-                    { `Floor ${floorToShow.floor_number}` || `Floor ${selectedFloorIndex + 1}`}
+                    {`Floor ${floorToShow.floor_number}` ||
+                      `Floor ${selectedFloorIndex + 1}`}
                   </h5>
                 </Col>{" "}
                 <Col xs={6} className="">
@@ -506,7 +510,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                   floorToShow.tables.map((table, tIndex) => {
                     const chairs = table.seats || [];
                     const hasNewSeats = table.seats?.some(
-                      (seat) => seat.is_new === true
+                      (seat) => seat.is_new === true,
                     );
                     let topRow = [];
                     let bottomRow = [];
@@ -576,11 +580,9 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                                       : "chairNotBooked"
                                   }  ${chair.is_new ? "chairNew" : ""}`}
                                   title={
-                                    chair.status === 4
-                                      ? "Available Seat"
-                                      : chair.status === 1
-                                      ? "Booked Seat"
-                                      : "Seat"
+                                    seatsStatusList.data.filter(
+                                      (data) => data.status_id === chair.status,
+                                    )[0].name
                                   }
                                   disabled={
                                     chair.is_booking !== true &&
@@ -601,19 +603,19 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                                       handleAddBookingSeat(
                                         selectedFloorIndex,
                                         table,
-                                        chair
+                                        chair,
                                       );
                                     }
                                   }}
                                 >
-                                  <img
-                                    className="charsimage"
-                                    src={`${
-                                      chair.status === 1 || chair.is_booking
-                                        ? chairBooked
-                                        : chairNotBooked
-                                    }`}
-                                    alt="char"
+                                  <SVGImage
+                                    isTransparent={true}
+                                    bgColor={
+                                      seatsStatusList.data.filter(
+                                        (data) =>
+                                          data.status_id === chair.status,
+                                      )[0].color_code
+                                    }
                                   />
                                   <span className="char-number">
                                     {chair.seat_number}
@@ -652,8 +654,8 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                                     chair.status === 4
                                       ? "Available Seat"
                                       : chair.status === 1
-                                      ? "Booked Seat"
-                                      : "Seat"
+                                        ? "Booked Seat"
+                                        : "Seat"
                                   }
                                   disabled={
                                     chair.is_booking !== true &&
@@ -674,7 +676,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                                       handleAddBookingSeat(
                                         selectedFloorIndex,
                                         table,
-                                        chair
+                                        chair,
                                       );
                                     }
                                   }}

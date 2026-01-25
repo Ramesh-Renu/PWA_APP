@@ -15,13 +15,15 @@ export const API = {
   DELETE_SEAT_API: "/api/seats/table",
   RESERVATION_API: "/api/reservations",
   GET_RESERVATION_HOTEL: "/api/reservations/hotel",
-  GET_RESERVATION_USER: "/api/reservations/user",
+  GET_RESERVATION_USER: "/api/reservations",
   CREATE_AREA_API: "/api/areas",
   GETALL_AREA_API: "/api/areas",
   CREATE_LOCATION_API: "/api/locations",
   GETALL_LOCATION_API: "/api/locations",
   CREATE_DINING_STATUS_API: "/api/dining-status",
   GETALL_DINING_STATUS_API: "/api/dining-status",
+  CREATE_SEATS_STATUS_MASTER: "/api/seat-status",
+  GETALL_SEATS_STATUS_MASTER: "/api/seat-status",
   
 
   /** NOTIFICATION */
