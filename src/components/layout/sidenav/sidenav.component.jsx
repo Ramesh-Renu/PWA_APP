@@ -17,7 +17,7 @@ const SideNav = ({ onChange }) => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const location = useLocation();
   const { authState, dispatch } = useGlobalContext();
-
+  const [showDrawer, setShowDrawer] = useState(false);
   /** INITIAL CALL */
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -69,6 +69,11 @@ const SideNav = ({ onChange }) => {
 
   const toggleDropdown = (key) => {
     setActiveDropdown((prev) => (prev === key ? null : key));
+  };
+  const expandCollaps = (e) => {
+    let showTitle = collaps ? !collaps : true;
+    setCollaps(showTitle);
+    onChange(!showTitle);
   };
 
   return (
@@ -218,6 +223,17 @@ const SideNav = ({ onChange }) => {
                 </NavLink>
               </h5>
             </div>
+                 {!showDrawer && (
+                <div className="expand__arrow" onClick={expandCollaps}>
+                  <span
+                    className={`icon-chevron-thin-right ${collaps && "rotate"} `}
+                  />
+                  {/* <img
+                src={collaps ? chevronLeftDuo : chevronRightDuo}
+                alt="arrow-icon"
+              /> */}
+                </div>
+              )}
           </div>
 
           <div
@@ -269,6 +285,7 @@ const SideNav = ({ onChange }) => {
                   </div>
                 </div>
               )}
+         
             </div>
             {/* <p className="version-info">
               {collaps ? "Version " : "v"}

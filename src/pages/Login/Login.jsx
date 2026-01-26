@@ -57,7 +57,7 @@ export default function Login() {
 
   const handleCheckMobilenumber = (value) => {
     const checkNumber = new RegExp(
-      appConstants.VALIDATION_PATTERNS.phonenumberHyphens
+      appConstants.VALIDATION_PATTERNS.phonenumberHyphens,
     ).test(value);
     if (checkNumber) {
       const trimmed = value.slice(0, 10);
@@ -75,7 +75,7 @@ export default function Login() {
 
   const handleCheckOTPNumber = (value) => {
     const checkNumber = new RegExp(
-      appConstants.VALIDATION_PATTERNS.phonenumberHyphens
+      appConstants.VALIDATION_PATTERNS.phonenumberHyphens,
     ).test(value);
     if (checkNumber) {
       setGetOTPnumber(value);
@@ -99,7 +99,7 @@ export default function Login() {
         message: response.data.message,
         variant: "success",
       });
-       navigate("/hotel");
+      navigate("/hotel");
       setActivateSignUpSuccess(true);
     } else {
       setInProgress(false);
@@ -305,6 +305,7 @@ export default function Login() {
                   <button
                     className="login-form-container-button-common mt-10"
                     onClick={handleSubmitForm}
+                    tabIndex={0}
                   >
                     {"Sign Up"}
                   </button>{" "}
@@ -321,6 +322,7 @@ export default function Login() {
                     ? "#0bc1ba"
                     : "var(--color-primary)",
                 }}
+                tabIndex={0}
               >
                 Send OTP
               </button>
@@ -337,6 +339,7 @@ export default function Login() {
                       height: "44px",
                       marginTop: "20px",
                     }}
+                    tabIndex={0}
                   >
                     <span>{"Loading"}...</span>
                   </button>
@@ -360,6 +363,7 @@ export default function Login() {
                         }}
                         onClick={(e) => handleLogin(e)}
                         disabled={getOTPnumber.length > 0 ? false : true}
+                        tabIndex={0}
                       >
                         {"Login"}
                       </button>
@@ -380,6 +384,7 @@ export default function Login() {
                         }}
                         onClick={(e) => handleLogin(e)}
                         disabled={getOTPnumber.length > 0 ? false : true}
+                        tabIndex={0}
                       >
                         {"Resend"}
                       </button>

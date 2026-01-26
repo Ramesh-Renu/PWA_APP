@@ -34,7 +34,8 @@ import hotelCreateActive from "assets/images/sidenav/hotel_create_active.svg";
 import hotelCreate from "assets/images/sidenav/hotel_create.svg";
 import tableBookedList from "assets/images/sidenav/table_booked_list.svg";
 import tableBookedListActive from "assets/images/sidenav/table_booked_list_active.svg";
-
+import hotelPlaceholderImage from "assets/images/hotel-placeholder-image.jpg";
+import tableImage  from "assets/images/sidenav/table-image.svg";
 export {
   tableBookedList,
   tableBookedListActive,
@@ -71,4 +72,6 @@ export {
   queueIconActive,
   tablesIconActive,
   bellIconActive,
+  hotelPlaceholderImage,
+  tableImage
 };

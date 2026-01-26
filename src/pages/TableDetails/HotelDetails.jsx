@@ -15,6 +15,7 @@ import { renderLocation } from "utils/common";
 import useGlobalMaster from "hooks/useGlobalMaster";
 import { useEffect } from "react";
 import { getHotelbyid } from "services";
+import { hotelPlaceholderImage } from "assets/images";
 
 const HotelDetails = () => {
   const { id } = useParams();
@@ -85,7 +86,7 @@ const HotelDetails = () => {
           <Row className="align-items-center">
             <Col md={3} className="text-center mb-3 mb-md-0">
               <Image
-                src={"/assets/images/appLogo.png"}
+                src={hotelPlaceholderImage}
                 rounded
                 fluid
                 style={{ maxHeight: 120, objectFit: "contain" }}

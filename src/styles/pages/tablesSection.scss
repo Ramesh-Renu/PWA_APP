@@ -5,6 +5,7 @@
   border-radius: 6px;
   padding: 0px;
   margin: 20px 0 0 0;
+  border: 2px solid #4bd058;
   &::-webkit-scrollbar {
     width: 0px;
     height: 0px;
@@ -22,10 +23,16 @@
     background-color: var(--color-oldSilver);
   }
   .table-box {
-    border: 1px solid #f5f296;
+    // border: 1px solid #f5f296;
     border-radius: 6px;
+    &.booked {
+      border-color: #dc3545;
+    }
+    &.available {
+      border-color: #28a745;
+    }
     .table-heading {
-      color: var(--color-white);
+      color: #605509;
       background: transparent;
       width: fit-content;
       margin: 0px auto;
@@ -125,17 +132,22 @@
         padding: 15px 20px;
         display: flex;
         justify-content: center;
+        position: relative;
         //   align-items: center
         width: 100%;
         min-height: 50px;
         min-width: 80px;
-        background-color: var(--color-light-gray-12);
+        background-color: #a7931f;
         &.chairNotBooked {
           color: var(--color-white);
           font-size: 13px;
           font-weight: 500;
           line-height: 100%;
-          background-color: var(--color-dark-green);
+          background-color: #a7931f;
+          background-image: url("../../assets/images/sidenav/table-image.svg"); /* Set your image URL */
+          background-size: cover; /* Make the image cover the entire container */
+          background-repeat: no-repeat; /* Prevent image repetition */
+          background-position: center center;
         }
         &.chairBooked {
           color: var(--color-white);
@@ -230,11 +242,58 @@
   }
 }
 .table-details-card {
-  .floor-name {
-    color: #1b4332;
-    font-size: 18px;
-    line-height: 24px;
+  /* From Uiverse.io by Mike11jr */
+  .scene {
+    background: #7db331;
+    border: none;
+    padding: 10px 20px;
+    display: inline-block;
+    font-size: 15px;
     font-weight: 600;
+    width: 120px;
+    // text-transform: uppercase;
+    cursor: pointer;
+    transform: skew(-21deg);
+    color: #3b0d0d;
+    span {
+      display: inline-block;
+      transform: skew(21deg);
+    }
+    &.active {
+      background: rgb(147 87 25);
+      color: #7fff00;
+    }
+  }
+  .scene::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 100%;
+    left: 0;
+    background: rgb(150 213 9);
+    opacity: 0;
+    z-index: -1;
+    transition: all 0.5s;
+  }
+  .scene:hover {
+    color: #fff;
+  }
+  .scene:hover::before {
+    left: 0;
+    right: 0;
+    opacity: 1;
+  }
+  .floor-name {
+    background: #1f56ad;
+    font-size: 18px;
+    line-height: 32px;
+    font-weight: 500;
+    width: fit-content;
+    border: none;
+    border-radius: 21px;
+    padding: 5px 16px;
+    color: #fff;
   }
   .addNewTable {
     font-weight: 500;

@@ -4,6 +4,7 @@ import {
   chairBooked,
   chairNotBooked,
   cleaningChar,
+  tableImage,
 } from "../../assets/images/index";
 import {
   createTable,
@@ -290,6 +291,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
 
   const handleAddBookingSeat = (floorIndex, table, seats) => {
     const floorToShow = floors[floorIndex] || floors[0];
+    console.log("chek");
 
     updateFloors((prev) =>
       prev.map((f) => {
@@ -430,16 +432,17 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                 <div className="d-flex gap-2">
                   {floors.map((f, i) => (
                     <button
-                      key={i}
-                      type="button"
-                      className={`btn ${
+                       className={`scene ${
                         i === selectedFloorIndex
-                          ? "btn-primary"
-                          : "btn-outline-secondary"
+                          ? "active"
+                          : ""
                       }`}
                       onClick={() => setSelectedFloorIndex(i)}
                     >
-                      {`Floor ${f.floor_number}` || `Floor ${i + 1}`}
+                        <span class="side front">
+                          {`Floor ${f.floor_number}` || `Floor ${i + 1}`}
+                        </span>
+                     
                     </button>
                   ))}
                 </div>
@@ -527,7 +530,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                     return (
                       <div
                         key={tIndex}
-                        className="p-3 m-2 text-center table-box"
+                        className={`p-3 m-2 text-center table-box ${topRow.every((seats) => seats.status === 1) ? "booked" : "available"}`}
                         style={{ minWidth: "200px" }}
                       >
                         {isEditable && (
@@ -598,7 +601,10 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                                       chair.user_id === auth?.details?.id
                                     ) {
                                       handleCancelThisSeat(table, chair);
-                                    } else if (isBooking) {
+                                    } else if (
+                                      isBooking &&
+                                      chair.status === 4
+                                    ) {
                                       handleAddBookingSeat(
                                         selectedFloorIndex,
                                         table,
@@ -608,11 +614,13 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                                   }}
                                 >
                                   <SVGImage
+                                    className={"charsimage"}
                                     isTransparent={true}
                                     bgColor={
-                                      seatsStatusList?.data?.filter(
-                                        (data) =>
-                                          data.status_id === chair.status,
+                                      seatsStatusList?.data?.filter((data) =>
+                                        chair.is_booking
+                                          ? data.status_id === 1
+                                          : data.status_id === chair.status,
                                       )[0].color_code
                                     }
                                   />
@@ -669,7 +677,10 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                                       chair.user_id === auth?.details?.id
                                     ) {
                                       handleCancelThisSeat(table, chair);
-                                    } else if (isBooking) {
+                                    } else if (
+                                      isBooking &&
+                                      chair.status === 4
+                                    ) {
                                       handleAddBookingSeat(
                                         selectedFloorIndex,
                                         table,
@@ -679,11 +690,13 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                                   }}
                                 >
                                   <SVGImage
+                                    className={"charsimage"}
                                     isTransparent={true}
                                     bgColor={
-                                      seatsStatusList?.data?.filter(
-                                        (data) =>
-                                          data.status_id === chair.status,
+                                      seatsStatusList?.data?.filter((data) =>
+                                        chair.is_booking
+                                          ? data.status_id === 1
+                                          : data.status_id === chair.status,
                                       )[0].color_code
                                     }
                                   />

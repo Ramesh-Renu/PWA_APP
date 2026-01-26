@@ -64,6 +64,8 @@ const UserLayout = () => {
   }, []);
 
   const tempChange = (status) => {
+    console.log("status",status);
+    
     setCollapseNav(status);
     return;
   };

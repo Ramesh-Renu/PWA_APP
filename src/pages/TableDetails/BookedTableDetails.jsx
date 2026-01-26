@@ -353,21 +353,24 @@ const BookedTableDetails = ({ data }) => {
   };
   return (
     <Fragment>
-      {bookedData?.length > 0 && loadingHotelListApp === false ? (
-        <Table
-          columns={columns}
-          columnData={bookedData || []}
-          className={"products__body-table dashboard_table"}
-          onSortingChange={handleSortChange}
-          sorting={sorting}
-          setSorting={setSorting}
-          tableName="Order_list"
-          noDataContent={"Do not render any no data content while loading"}
-          tableHeight={"calc(100vh - 85px)"}
-          loading={loadingHotelListApp}
-          //onScrollEnd={handleInfiniteScroll}
-        />
-      ) : (
+      {bookedData?.length > 0 && (
+        <div className="mt-4">
+          <Table
+            columns={columns}
+            columnData={bookedData || []}
+            className={"products__body-table dashboard_table"}
+            onSortingChange={handleSortChange}
+            sorting={sorting}
+            setSorting={setSorting}
+            tableName="Order_list"
+            noDataContent={"Do not render any no data content while loading"}
+            tableHeight={"calc(100vh - 85px)"}
+            loading={loadingHotelListApp}
+            //onScrollEnd={handleInfiniteScroll}
+          />
+        </div>
+      )}
+      {bookedData?.length === 0 && loadingHotelListApp === false && (
         <div className="no-booking-found">
           <h1 className="main-head">No Booking Found</h1>
           <p className="sub-head">

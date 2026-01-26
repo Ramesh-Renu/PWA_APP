@@ -8,7 +8,7 @@
   <!-- Roof -->
   <path
     d="M4 8L12 3L20 8"
-    stroke="#64748b"
+    stroke="#F3AF3D"
     stroke-width="1.6"
     stroke-linecap="round"
     stroke-linejoin="round"
@@ -21,7 +21,7 @@
     width="14"
     height="13"
     rx="2"
-    stroke="#64748b"
+    stroke="#F3AF3D"
     stroke-width="1.6"
   />
 
@@ -32,18 +32,18 @@
     width="4"
     height="7"
     rx="1"
-    stroke="#64748b"
+    stroke="#F3AF3D"
     stroke-width="1.6"
   />
 
   <!-- Windows -->
-  <rect x="7" y="10" width="2" height="2" rx="0.5" fill="#64748b"/>
-  <rect x="11" y="10" width="2" height="2" rx="0.5" fill="#64748b"/>
-  <rect x="15" y="10" width="2" height="2" rx="0.5" fill="#64748b"/>
+  <rect x="7" y="10" width="2" height="2" rx="0.5" fill="#F3AF3D"/>
+  <rect x="11" y="10" width="2" height="2" rx="0.5" fill="#F3AF3D"/>
+  <rect x="15" y="10" width="2" height="2" rx="0.5" fill="#F3AF3D"/>
 
   <!-- Star (Luxury Touch) -->
   <path
     d="M12 5.2L12.8 6.8L14.6 7.1L13.3 8.3L13.6 10.1L12 9.3L10.4 10.1L10.7 8.3L9.4 7.1L11.2 6.8Z"
-    fill="#64748b"
+    fill="#F3AF3D"
   />
 </svg>
