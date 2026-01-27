@@ -25,6 +25,32 @@
   .table-box {
     // border: 1px solid #f5f296;
     border-radius: 6px;
+    .isSeats-selectall {
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-start;
+      gap: 8px;
+      margin: 2px 0 8px;
+      .flex-name-checkbox {
+        display: inline-flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        .selectAllHead {
+          font-weight: 500;
+          font-size: 13px;
+          line-height: 100%;
+          vertical-align: middle;
+          color: var(--color-blue);
+        }
+        .checkbox-img {
+          width: 13px;
+          height: 100%;
+        }
+      }
+    }
     &.booked {
       border-color: #dc3545;
     }

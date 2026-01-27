@@ -5,6 +5,8 @@ import {
   chairNotBooked,
   cleaningChar,
   tableImage,
+  checkedBlueIcon,
+  blueBorderUnchecked,
 } from "../../assets/images/index";
 import {
   createTable,
@@ -432,17 +434,14 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                 <div className="d-flex gap-2">
                   {floors.map((f, i) => (
                     <button
-                       className={`scene ${
-                        i === selectedFloorIndex
-                          ? "active"
-                          : ""
+                      className={`scene ${
+                        i === selectedFloorIndex ? "active" : ""
                       }`}
                       onClick={() => setSelectedFloorIndex(i)}
                     >
-                        <span class="side front">
-                          {`Floor ${f.floor_number}` || `Floor ${i + 1}`}
-                        </span>
-                     
+                      <span class="side front">
+                        {`Floor ${f.floor_number}` || `Floor ${i + 1}`}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -568,6 +567,30 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                             </div>
                           </div>
                         )}
+                        <div className="isSeats-selectall">
+                          <div
+                            className="flex-name-checkbox"
+                            // onClick={() => {
+                            //   handleSelectAllTable(card.orderId);
+                            // }}
+                          >
+                            <img
+                              className="checkbox-img"
+                              src={
+                                // chairs?.every((seat) =>
+                                //   seat?.every((seat) => seat.selected),
+                                // )
+                                chairs.selected
+                                  ? checkedBlueIcon
+                                  : blueBorderUnchecked
+                              }
+                              alt="checkbox-img"
+                            />
+                            <span className="selectAllHead">
+                              &#160;{"Select Table"}
+                            </span>
+                          </div>
+                        </div>
                         <div className="tables-section">
                           <Row className="top-row mb-2">
                             {topRow.map((chair, cIndex) => (

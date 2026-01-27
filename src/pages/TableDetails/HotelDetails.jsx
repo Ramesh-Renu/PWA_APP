@@ -22,6 +22,8 @@ const HotelDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [hotelData, setHotelData] = useState(location.state?.hotelData || null);
+  const [isEditable, setIsEditable] = useState(false);
+  const [isBooking, setIsBooking] =useState(false);
   const { areaList, locationList, getAllArea, getAllLocation } =
     useGlobalMaster();
   useEffect(() => {
@@ -32,6 +34,15 @@ const HotelDetails = () => {
       getAllLocation();
     }
   }, []);
+
+  useEffect(() => {
+    if (location?.state?.isEditable) {
+      setIsEditable(true);
+    }
+    if(location?.state?.isBooking) {
+      setIsBooking(true);
+    }
+  }, [location?.state]);
 
   const fetchHotelDetailsbyId = async (param) => {
     try {
@@ -62,6 +73,7 @@ const HotelDetails = () => {
     const seatCount = hd?.seatCount || 0;
     return { floorCount, tables_per_floor, totalTables, seatCount };
   };
+  console.log("location", location);
 
   const stats = computeTotals(hotelData || {});
 
@@ -75,9 +87,7 @@ const HotelDetails = () => {
           <span className="breadcrumb-item-divider">
             <BreadcrumbArrow />
           </span>
-          <Breadcrumb.Item active>
-            {hotelData?.hotel_name}
-          </Breadcrumb.Item>
+          <Breadcrumb.Item active>{hotelData?.hotel_name}</Breadcrumb.Item>
         </Breadcrumb>
       </div>
 
@@ -160,8 +170,8 @@ const HotelDetails = () => {
 
       <TableDetails
         data={hotelData || { id }}
-        isEditable={location?.state?.isEditable}
-        isBooking={location?.state?.isBooking}
+        isEditable={isEditable}
+        isBooking={isBooking}
       />
     </div>
   );

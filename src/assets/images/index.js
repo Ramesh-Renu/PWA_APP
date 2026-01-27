@@ -36,6 +36,11 @@ import tableBookedList from "assets/images/sidenav/table_booked_list.svg";
 import tableBookedListActive from "assets/images/sidenav/table_booked_list_active.svg";
 import hotelPlaceholderImage from "assets/images/hotel-placeholder-image.jpg";
 import tableImage  from "assets/images/sidenav/table-image.svg";
+
+import checkedBlueIcon from "assets/images/checked_blue.png";
+import unCheckedBlueIcon from "assets/images/unChecked_blue.png";
+import blueBorderUnchecked from "assets/images/blueBorderUnchecked.png";
+
 export {
   tableBookedList,
   tableBookedListActive,
@@ -73,5 +78,8 @@ export {
   tablesIconActive,
   bellIconActive,
   hotelPlaceholderImage,
-  tableImage
+  tableImage,
+  checkedBlueIcon,
+  unCheckedBlueIcon,
+  blueBorderUnchecked,
 };
