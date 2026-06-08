@@ -346,6 +346,43 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
     );
   };
 
+  const handleSelectAllTable = (floorIndex, table) => {
+    const floorToShow = floors[floorIndex] || floors[0];
+
+    updateFloors((prev) =>
+      prev.map((f) => {
+        if (f.floor_id !== floorToShow.floor_id) return f;
+
+        const targetTable = f.tables.find((t) => t.table_id === table.table_id);
+        const allSelected = targetTable.seats?.every((s) => s.is_booking === true);
+
+        // Toggle select-all for this table
+        const newSelectedState = !allSelected;
+        const bookingCount = newSelectedState ? targetTable.seats.length : 0;
+
+        // When any seats in target table are selected, disable other tables (exclusive selection)
+        const setNotAccessForOthers = bookingCount > 0;
+
+        return {
+          ...f,
+          tables: f.tables.map((t) => {
+            if (t.table_id === table.table_id) {
+              return {
+                ...t,
+                seats: t.seats.map((s) => ({ ...s, is_booking: newSelectedState, notAccess: false })),
+              };
+            }
+
+            return {
+              ...t,
+              seats: t.seats.map((s) => ({ ...s, notAccess: setNotAccessForOthers })),
+            };
+          }),
+        };
+      }),
+    );
+  };
+
   const updateBookingTableinSeats = async (hotelData) => {
     const getCurretnTime = new Date();
     const reservationId = cancelBookingSeats.seat_ids.reservation_id;
@@ -568,28 +605,25 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                           </div>
                         )}
                         <div className="isSeats-selectall">
-                          <div
-                            className="flex-name-checkbox"
-                            // onClick={() => {
-                            //   handleSelectAllTable(card.orderId);
-                            // }}
-                          >
-                            <img
-                              className="checkbox-img"
-                              src={
-                                // chairs?.every((seat) =>
-                                //   seat?.every((seat) => seat.selected),
-                                // )
-                                chairs.selected
-                                  ? checkedBlueIcon
-                                  : blueBorderUnchecked
-                              }
-                              alt="checkbox-img"
-                            />
-                            <span className="selectAllHead">
-                              &#160;{"Select Table"}
-                            </span>
-                          </div>
+                          {(() => {
+                            const allSelected = table.seats?.every(
+                              (s) => s.is_booking === true,
+                            );
+                            return (
+                              <div
+                                className="flex-name-checkbox"
+                                onClick={() => handleSelectAllTable(selectedFloorIndex, table)}
+                                style={{ cursor: "pointer" }}
+                              >
+                                <img
+                                  className="checkbox-img"
+                                  src={allSelected ? checkedBlueIcon : blueBorderUnchecked}
+                                  alt="checkbox-img"
+                                />
+                                <span className="selectAllHead">&#160;{"Select Table"}</span>
+                              </div>
+                            );
+                          })()}
                         </div>
                         <div className="tables-section">
                           <Row className="top-row mb-2">
