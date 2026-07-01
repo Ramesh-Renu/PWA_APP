@@ -566,12 +566,13 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                 <div className="d-flex gap-2">
                   {floors.map((f, i) => (
                     <button
+                      key={f.floor_id || i}
                       className={`scene ${
                         i === selectedFloorIndex ? "active" : ""
                       }`}
                       onClick={() => setSelectedFloorIndex(i)}
                     >
-                      <span class="side front">
+                      <span className="side front">
                         {`Floor ${f.floor_number}` || `Floor ${i + 1}`}
                       </span>
                     </button>

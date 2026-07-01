@@ -260,13 +260,18 @@ const BookTables = () => {
 
   return (
     <Fragment>
+      <section className="app-page book-table-page">
+      <header className="app-page-header book-table-header">
+        <div><span className="page-kicker">DISCOVER & DINE</span><h1>Find your perfect table</h1><p>Explore restaurants, compare availability and reserve in a few clicks.</p></div>
+        <div className="header-stat"><strong>{listOfHotel?.length || 0}</strong><span>restaurants available</span></div>
+      </header>
       <div className="create-hotel-page">
         <div className="create-hotel-page-flex">
           <div className="create-hotel-page-flex-column-one">
             <input
               className="search-hotel"
               onChange={handleSearchHotel}
-              placeholder="Search Hotel name/location"
+              placeholder="Search by restaurant, location or area..."
             />
           </div>
           <div className="create-hotel-page-flex-column-two"></div>
@@ -278,6 +283,7 @@ const BookTables = () => {
         </div>
       )}
       {listOfHotel?.length > 0 && (
+        <div className="page-table-shell">
         <Table
           columns={columns}
           columnData={listOfHotel}
@@ -291,7 +297,9 @@ const BookTables = () => {
           // loading={loadingHotelListApp}
           //onScrollEnd={handleInfiniteScroll}
         />
+        </div>
       )}
+      </section>
       {/* DELETE CONFIRMATION POPUP */}
 
       <PopupModal

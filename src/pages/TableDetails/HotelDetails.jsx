@@ -57,7 +57,7 @@ const HotelDetails = () => {
   };
 
   useEffect(() => {
-    if (hotelData === null && location.state.hotel_id) {
+    if (hotelData === null && location.state?.hotel_id) {
       fetchHotelDetailsbyId({ hotel_id: location.state.hotel_id });
     }
   }, [hotelData]);
@@ -77,8 +77,8 @@ const HotelDetails = () => {
   const stats = computeTotals(hotelData || {});
 
   return (
-    <div className="p-3">
-      <div className="mb-3">
+    <main className="hotel-details-page">
+      <div className="hotel-breadcrumb">
         <Breadcrumb className="mb-1 p-0">
           <Breadcrumb.Item onClick={() => navigate("/hotel/book-table")}>
             Hotel Table
@@ -90,18 +90,19 @@ const HotelDetails = () => {
         </Breadcrumb>
       </div>
 
-      <Card className="mb-4 shadow-sm">
+      <Card className="hotel-profile-card">
         <Card.Body>
           <Row className="align-items-center">
-            <Col md={3} className="text-center mb-3 mb-md-0">
+            <Col lg={2} md={3} className="text-center mb-3 mb-md-0">
               <Image
                 src={hotelPlaceholderImage}
                 rounded
                 fluid
-                style={{ maxHeight: 120, objectFit: "contain" }}
+                className="hotel-cover-image"
               />
             </Col>
-            <Col md={6}>
+            <Col lg={6} md={5} className="hotel-profile-copy">
+              <span className="property-label">PROPERTY OVERVIEW</span>
               <h2 className="mb-1">{hotelData?.hotel_name || `--`}</h2>
               <div className="mb-2">
                 <Badge bg="info" className="me-2">
@@ -127,10 +128,10 @@ const HotelDetails = () => {
                 </div>
               )}
             </Col>
-            <Col md={3} xs={12}>
-              <Row>
+            <Col lg={4} md={4} xs={12}>
+              <Row className="hotel-stat-grid">
                 <Col xs={6} className="mb-2">
-                  <Card className="text-center border-0">
+                  <Card className="hotel-stat-card floor-stat">
                     <Card.Body>
                       <div className="h4 mb-0">{stats.floorCount || "-"}</div>
                       <small className="text-muted">Floors</small>
@@ -138,7 +139,7 @@ const HotelDetails = () => {
                   </Card>
                 </Col>
                 <Col xs={6} className="mb-2">
-                  <Card className="text-center border-0">
+                  <Card className="hotel-stat-card table-stat">
                     <Card.Body>
                       <div className="h4 mb-0">{stats.totalTables || "-"}</div>
                       <small className="text-muted">Tables</small>
@@ -146,7 +147,7 @@ const HotelDetails = () => {
                   </Card>
                 </Col>
                 {/* <Col xs={6} className="mb-2">
-                  <Card className="text-center border-0">
+                  <Card className="hotel-stat-card seat-stat">
                     <Card.Body>
                       <div className="h4 mb-0">{stats.tables_per_floor || "-"}</div>
                       <small className="text-muted">Table / Floor</small>
@@ -172,7 +173,7 @@ const HotelDetails = () => {
         isEditable={isEditable}
         isBooking={isBooking}
       />
-    </div>
+    </main>
   );
 };
 

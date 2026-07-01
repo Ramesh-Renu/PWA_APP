@@ -353,6 +353,17 @@ const BookedTableDetails = ({ data }) => {
   };
   return (
     <Fragment>
+      <section className="app-page reservations-page">
+      <header className="app-page-header reservations-header">
+        <div><span className="page-kicker">RESERVATIONS</span><h1>Reservation management</h1><p>Track bookings, guest seating and dining status in one place.</p></div>
+        <button className="page-primary-action" onClick={handleGoToBookingPage}>+ New reservation</button>
+      </header>
+      <div className="page-summary-strip">
+        <div><span>All reservations</span><strong>{bookedData?.length || 0}</strong></div>
+        <div><span>Confirmed</span><strong>{bookedData?.filter((item) => item.dining_status === 1).length || 0}</strong></div>
+        <div><span>Seated</span><strong>{bookedData?.filter((item) => item.dining_status === 2).length || 0}</strong></div>
+        <div><span>Completed</span><strong>{bookedData?.filter((item) => item.dining_status === 3).length || 0}</strong></div>
+      </div>
       {bookedData?.length > 0 && (
         <div className="mt-4">
           <Table
@@ -384,6 +395,7 @@ const BookedTableDetails = ({ data }) => {
           </button>
         </div>
       )}
+      </section>
       <PopupModal
         show={showCancelBookingSeats}
         onClose={() => setShowCancelBookingSeats(false)}

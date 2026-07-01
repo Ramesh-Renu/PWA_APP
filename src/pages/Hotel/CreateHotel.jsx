@@ -484,6 +484,11 @@ const CreateHotel = () => {
 
   return (
     <Fragment>
+      <section className="app-page hotels-admin-page">
+      <header className="app-page-header hotels-admin-header">
+        <div><span className="page-kicker">PROPERTY SETUP</span><h1>Hotels & table layouts</h1><p>Create properties and configure floors, tables and seating capacity.</p></div>
+        <div className="header-stat"><strong>{listOfHotel?.length || 0}</strong><span>properties managed</span></div>
+      </header>
       <div className="create-hotel-page">
         <div className="create-hotel-page-flex">
           <div className="create-hotel-page-flex-column-one">
@@ -502,6 +507,7 @@ const CreateHotel = () => {
         </div>
       </div>
       {listOfHotel?.length > 0 && (
+        <div className="page-table-shell">
         <Table
           columns={columns}
           columnData={listOfHotel || []}
@@ -515,19 +521,22 @@ const CreateHotel = () => {
           loading={loadingHotelListApp}
           //onScrollEnd={handleInfiniteScroll}
         />
+        </div>
       )}
+      </section>
       {showCreateHotelForm && (
         <PopupModal
           show={showCreateHotelForm}
           onClose={closeShowPopup}
           className={"create-hotel-page-popup-content bg-white rounded-4"}
-          width={"40vh"}
+          width={"680px"}
           header={true}
-          title={<span className="move-to-aarow">&#160;&#160;Hotel</span>}
+          title={<span className="move-to-aarow">{updateHotel ? "Edit property" : "Create new property"}</span>}
         >
           <Fragment>
+            <div className="hotel-form-intro"><span>✦</span><div><strong>Property information</strong><p>Set up the hotel and its initial table capacity.</p></div></div>
             <Row className="p-2 top-content">
-              <Col lg={5} md={5} xs={10} className="my-2">
+              <Col lg={6} md={6} xs={12} className="my-2">
                 <label className="create-hotel-label">
                   Name <sup>*</sup>
                 </label>
@@ -544,7 +553,7 @@ const CreateHotel = () => {
                   </label>
                 )}
               </Col>
-              <Col lg={5} md={5} xs={10} className="my-2">
+              <Col lg={6} md={6} xs={12} className="my-2">
                 <label className="create-hotel-label">
                   Location <sup>*</sup>
                 </label>
@@ -574,7 +583,7 @@ const CreateHotel = () => {
                   </label>
                 )}
               </Col>
-              <Col lg={5} md={5} xs={10} className="my-2">
+              <Col lg={6} md={6} xs={12} className="my-2">
                 <label className="create-hotel-label">
                   Area <sup>*</sup>
                 </label>
@@ -600,7 +609,7 @@ const CreateHotel = () => {
                   </label>
                 )}
               </Col>
-              <Col lg={5} md={5} xs={10} className="my-2">
+              <Col lg={6} md={6} xs={12} className="my-2">
                 <label className="create-hotel-label">
                   Address <sup>*</sup>
                 </label>
@@ -617,12 +626,13 @@ const CreateHotel = () => {
                   </label>
                 )}
               </Col>
-              <Col lg={5} md={5} xs={10} className="my-2">
+              <Col lg={6} md={6} xs={12} className="my-2">
                 <label className="create-hotel-label">
                   Floor Count <sup>*</sup>
                 </label>
                 <input
-                  type="text"
+                  type="number"
+                  min="1"
                   className="craete-hotel-name"
                   onChange={handleCreateHotelFloorCount}
                   placeholder="Enter floor count"
@@ -634,12 +644,13 @@ const CreateHotel = () => {
                   </label>
                 )}
               </Col>
-              <Col lg={5} md={5} xs={10} className="my-2">
+              <Col lg={6} md={6} xs={12} className="my-2">
                 <label className="create-hotel-label">
                   Table Per Floor <sup>*</sup>
                 </label>
                 <input
-                  type="text"
+                  type="number"
+                  min="1"
                   className="craete-hotel-name"
                   onChange={handleCreateHotelTablePerFloor}
                   placeholder="Enter table count"
@@ -651,12 +662,13 @@ const CreateHotel = () => {
                   </label>
                 )}
               </Col>
-              <Col lg={5} md={5} xs={10} className="my-2">
+              <Col lg={6} md={6} xs={12} className="my-2">
                 <label className="create-hotel-label">
                   Chairs Per Table <sup>*</sup>
                 </label>
                 <input
-                  type="text"
+                  type="number"
+                  min="1"
                   className="craete-hotel-name"
                   onChange={handleCreateHotelChairsPerTable}
                   placeholder="Enter char count"
@@ -677,7 +689,7 @@ const CreateHotel = () => {
                     handleCreateHotelSubmit(updateHotel ? "Update" : "Create")
                   }
                 >
-                  {updateHotel ? "Update" : "Submit"}
+                  {updateHotel ? "Save changes" : "Create property"}
                 </button>{" "}
                 <button className="btn btn-cancel" onClick={handleCancel}>
                   Cancel

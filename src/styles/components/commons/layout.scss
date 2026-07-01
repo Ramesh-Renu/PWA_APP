@@ -2420,6 +2420,16 @@
   min-height: 140px;
 }
 
+/* Sidebar readability */
+.modern-nav-link .nav-label{font-size:14px}
+.sidebar-insight strong{font-size:12px}.sidebar-insight p{font-size:10px;color:#a0a3bc}
+.sidebar-user-copy strong{font-size:12px}.sidebar-user-copy span{font-size:10px;color:#a0a3bc}
+.system-status{font-size:10px}
+
+/* Let page backgrounds continue through the full scroll height. */
+.layout-container{height:auto!important;min-height:100vh;align-items:stretch;background:#f7f8ff!important}
+.layout-page{min-height:100vh;padding:0!important;background:#f7f8ff}
+
 /* Modern application sidebar */
 .layout-container { padding-left:84px; transition:padding-left .28s ease;
   &.left-sidebar { padding-left:248px; }
