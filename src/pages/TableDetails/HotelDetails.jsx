@@ -73,7 +73,6 @@ const HotelDetails = () => {
     const seatCount = hd?.seatCount || 0;
     return { floorCount, tables_per_floor, totalTables, seatCount };
   };
-  console.log("location", location);
 
   const stats = computeTotals(hotelData || {});
 

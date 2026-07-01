@@ -39,11 +39,7 @@ const App = () => {
             {/* Default redirect */}
             <Route
               index
-              element={
-                auth?.details?.role === "Admin"
-                  ? <Navigate to="dashboard" replace />
-                  : <Navigate to="book-table" replace />
-              }
+              element={<Navigate to="dashboard" replace />}
             />
 
             {/* Routes */}

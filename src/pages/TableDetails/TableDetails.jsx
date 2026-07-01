@@ -40,6 +40,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
   const [enbaleBoooking, setEnbaleBoooking] = useState(false);
   const [seletedSeatCount, setSeletedSeatCount] = useState(null);
   const [seletedTableCount, setSeletedTableCount] = useState(null);
+  const [openAdminPopupTableId, setOpenAdminPopupTableId] = useState(null);
 
   const fetchHotelbyId = async (hotelData) => {
     try {
@@ -63,6 +64,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
       getSeatsStatusMatsers();
     }
   }, []);
+  console.log("floorsState", floorsState);
 
   useEffect(() => {
     fetchHotelbyId(data);
@@ -177,8 +179,8 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
 
   const handleAddSeat = (floorIndex, table) => {
     const floorToShow = floors[floorIndex] || floors[0];
-    updateFloors((prev) =>
-      prev.map((f) => {
+    updateFloors((prev) => {
+      const next = prev.map((f) => {
         if (f.floor_id !== floorToShow.floor_id) return f;
         const newTables = f.tables.map((t) => {
           if (t.table_id !== table.table_id) return t;
@@ -187,6 +189,8 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
             seats.length > 0
               ? seats[seats.length - 1].seat_id + 1
               : seats.length + 1;
+          console.log("nextId", nextId);
+
           return {
             ...t,
             seats: [
@@ -201,8 +205,9 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
           };
         });
         return { ...f, tables: newTables };
-      }),
-    );
+      });
+      return next;
+    });
   };
 
   const handleRemoveSeat = (floorIndex, table) => {
@@ -354,65 +359,155 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
         if (f.floor_id !== floorToShow.floor_id) return f;
 
         const targetTable = f.tables.find((t) => t.table_id === table.table_id);
-        const allSelected = targetTable.seats?.every((s) => s.is_booking === true);
+        // Determine eligible seats based on role
+        const eligibleSeatIds =
+          (targetTable.seats || [])
+            .filter((s) =>
+              isEditable === true ||
+              auth?.details?.role === "Admin" ||
+              auth?.details?.is_admin
+                ? s.status === 4 || s.status === 1
+                : s.status === 4 ||
+                  (s.status === 1 && s.user_id === auth?.details?.id),
+            )
+            .map((s) => s.seat_id) || [];
 
-        // Toggle select-all for this table
-        const newSelectedState = !allSelected;
-        const bookingCount = newSelectedState ? targetTable.seats.length : 0;
+        if (eligibleSeatIds.length === 0) return f;
 
-        // When any seats in target table are selected, disable other tables (exclusive selection)
-        const setNotAccessForOthers = bookingCount > 0;
+        const anyEligibleSelected = (targetTable.seats || []).some(
+          (s) => eligibleSeatIds.includes(s.seat_id) && s.is_booking === true,
+        );
+        const newSelectedState = !anyEligibleSelected;
+        // Determine clicked table booking state (booked vs non-booked)
+        const clickedTableBooked = (targetTable.seats || []).some(
+          (s) => s.status === 1,
+        );
 
-        return {
-          ...f,
-          tables: f.tables.map((t) => {
-            if (t.table_id === table.table_id) {
-              return {
-                ...t,
-                seats: t.seats.map((s) => ({ ...s, is_booking: newSelectedState, notAccess: false })),
-              };
-            }
-
+        // Build new tables: toggle only clicked table's eligible seats; set notAccess on other tables
+        const newTables = f.tables.map((t) => {
+          if (t.table_id === table.table_id) {
             return {
               ...t,
-              seats: t.seats.map((s) => ({ ...s, notAccess: setNotAccessForOthers })),
+              seats: t.seats.map((s) =>
+                eligibleSeatIds.includes(s.seat_id)
+                  ? { ...s, is_booking: newSelectedState, notAccess: false }
+                  : { ...s },
+              ),
             };
-          }),
-        };
+          }
+
+          // For other tables, compute their booking state
+          const otherBooked = (t.seats || []).some((s) => s.status === 1);
+
+          // If selecting (newSelectedState === true), lock tables that have different booking state
+          // If deselecting, unlock other tables
+          const setNotAccessForOthers = newSelectedState
+            ? otherBooked !== clickedTableBooked
+            : false;
+
+          return {
+            ...t,
+            seats: t.seats.map((s) => ({
+              ...s,
+              notAccess: setNotAccessForOthers,
+            })),
+          };
+        });
+
+        return { ...f, tables: newTables };
       }),
     );
   };
 
+  const handleAdminTableAction = (action, table) => {
+    // Minimal handlers - replace with real implementations as needed
+    if (action === "seated") {
+      showToast({
+        message: `Marked Table ${table.table_number} as Seated`,
+        variant: "success",
+      });
+    } else if (action === "cleaning") {
+      showToast({
+        message: `Marked Table ${table.table_number} for Cleaning`,
+        variant: "info",
+      });
+    } else if (action === "completed") {
+      showToast({
+        message: `Marked Table ${table.table_number} as Completed`,
+        variant: "success",
+      });
+    } else if (action === "cancel") {
+      showToast({
+        message: `Cancel Order requested for Table ${table.table_number}`,
+        variant: "warning",
+      });
+    }
+    setOpenAdminPopupTableId(null);
+  };
+
   const updateBookingTableinSeats = async (hotelData) => {
     const getCurretnTime = new Date();
-    const reservationId = cancelBookingSeats.seat_ids.reservation_id;
-    console.log("reservationId", reservationId);
-
-    const cancelSeats = [
-      {
-        table_id: cancelBookingSeats.table_id,
-        seat_ids: [cancelBookingSeats.seat_ids.seat_id],
-      },
-    ];
-    const body = {
-      cancel_seats: cancelSeats,
-      cancel_date: dayjs(getCurretnTime).format("YYYY-MM-DD"),
-      cancel_time: dayjs(getCurretnTime).format("HH:mm"),
-    };
+    const seatsToCancel = cancelBookingSeats?.seat_ids;
     setShowCancelBookingSeats(false);
     setLoading(true);
     try {
-      const response = await updateReservation(reservationId, body);
-      if (response.success) {
-        showToast({
-          message: response.message || "Booked seatscanceld successfully",
-          variant: "success",
-        });
-        fetchHotelbyId(hotelData);
-        setLoading(false);
+      if (Array.isArray(seatsToCancel)) {
+        // group seats by reservation_id and call updateReservation per reservation
+        const groups = seatsToCancel.reduce((acc, s) => {
+          const rid = s.reservation_id;
+          if (!acc[rid]) acc[rid] = [];
+          acc[rid].push(s);
+          return acc;
+        }, {});
+
+        const results = await Promise.all(
+          Object.keys(groups).map(async (reservationId) => {
+            const groupSeats = groups[reservationId];
+            const cancelSeats = groupSeats.map((s) => ({
+              table_id: cancelBookingSeats.table_id,
+              seat_ids: [s.seat_id],
+            }));
+            const body = {
+              cancel_seats: cancelSeats,
+              cancel_date: dayjs(getCurretnTime).format("YYYY-MM-DD"),
+              cancel_time: dayjs(getCurretnTime).format("HH:mm"),
+            };
+            return updateReservation(reservationId, body);
+          }),
+        );
+
+        const anySuccess = results.some((r) => r && r.success);
+        if (anySuccess) {
+          showToast({
+            message: "Booked seats cancelled successfully",
+            variant: "success",
+          });
+          fetchHotelbyId(hotelData);
+        }
+      } else {
+        const reservationId = seatsToCancel?.reservation_id;
+        const cancelSeats = [
+          {
+            table_id: cancelBookingSeats.table_id,
+            seat_ids: [seatsToCancel.seat_id],
+          },
+        ];
+        const body = {
+          cancel_seats: cancelSeats,
+          cancel_date: dayjs(getCurretnTime).format("YYYY-MM-DD"),
+          cancel_time: dayjs(getCurretnTime).format("HH:mm"),
+        };
+        const response = await updateReservation(reservationId, body);
+        if (response.success) {
+          showToast({
+            message: response.message || "Booked seats cancelled successfully",
+            variant: "success",
+          });
+          fetchHotelbyId(hotelData);
+        }
       }
     } catch (error) {
-      console.error("Error creating hotel:", error);
+      console.error("Error cancelling reservation:", error);
       showToast({
         message: error,
         variant: "danger",
@@ -562,131 +657,350 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                         else bottomRow.push(chair);
                       });
                     }
+                    const isReserved = table.seats.some(
+                      (seat) => seat.reservation_id != null,
+                    );
 
                     return (
                       <div
                         key={tIndex}
-                        className={`p-3 m-2 text-center table-box ${topRow.every((seats) => seats.status === 1) ? "booked" : "available"}`}
+                        className={`p-3 m-2 text-center table-box ${topRow.every((seats) => seats?.status === 1) ? "booked" : "available"}`}
                         style={{ minWidth: "200px" }}
                       >
-                        {isEditable && (
-                          <div className="d-flex justify-content-between align-items-center mb-2">
-                            <div className="d-flex justify-content-between gap-1 align-items-center w-100">
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-outline-success addseats"
-                                onClick={() =>
-                                  handleAddSeat(selectedFloorIndex, table)
-                                }
-                              >
-                                +
-                              </button>
-                              {hasNewSeats && (
+                        {(isEditable === true ||
+                          auth?.details?.role === "Admin" ||
+                          auth?.details?.is_admin) &&
+                          (table?.seats?.length === 0 ||
+                            table?.seats.some((chair)=>chair.is_new === true)) && (
+                            <div className="d-flex justify-content-between align-items-center mb-2">
+                              <div className="d-flex justify-content-between gap-1 align-items-center w-100">
                                 <button
                                   type="button"
-                                  className="btn btn-sm btn-outline-success save-seats"
-                                  onClick={() => fetchAddSeatsInTable(table)}
-                                >
-                                  Save
-                                </button>
-                              )}
-                              {hasNewSeats && (
-                                <button
-                                  type="button"
-                                  className="btn btn-sm btn-outline-danger removeseats"
+                                  className="btn btn-sm btn-outline-success addseats"
                                   onClick={() =>
-                                    handleRemoveSeat(selectedFloorIndex, table)
+                                    handleAddSeat(selectedFloorIndex, table)
                                   }
                                 >
-                                  -
+                                  + Add Seats
                                 </button>
-                              )}
+
+                                {hasNewSeats && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-success save-seats"
+                                    onClick={() => fetchAddSeatsInTable(table)}
+                                  >
+                                    Save
+                                  </button>
+                                )}
+
+                                {hasNewSeats && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-danger removeseats"
+                                    onClick={() =>
+                                      handleRemoveSeat(
+                                        selectedFloorIndex,
+                                        table,
+                                      )
+                                    }
+                                  >
+                                    -
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
-                        <div className="isSeats-selectall">
-                          {(() => {
-                            const allSelected = table.seats?.every(
-                              (s) => s.is_booking === true,
-                            );
+                          )}
+                        {Array.isArray(table.seats) &&
+                          table.seats.length > 0 &&
+                          (() => {
+                            // determine eligible seats based on role: admin sees booked+available, user sees available + their own booked
+                            const eligibleSeats =
+                              table.seats?.filter((s) =>
+                                isEditable === true ||
+                                auth?.details?.role === "Admin" ||
+                                auth?.details?.is_admin
+                                  ? s.status === 4 || s.status === 1
+                                  : s.status === 4 ||
+                                    (s.status === 1 &&
+                                      s.user_id === auth?.details?.id),
+                              ) || [];
+                            const allSelected =
+                              eligibleSeats.length > 0 &&
+                              eligibleSeats.every((s) => s.is_booking === true);
+
                             return (
                               <div
-                                className="flex-name-checkbox"
-                                onClick={() => handleSelectAllTable(selectedFloorIndex, table)}
-                                style={{ cursor: "pointer" }}
+                                className="isSeats-selectall"
+                                style={{ position: "relative" }}
                               >
-                                <img
-                                  className="checkbox-img"
-                                  src={allSelected ? checkedBlueIcon : blueBorderUnchecked}
-                                  alt="checkbox-img"
-                                />
-                                <span className="selectAllHead">&#160;{"Select Table"}</span>
+                                <button
+                                  className="flex-name-checkbox"
+                                  onClick={() => {
+                                    const hasBookedSeats = table.seats?.some(
+                                      (s) => s.status === 1,
+                                    );
+                                    const userBookedSeats = table.seats?.filter(
+                                      (s) =>
+                                        s.status === 1 &&
+                                        s.user_id === auth?.details?.id,
+                                    );
+                                    const anyEligibleSelected =
+                                      eligibleSeats.some(
+                                        (s) => s.is_booking === true,
+                                      );
+                                    const willSelect = !anyEligibleSelected;
+
+                                    // If non-admin user is about to select and this table contains their booked seats,
+                                    // show the cancel-confirmation popup instead of toggling selection immediately.
+                                    if (
+                                      !(
+                                        isEditable === true ||
+                                        auth?.details?.role === "Admin" ||
+                                        auth?.details?.is_admin
+                                      ) &&
+                                      willSelect &&
+                                      userBookedSeats?.length > 0
+                                    ) {
+                                      setCancelBookingSeats({
+                                        table_id: table.table_id,
+                                        seat_ids: userBookedSeats,
+                                      });
+                                      setShowCancelBookingSeats(true);
+                                      return;
+                                    }
+
+                                    // Otherwise toggle eligible seats on click
+                                    handleSelectAllTable(
+                                      selectedFloorIndex,
+                                      table,
+                                    );
+
+                                    // For admin: if we're selecting (willSelect) and table has booked seats, open action popup
+                                    if (
+                                      (isEditable === true ||
+                                        auth?.details?.role === "Admin" ||
+                                        auth?.details?.is_admin) &&
+                                      hasBookedSeats &&
+                                      willSelect
+                                    ) {
+                                      setOpenAdminPopupTableId(table.table_id);
+                                    } else {
+                                      // otherwise close popup
+                                      setOpenAdminPopupTableId(null);
+                                    }
+                                  }}
+                                  style={{ cursor: "pointer" }}
+                                  // disable select-all when there are no eligible seats
+                                  disabled={eligibleSeats.length === 0}
+                                >
+                                  <img
+                                    className="checkbox-img"
+                                    src={
+                                      allSelected
+                                        ? checkedBlueIcon
+                                        : blueBorderUnchecked
+                                    }
+                                    alt="checkbox-img"
+                                  />
+                                  <span className="selectAllHead">
+                                    &#160;{"Select Table"}
+                                  </span>
+                                </button>
+
+                                {openAdminPopupTableId === table.table_id && (
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      top: "28px",
+                                      left: 0,
+                                      background: "#fff",
+                                      border: "1px solid #ddd",
+                                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                                      borderRadius: 6,
+                                      zIndex: 2000,
+                                      padding: "6px 0",
+                                      minWidth: 140,
+                                    }}
+                                  >
+                                    {isEditable === true ||
+                                    auth?.details?.role === "Admin" ||
+                                    auth?.details?.is_admin ? (
+                                      <>
+                                        <div
+                                          className="admin-action-item"
+                                          style={{
+                                            padding: "6px 12px",
+                                            cursor: "pointer",
+                                          }}
+                                          onClick={() =>
+                                            handleAdminTableAction(
+                                              "seated",
+                                              table,
+                                            )
+                                          }
+                                        >
+                                          Seated
+                                        </div>
+                                        <div
+                                          className="admin-action-item"
+                                          style={{
+                                            padding: "6px 12px",
+                                            cursor: "pointer",
+                                          }}
+                                          onClick={() =>
+                                            handleAdminTableAction(
+                                              "cleaning",
+                                              table,
+                                            )
+                                          }
+                                        >
+                                          Cleaning
+                                        </div>
+                                        <div
+                                          className="admin-action-item"
+                                          style={{
+                                            padding: "6px 12px",
+                                            cursor: "pointer",
+                                          }}
+                                          onClick={() => {
+                                            // toggle select/deselect eligible seats
+                                            handleSelectAllTable(
+                                              selectedFloorIndex,
+                                              table,
+                                            );
+                                            setOpenAdminPopupTableId(null);
+                                          }}
+                                        >
+                                          Toggle Select
+                                        </div>
+                                        <div
+                                          className="admin-action-item"
+                                          style={{
+                                            padding: "6px 12px",
+                                            cursor: "pointer",
+                                          }}
+                                          onClick={() =>
+                                            handleAdminTableAction(
+                                              "completed",
+                                              table,
+                                            )
+                                          }
+                                        >
+                                          Completed
+                                        </div>
+                                        <div
+                                          className="admin-action-item text-danger"
+                                          style={{
+                                            padding: "6px 12px",
+                                            cursor: "pointer",
+                                          }}
+                                          onClick={() =>
+                                            handleAdminTableAction(
+                                              "cancel",
+                                              table,
+                                            )
+                                          }
+                                        >
+                                          Cancel Order
+                                        </div>
+                                      </>
+                                    ) : (
+                                      // Non-admin (user) - only show Cancel if user has booked seats on this table
+                                      table.seats?.some(
+                                        (s) =>
+                                          s.status === 1 &&
+                                          s.user_id === auth?.details?.id,
+                                      ) && (
+                                        <div
+                                          className="admin-action-item text-danger"
+                                          style={{
+                                            padding: "6px 12px",
+                                            cursor: "pointer",
+                                          }}
+                                          onClick={() =>
+                                            handleAdminTableAction(
+                                              "cancel",
+                                              table,
+                                            )
+                                          }
+                                        >
+                                          Cancel
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             );
                           })()}
-                        </div>
                         <div className="tables-section">
                           <Row className="top-row mb-2">
-                            {topRow.map((chair, cIndex) => (
-                              <Col
-                                key={cIndex}
-                                className="d-flex top-row-chair"
-                              >
-                                <button
-                                  className={`text-center rounded chairs ${
-                                    chair.is_booked
-                                      ? "chairBooked"
-                                      : "chairNotBooked"
-                                  }  ${chair.is_new ? "chairNew" : ""}`}
-                                  title={
-                                    seatsStatusList?.data?.filter(
-                                      (data) => data.status_id === chair.status,
-                                    )[0].name
-                                  }
-                                  disabled={
-                                    chair.is_booking !== true &&
-                                    ((chair.status === 1 &&
-                                      chair.user_id !== auth?.details?.id) ||
-                                      chair.notAccess ||
-                                      chair.is_new)
-                                  }
-                                  onClick={() => {
-                                    if (isEditable) {
-                                      handleRemoveThisSeat(table, chair);
-                                    } else if (
-                                      chair.status === 1 &&
-                                      chair.user_id === auth?.details?.id
-                                    ) {
-                                      handleCancelThisSeat(table, chair);
-                                    } else if (
-                                      isBooking &&
-                                      chair.status === 4
-                                    ) {
-                                      handleAddBookingSeat(
-                                        selectedFloorIndex,
-                                        table,
-                                        chair,
-                                      );
-                                    }
-                                  }}
+                            {topRow.map((chair, cIndex) => {
+                              const canAccessEdit =
+                                isEditable === true ||
+                                auth?.details?.role === "Admin" ||
+                                auth?.details?.is_admin ||
+                                (chair.status === 1 &&
+                                  chair.user_id === auth?.details?.id) ||
+                                chair.status === 4;
+
+                              return (
+                                <Col
+                                  key={cIndex}
+                                  className="d-flex top-row-chair"
                                 >
-                                  <SVGImage
-                                    className={"charsimage"}
-                                    isTransparent={true}
-                                    bgColor={
-                                      seatsStatusList?.data?.filter((data) =>
-                                        chair.is_booking
-                                          ? data.status_id === 1
-                                          : data.status_id === chair.status,
-                                      )[0].color_code
+                                  <button
+                                    className={`text-center rounded chairs ${
+                                      chair.reservation_id
+                                        ? "chairBooked"
+                                        : "chairNotBooked"
+                                    }  ${chair.is_new ? "chairNew" : ""}`}
+                                    title={
+                                      seatsStatusList?.data?.find(
+                                        (data) =>
+                                          data.status_id === chair.status,
+                                      )?.name || ""
                                     }
-                                  />
-                                  <span className="char-number">
-                                    {chair.seat_number}
-                                  </span>
-                                </button>
-                              </Col>
-                            ))}
+                                    disabled={!canAccessEdit}
+                                    onClick={() => {
+                                      if (isEditable) {
+                                        handleRemoveThisSeat(table, chair);
+                                      } else if (
+                                        chair.status === 1 &&
+                                        chair.user_id === auth?.details?.id
+                                      ) {
+                                        handleCancelThisSeat(table, chair);
+                                      } else if (
+                                        isBooking &&
+                                        chair.status === 4
+                                      ) {
+                                        handleAddBookingSeat(
+                                          selectedFloorIndex,
+                                          table,
+                                          chair,
+                                        );
+                                      }
+                                    }}
+                                  >
+                                    <SVGImage
+                                      className={"charsimage"}
+                                      isTransparent={true}
+                                      bgColor={
+                                        seatsStatusList?.data?.find((data) =>
+                                          chair.is_booking
+                                            ? data.status_id === 1
+                                            : data.status_id === chair.status,
+                                        )?.color_code || undefined
+                                      }
+                                    />
+                                    <span className="char-number">
+                                      {chair.seat_number}
+                                    </span>
+                                  </button>
+                                </Col>
+                              );
+                            })}
                           </Row>
 
                           <div
@@ -703,66 +1017,70 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                           </div>
 
                           <Row className="bottom-row mt-2">
-                            {bottomRow.map((chair, cIndex) => (
-                              <Col
-                                key={cIndex}
-                                className="d-flex bottom-row-chair"
-                              >
-                                <button
-                                  className={`text-center rounded chairs ${
-                                    chair.is_booked
-                                      ? "chairBooked"
-                                      : "chairNotBooked"
-                                  }  ${chair.is_new ? "chairNew" : ""}`}
-                                  title={
-                                    seatsStatusList?.data?.filter(
-                                      (data) => data.status_id === chair.status,
-                                    )[0].name
-                                  }
-                                  disabled={
-                                    chair.is_booking !== true &&
-                                    ((chair.status === 1 &&
-                                      chair.user_id !== auth?.details?.id) ||
-                                      chair.notAccess ||
-                                      chair.is_new)
-                                  }
-                                  onClick={() => {
-                                    if (isEditable) {
-                                      handleRemoveThisSeat(table, chair);
-                                    } else if (
-                                      chair.status === 1 &&
-                                      chair.user_id === auth?.details?.id
-                                    ) {
-                                      handleCancelThisSeat(table, chair);
-                                    } else if (
-                                      isBooking &&
-                                      chair.status === 4
-                                    ) {
-                                      handleAddBookingSeat(
-                                        selectedFloorIndex,
-                                        table,
-                                        chair,
-                                      );
-                                    }
-                                  }}
+                            {bottomRow.map((chair, cIndex) => {
+                              const canAccessEdit =
+                                isEditable === true ||
+                                auth?.details?.role === "Admin" ||
+                                auth?.details?.is_admin ||
+                                (chair.status === 1 &&
+                                  chair.user_id === auth?.details?.id) ||
+                                chair.status === 4;
+                              return (
+                                <Col
+                                  key={cIndex}
+                                  className="d-flex bottom-row-chair"
                                 >
-                                  <SVGImage
-                                    className={"charsimage"}
-                                    isTransparent={true}
-                                    bgColor={
-                                      seatsStatusList?.data?.filter((data) =>
-                                        chair.is_booking
-                                          ? data.status_id === 1
-                                          : data.status_id === chair.status,
-                                      )[0].color_code
+                                  <button
+                                    className={`text-center rounded chairs ${
+                                      chair.is_booked
+                                        ? "chairBooked"
+                                        : "chairNotBooked"
+                                    }  ${chair.is_new ? "chairNew" : ""}`}
+                                    title={
+                                      seatsStatusList?.data?.find(
+                                        (data) =>
+                                          data.status_id === chair.status,
+                                      )?.name || ""
                                     }
-                                  />
-                                  <span className="char-number">
-                                    {chair.seat_number}
-                                  </span>
-                                </button>
-                              </Col>
-                            ))}
+                                    disabled={!canAccessEdit}
+                                    onClick={() => {
+                                      if (isEditable) {
+                                        handleRemoveThisSeat(table, chair);
+                                      } else if (
+                                        chair.status === 1 &&
+                                        chair.user_id === auth?.details?.id
+                                      ) {
+                                        handleCancelThisSeat(table, chair);
+                                      } else if (
+                                        isBooking &&
+                                        chair.status === 4
+                                      ) {
+                                        handleAddBookingSeat(
+                                          selectedFloorIndex,
+                                          table,
+                                          chair,
+                                        );
+                                      }
+                                    }}
+                                  >
+                                    <SVGImage
+                                      className={"charsimage"}
+                                      isTransparent={true}
+                                      bgColor={
+                                        seatsStatusList?.data?.find((data) =>
+                                          chair.is_booking
+                                            ? data.status_id === 1
+                                            : data.status_id === chair.status,
+                                        )?.color_code || undefined
+                                      }
+                                    />
+                                    <span className="char-number">
+                                      {chair.seat_number}
+                                    </span>
+                                  </button>
+                                </Col>
+                              );
+                            })}
                           </Row>
                         </div>
                       </div>

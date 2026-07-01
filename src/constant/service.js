@@ -16,6 +16,7 @@ export const API = {
   RESERVATION_API: "/api/reservations",
   GET_RESERVATION_HOTEL: "/api/reservations/hotel",
   GET_RESERVATION_USER: "/api/reservations",
+  DASHBOARD_SUMMARY: "/api/reservations/dashboard/summary",
   CREATE_AREA_API: "/api/areas",
   GETALL_AREA_API: "/api/areas",
   CREATE_LOCATION_API: "/api/locations",

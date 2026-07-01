@@ -1,301 +1,90 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { appIcon } from "assets/images";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import * as menu from "assets/images";
-import packageJson from "./../../../../package.json";
 import LogoAvatarShowLetter from "components/common/LogoAvatarShowLetter";
 import useAuth from "hooks/useAuth";
 import { useGlobalContext } from "store/context/GlobalProvider";
 
 const SideNav = ({ onChange }) => {
   const navigate = useNavigate();
-  const [collaps, setCollaps] = useState(true);
-  const [{ data: auth }, { setAuth }] = useAuth();
-  const popupRef = useRef(null);
-  const [showInfo, setShowInfo] = useState(false);
-  const [profileLoading, setProfileLoading] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState(null);
   const location = useLocation();
-  const { authState, dispatch } = useGlobalContext();
-  const [showDrawer, setShowDrawer] = useState(false);
-  /** INITIAL CALL */
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        ((popupRef.current && !popupRef.current.contains(event.target)) ||
-          popupRef.current == null) &&
-        event.target.id !== "show_more_boards"
-      ) {
-        setShowInfo(false);
-      }
-    };
-    document.addEventListener("click", handleClickOutside);
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-    };
-  }, []);
+  const [expanded, setExpanded] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [{ data: auth }] = useAuth();
+  const { dispatch } = useGlobalContext();
+  const isAdmin = auth?.details?.role === "Admin";
 
-  /** HANDLE SHOW/HIDE MENU ITEM BASED ON USER CLICK */
-  const handleMenuItem = (e) => {
-    const showPopup = showInfo ? !showInfo : true;
-    if (e.type === "click" || e.key === "Enter") {
-      setShowInfo(showPopup);
-    }
+  useEffect(() => setMobileOpen(false), [location.pathname]);
+
+  const toggleSidebar = () => {
+    setExpanded((current) => {
+      onChange(current);
+      return !current;
+    });
   };
 
-  /** CLEARS TOKEN & LOGOUT USER */
   const userLogout = () => {
-    setShowInfo(false);
-    navigate("/");
     localStorage.removeItem("token");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("userInfo");
     dispatch({ type: "LOGOUT" });
+    navigate("/");
   };
 
-  // const handleMouseEnter = () => {
-  //   if (!collaps) {
-  //     setCollaps(true);
-  //     onChange(true);
-  //   }
-  // };
+  const navItems = [
+    { label: "Dashboard", to: "hotel/dashboard", icon: menu.dashboardIcon, activeIcon: menu.dashboardIconActive, match: "dashboard" },
+    ...(isAdmin ? [{ label: "Hotels", to: "hotel/create", icon: menu.hotelCreate, activeIcon: menu.hotelCreateActive, match: "hotel/create|hotel/details" }] : []),
+    { label: "Reservations", to: "hotel/booked-table", icon: menu.tableBookedList, activeIcon: menu.tableBookedListActive, match: "booked-table" },
+    { label: "Book a table", to: "hotel/book-table", icon: menu.tablesIcon, activeIcon: menu.tablesIconActive, match: "book-table" },
+  ];
 
-  // const handleMouseLeave = () => {
-  //   if (collaps) {
-  //     setCollaps(false);
-  //     onChange(false);
-  //   }
-  // };
-
-  const toggleDropdown = (key) => {
-    setActiveDropdown((prev) => (prev === key ? null : key));
-  };
-  const expandCollaps = (e) => {
-    let showTitle = collaps ? !collaps : true;
-    setCollaps(showTitle);
-    onChange(!showTitle);
-  };
-
-  return (
-    <>
-      <div
-        className={`sidenav-content ${collaps ? "expanded" : ""}`}
-        // onMouseEnter={handleMouseEnter}
-        // onMouseLeave={handleMouseLeave}
-      >
-        <>
-          <div className="sidenav-content__headings">
-            <div className={`header-content__logo ${collaps ? "collaps" : ""}`}>
-              <img
-                src={collaps ? appIcon : appIcon}
-                alt="app-logo"
-                className={!collaps ? "appLogo" : ""}
-              />
-            </div>
-
-            <div
-              className={
-                !collaps
-                  ? "sidenav-content__headings-lists collaps"
-                  : "sidenav-content__headings-lists"
-              }
-            >
-              {auth?.details?.role === "Admin" && (
-                <>
-                  {/* Dashboard */}
-                  <h5
-                    className="sidenav-content__headings-lists--title"
-                    title="Dashboard"
-                  >
-                    <NavLink to="hotel/dashboard" className="link-tag">
-                      {({ isActive, isPending }) => (
-                        <>
-                          <img
-                            src={
-                              isActive
-                                ? menu.dashboardIconActive
-                                : menu.dashboardIcon
-                            }
-                            alt="icon"
-                          />
-                          {collaps && "Dashboard"}
-                        </>
-                      )}
-                    </NavLink>
-                  </h5>
-
-                  {/* Create Hotel */}
-                  <h5
-                    className="sidenav-content__headings-lists--title"
-                    title="Dashboard"
-                  >
-                    <NavLink
-                      to="hotel/create"
-                      className={({ isActive }) =>
-                        `link-tag ${
-                          isActive ||
-                          location.pathname.includes("hotel/details")
-                            ? "active"
-                            : ""
-                        }`
-                      }
-                    >
-                      {({ isActive, isPending }) => (
-                        <>
-                          <img
-                            src={
-                              isActive ||
-                              location.pathname.includes("hotel/details")
-                                ? menu.hotelCreateActive
-                                : menu.hotelCreate
-                            }
-                            alt="icon"
-                          />
-                          {collaps && "Hotels"}
-                        </>
-                      )}
-                    </NavLink>
-                  </h5>
-                </>
-              )}
-              {/* Booked List */}
-              <h5
-                className="sidenav-content__headings-lists--title"
-                title="Dashboard"
-              >
-                <NavLink
-                  to="hotel/booked-table"
-                  className={({ isActive }) =>
-                    `link-tag ${
-                      isActive ||
-                      location.pathname.includes("booked-table/details")
-                        ? "active"
-                        : ""
-                    }`
-                  }
-                >
-                  {({ isActive, isPending }) => (
-                    <>
-                      <img
-                        src={
-                          isActive ||
-                          location.pathname.includes("booked-table/details")
-                            ? menu.tableBookedListActive
-                            : menu.tableBookedList
-                        }
-                        alt="icon"
-                      />
-                      {collaps && "Booked List"}
-                    </>
-                  )}
-                </NavLink>
-              </h5>
-              {/* Book Table */}
-              <h5
-                className="sidenav-content__headings-lists--title"
-                title="Dashboard"
-              >
-                <NavLink
-                  to="hotel/book-table"
-                  className={({ isActive }) =>
-                    `link-tag ${
-                      isActive ||
-                      location.pathname.includes("book-table/details")
-                        ? "active"
-                        : ""
-                    }`
-                  }
-                >
-                  {({ isActive, isPending }) => (
-                    <>
-                      <img
-                        src={
-                          isActive ||
-                          location.pathname.includes("book-table/details")
-                            ? menu.tablesIconActive
-                            : menu.tablesIcon
-                        }
-                        alt="icon"
-                      />
-                      {collaps && "Book Table"}
-                    </>
-                  )}
-                </NavLink>
-              </h5>
-            </div>
-                 {!showDrawer && (
-                <div className="expand__arrow" onClick={expandCollaps}>
-                  <span
-                    className={`icon-chevron-thin-right ${collaps && "rotate"} `}
-                  />
-                  {/* <img
-                src={collaps ? chevronLeftDuo : chevronRightDuo}
-                alt="arrow-icon"
-              /> */}
-                </div>
-              )}
-          </div>
-
-          <div
-            className={!collaps ? "others__options collaps" : "others__options"}
-          >
-            <div className="header-user-info" ref={popupRef}>
-              <div className="user-info" onClick={handleMenuItem}>
-                {auth?.details?.name && (
-                  <LogoAvatarShowLetter
-                    genaralData={auth.details}
-                    profilePhotoName={"photo"}
-                    profileName={"name"}
-                    outerClassName={"user-info__profile-pic"}
-                    innerClassName={"user-icon-photo"}
-                  ></LogoAvatarShowLetter>
-                )}
-                {collaps && (
-                  <div
-                    className={`user-info__details ${
-                      auth.details?.name ? auth.details?.name : "none"
-                    }`}
-                  >
-                    <p className="user-info__details-welcome-back">
-                      Welcome back{" "}
-                    </p>
-                    <p
-                      className="user-info__details-name"
-                      title={auth.details?.name || "User Name"}
-                    >
-                      {auth.details?.name || "User Name"}
-                    </p>
-                    <p className="user-info__details-role" title={"Guest"}>
-                      {auth.details?.role || "Gust"}
-                    </p>
-                  </div>
-                )}
-              </div>
-              {showInfo && (
-                <div className="user-info__popup">
-                  <div className="user-info__popup-profile">
-                    <p>
-                      <button
-                        className="user-info__popup-logout-btn"
-                        onClick={userLogout}
-                      >
-                        {"Logout"}
-                      </button>
-                    </p>
-                  </div>
-                </div>
-              )}
-         
-            </div>
-            {/* <p className="version-info">
-              {collaps ? "Version " : "v"}
-              {packageJson.version}
-            </p> */}
-          </div>
-        </>
+  return <>
+    <button className="mobile-nav-toggle" onClick={() => setMobileOpen(true)} aria-label="Open navigation">
+      <span/><span/><span/>
+    </button>
+    {mobileOpen && <button className="sidenav-overlay" onClick={() => setMobileOpen(false)} aria-label="Close navigation"/>}
+    <aside className={`sidenav-content modern-sidenav ${expanded ? "expanded" : "compact"} ${mobileOpen ? "mobile-open" : ""}`}>
+      <div className="sidenav-brand">
+        <div className="brand-mark"><img src={appIcon} alt="Table booking"/></div>
+        {expanded && <div className="brand-copy"><strong>TableFlow</strong><span>Hotel workspace</span></div>}
       </div>
-    </>
-  );
+
+      <div className="sidenav-scroll">
+        {expanded && <p className="nav-section-label">Workspace</p>}
+        <nav className="modern-nav" aria-label="Main navigation">
+          {navItems.map((item) => {
+            const manuallyActive = new RegExp(item.match).test(location.pathname);
+            return <NavLink key={item.label} to={item.to} title={!expanded ? item.label : undefined} className={() => `modern-nav-link ${manuallyActive ? "active" : ""}`}>
+              <span className="nav-icon"><img src={manuallyActive ? item.activeIcon : item.icon} alt=""/></span>
+              {expanded && <span className="nav-label">{item.label}</span>}
+              {expanded && manuallyActive && <span className="active-dot"/>}
+            </NavLink>;
+          })}
+        </nav>
+
+        {expanded && <div className="sidebar-insight">
+          <span className="insight-icon">✦</span>
+          <div><strong>Ready for service</strong><p>Manage today’s bookings from your dashboard.</p></div>
+        </div>}
+      </div>
+
+      <div className="sidenav-footer">
+        {expanded && <div className="system-status"><span/> All systems operational</div>}
+        <div className="sidebar-user">
+          {auth?.details?.name ? <LogoAvatarShowLetter genaralData={auth.details} profilePhotoName="photo" profileName="name" outerClassName="sidebar-avatar" innerClassName="user-icon-photo"/> : <span className="sidebar-avatar fallback">U</span>}
+          {expanded && <div className="sidebar-user-copy"><strong title={auth?.details?.name}>{auth?.details?.name || "User"}</strong><span>{auth?.details?.role || "Guest"}</span></div>}
+          <button className="sidebar-logout" onClick={userLogout} title="Log out" aria-label="Log out">
+            <svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3M14 3h4a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-4"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <button className="sidebar-collapse" onClick={toggleSidebar} aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}>
+        <svg viewBox="0 0 24 24"><path d={expanded ? "m15 18-6-6 6-6" : "m9 18 6-6-6-6"}/></svg>
+      </button>
+    </aside>
+  </>;
 };
 
 export default SideNav;
