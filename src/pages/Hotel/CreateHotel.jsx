@@ -529,7 +529,8 @@ const CreateHotel = () => {
           show={showCreateHotelForm}
           onClose={closeShowPopup}
           className={"create-hotel-page-popup-content bg-white rounded-4"}
-          width={"680px"}
+          size="lg"
+          customClassName="property-modal-dialog"
           header={true}
           title={<span className="move-to-aarow">{updateHotel ? "Edit property" : "Create new property"}</span>}
         >

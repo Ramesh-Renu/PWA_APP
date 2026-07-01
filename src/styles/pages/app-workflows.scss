@@ -35,3 +35,12 @@
 .table-details-card .scroll-inner{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:stretch;overflow:visible!important;max-height:none!important}
 .table-details-card .table-box{width:100%;min-width:0!important;min-height:215px;margin:0!important;display:flex;flex-direction:column;justify-content:center}
 .table-details-card .tables-section{margin-top:auto;margin-bottom:auto}.table-details-card .isSeats-selectall{margin-bottom:12px!important}.table-details-card .flex-name-checkbox{font-size:12px}.table-details-card .char-number{font-size:11px!important}.table-details-card .card-body .text-muted{font-size:11px!important}
+
+/* Keep property modal header and body on one sizing system. */
+.property-modal-dialog{width:calc(100% - 32px)!important;max-width:680px!important;margin-inline:auto!important}
+.property-modal-dialog .modal-content{width:100%;min-width:0;border:0;border-radius:22px;overflow:hidden;box-shadow:0 28px 80px rgba(28,24,65,.28)}
+.property-modal-dialog .modal-header{padding:20px 24px;border-bottom:1px solid #eceaf4}.property-modal-dialog .modal-title,.property-modal-dialog .move-to-aarow{color:#282c43;font-size:21px!important;font-weight:750}.property-modal-dialog .btn-close{margin-right:0}
+.property-modal-dialog .create-hotel-page-popup-content{width:100%!important;max-width:none!important;max-height:calc(100vh - 105px);overflow-y:auto;overflow-x:hidden;padding:0 24px 24px!important;border-radius:0!important;box-shadow:none!important}
+.property-modal-dialog .create-hotel-page-popup-content .row{--bs-gutter-x:14px;margin-right:0;margin-left:0}.property-modal-dialog .create-hotel-page-popup-content .col-12{min-width:0}
+@media(min-width:768px){.property-modal-dialog .create-hotel-page-popup-content .col-md-6{width:50%}}
+@media(max-width:650px){.property-modal-dialog{width:calc(100% - 20px)!important;margin:10px auto!important}.property-modal-dialog .modal-header{padding:16px 18px}.property-modal-dialog .create-hotel-page-popup-content{max-height:calc(100vh - 82px);padding:0 12px 18px!important}.property-modal-dialog .create-hotel-page-popup-content .col-12{width:100%}}
