@@ -37,6 +37,31 @@ const Dashboard = () => {
   const [rangeEnd, setRangeEnd] = useState("");
 
   const buildFilterParams = () => {
+    const now = new Date();
+    if (filterType === "last7") {
+      const end = new Date(now);
+      const start = new Date(end);
+      start.setDate(end.getDate() - 6);
+      return { start_date: start.toISOString().slice(0, 10), end_date: end.toISOString().slice(0, 10) };
+    }
+    if (filterType === "last30") {
+      const end = new Date(now);
+      const start = new Date(end);
+      start.setDate(end.getDate() - 29);
+      return { start_date: start.toISOString().slice(0, 10), end_date: end.toISOString().slice(0, 10) };
+    }
+    if (filterType === "last60") {
+      const end = new Date(now);
+      const start = new Date(end);
+      start.setDate(end.getDate() - 59);
+      return { start_date: start.toISOString().slice(0, 10), end_date: end.toISOString().slice(0, 10) };
+    }
+    if (filterType === "last90") {
+      const end = new Date(now);
+      const start = new Date(end);
+      start.setDate(end.getDate() - 89);
+      return { start_date: start.toISOString().slice(0, 10), end_date: end.toISOString().slice(0, 10) };
+    }
     if (filterType === "date" && selectedDate) {
       return { start_date: selectedDate, end_date: selectedDate };
     }
@@ -83,6 +108,18 @@ const Dashboard = () => {
   }, [filterType, selectedDate, selectedMonth, selectedYear, rangeStart, rangeEnd, loadDashboard, initialLoad]);
 
   const trendSubtitle = useMemo(() => {
+    if (filterType === "last7") {
+      return "Reservations over the last 7 days";
+    }
+    if (filterType === "last30") {
+      return "Reservations over the last 30 days";
+    }
+    if (filterType === "last60") {
+      return "Reservations over the last 60 days";
+    }
+    if (filterType === "last90") {
+      return "Reservations over the last 90 days";
+    }
     if (filterType === "date" && selectedDate) {
       return `Reservations for ${new Date(selectedDate).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })}`;
     }
@@ -101,9 +138,79 @@ const Dashboard = () => {
     return "Reservations over the last 7 days";
   }, [filterType, selectedDate, selectedMonth, selectedYear, rangeStart, rangeEnd]);
 
+  const getRangeDays = useMemo(() => {
+    if (filterType === "last7") return 7;
+    if (filterType === "last30") return 30;
+    if (filterType === "last60") return 60;
+    if (filterType === "last90") return 90;
+    if (filterType === "date") return 1;
+    if (filterType === "month") {
+      const [year, month] = selectedMonth.split("-");
+      return new Date(Number(year), Number(month), 0).getDate();
+    }
+    if (filterType === "year") return 365;
+    if (filterType === "range" && rangeStart && rangeEnd) {
+      const start = new Date(rangeStart);
+      const end = new Date(rangeEnd);
+      const diffTime = Math.max(0, end.getTime() - start.getTime());
+      return Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    }
+    return 0;
+  }, [filterType, selectedMonth, rangeStart, rangeEnd]);
+
+  const aggregationMode = useMemo(() => {
+    if (filterType === "last60" || filterType === "last90") return "weekly";
+    if (filterType === "range" && getRangeDays > 30) return "weekly";
+    return "daily";
+  }, [filterType, getRangeDays]);
+
+  const aggregatedTrend = useMemo(() => {
+    const raw = data?.trend || [];
+    if (!raw.length) return [];
+    if (aggregationMode === "daily") {
+      return raw.map((item) => ({
+        label: new Date(item.date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+        bookings: item.bookings,
+      }));
+    }
+
+    const startDate = new Date(raw[0].date);
+    startDate.setHours(0, 0, 0, 0);
+    const buckets = [];
+    raw.forEach((item) => {
+      const current = new Date(item.date);
+      current.setHours(0, 0, 0, 0);
+      const diffDays = Math.floor((current - startDate) / (1000 * 60 * 60 * 24));
+      const weekIndex = Math.floor(diffDays / 7);
+      if (!buckets[weekIndex]) {
+        const weekStart = new Date(startDate);
+        weekStart.setDate(startDate.getDate() + weekIndex * 7);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        buckets[weekIndex] = {
+          periodStart: weekStart,
+          periodEnd: weekEnd,
+          bookings: 0,
+        };
+      }
+      buckets[weekIndex].bookings += item.bookings;
+    });
+
+    return buckets.map((bucket) => {
+      const lastTrendDate = new Date(data?.trend?.slice(-1)[0]?.date || bucket.periodStart);
+      const labelEnd = bucket.periodEnd.getTime() > lastTrendDate.getTime() ? lastTrendDate : bucket.periodEnd;
+      const labelStartText = bucket.periodStart.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      const labelEndText = labelEnd.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      return {
+        label: `${labelStartText} - ${labelEndText}`,
+        bookings: bucket.bookings,
+      };
+    });
+  }, [data, aggregationMode]);
+
   const maxBookings = useMemo(
-    () => Math.max(1, ...(data?.trend || []).map((item) => item.bookings)),
-    [data]
+    () => Math.max(1, ...(aggregatedTrend || []).map((item) => item.bookings)),
+    [aggregatedTrend]
   );
 
   const handleViewReservationDetails = (reservation) => {
@@ -142,6 +249,9 @@ const Dashboard = () => {
         <label htmlFor="filterType">Filter by</label>
         <select id="filterType" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
           <option value="last7">Last 7 days</option>
+          <option value="last30">Last 30 days</option>
+          <option value="last60">Last 60 days</option>
+          <option value="last90">Last 90 days</option>
           <option value="date">Specific date</option>
           <option value="month">Month</option>
           <option value="year">Year</option>
@@ -151,7 +261,13 @@ const Dashboard = () => {
           className="filter-apply-button"
           type="button"
           onClick={() => loadDashboard(buildFilterParams())}
-          disabled={filterType === "range" ? !(rangeStart && rangeEnd) : filterType !== "last7" && !((filterType === "date" && selectedDate) || (filterType === "month" && selectedMonth) || (filterType === "year" && selectedYear))}
+          disabled={
+            filterType === "range"
+              ? !(rangeStart && rangeEnd)
+              : ["last7", "last30", "last60", "last90"].includes(filterType)
+              ? false
+              : (filterType === "date" && !selectedDate) || (filterType === "month" && !selectedMonth) || (filterType === "year" && !selectedYear)
+          }
         >
           Apply
         </button>
@@ -200,21 +316,33 @@ const Dashboard = () => {
 
     <section className="dashboard-grid">
       <article className="dashboard-panel trend-panel">
-        <div className="panel-heading"><div><h2>Booking trend</h2><p>{trendSubtitle}</p></div><span className="live-chip">{filterType === "last7" ? "7 DAYS" : "FILTERED"}</span></div>
+        <div className="panel-heading"><div><h2>Booking trend</h2><p>{trendSubtitle}</p></div><span className="live-chip">{aggregationMode === "weekly" ? "WEEKLY" : "DAILY"}</span></div>
         <div className="bar-chart">
-          {(data?.trend || []).map((item) => <div className="bar-column" key={item.date}>
+          {aggregatedTrend.map((item, index) => <div className="bar-column" key={`${item.label}-${index}`}>
             <span className="bar-value">{item.bookings}</span>
             <div className="bar-track"><div className="bar-fill" style={{height: `${Math.max(5, (item.bookings / maxBookings) * 100)}%`}}/></div>
-            <span>{new Date(`${item.date}T00:00:00`).toLocaleDateString(undefined, { weekday: "short" })}</span>
+            <span>{item.label}</span>
           </div>)}
         </div>
       </article>
 
       <article className="dashboard-panel status-panel">
         <div className="panel-heading"><div><h2>Today’s flow</h2><p>Reservation status at a glance</p></div></div>
-        <div className="occupancy-ring" style={{"--progress": `${totals.occupancyRate || 0}%`}}><div><strong>{totals.occupancyRate || 0}%</strong><span>occupied</span></div></div>
-        <div className="status-list">
-          {Object.entries(data?.todayStatus || {}).map(([key, value]) => <div key={key}><span className={`status-dot ${key}`}/><span>{key}</span><strong>{value}</strong></div>)}
+        <div className="occupancy-chart-container">
+          <div className="occupancy-ring" style={{"--progress": `${totals.occupancyRate || 0}%`}}><div><strong>{totals.occupancyRate || 0}%</strong><span>occupied</span></div></div>
+          <div className="status-values-display">
+            {Object.entries(data?.todayStatus || {}).map(([key, value]) => {
+              return (
+                <div key={key} className={`status-value-box ${key}`}>
+                  <div className="status-dot-inline"></div>
+                  <div className="status-info">
+                    <span className="status-label">{key}</span>
+                    <span className="status-count">{value}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </article>
     </section>

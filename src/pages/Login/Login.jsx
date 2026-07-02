@@ -5,6 +5,8 @@ import appConstants from "constant/common";
 import useToast from "hooks/useToast";
 import useAuth from "hooks/useAuth";
 import { createUser, getOTp } from "services";
+import { AiOutlineMail, AiOutlinePhone, AiOutlineUser, AiOutlineEnvironment } from "react-icons/ai";
+import { MdOutlineVisibility, MdOutlineVisibilityOff } from "react-icons/md";
 
 export default function Login() {
   const { showToast } = useToast();
@@ -19,6 +21,7 @@ export default function Login() {
   const [enableOTPsent, setEnableOTPsent] = useState(true);
   const [activeForm, setActiveForm] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -33,9 +36,11 @@ export default function Login() {
     mobilenumber: false,
     location: false,
   });
+  const [otpTimer, setOtpTimer] = useState(0);
   const handleSendOtp = (e) => {
     e.preventDefault();
     setShowOTPSent(true);
+    setOtpTimer(60);
     try {
       const response = getOTp({
         mobilenumber: mobile,
@@ -45,6 +50,11 @@ export default function Login() {
 
         if (res.success) {
           showToast({ message: res.message, variant: "success" });
+          setOtpTimer(60);
+          const timer = setInterval(() => {
+            setOtpTimer((prev) => (prev > 0 ? prev - 1 : 0));
+          }, 1000);
+          return () => clearInterval(timer);
         } else {
           showToast({ message: res.message, variant: "danger" });
         }
@@ -154,63 +164,161 @@ export default function Login() {
     }
   };
   return (
-    <>
-      <div className="login-page">
-        <div className="login-form">
-          <div className="login-form-banner">
-            <img src={loginBanner} alt="Login" />
+    <div className="modern-login-container">
+      <div className="login-left-section">
+        <div className="login-brand">
+          <h1 className="brand-title">HotelApp</h1>
+          <p className="brand-subtitle">Table Reservation System</p>
+        </div>
+        <div className="login-illustration">
+          <img src={loginBanner} alt="Hotel Booking" />
+        </div>
+        <div className="login-features">
+          <div className="feature-item">
+            <span className="feature-icon">✓</span>
+            <p>Quick & Easy Booking</p>
           </div>
-          <div className="login-form-container">
-            {" "}
-            <p className="login-form-container-title">{"Welcome"}!</p>
-            {!activeForm && (
-              <>
-                <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
-                  Login with Mobile
-                </h2>
-              </>
-            )}
-            <div className="login-form-signup">
-              {" "}
-              <div className="form-row">
-                <div className="form-col">
-                  <label className="input-label">
-                    {"Mobile Number"} <sup>*</sup>{" "}
-                  </label>
-                  <input
-                    ref={inputRef}
-                    type="tel"
-                    value={mobile}
-                    onChange={(e) => handleCheckMobilenumber(e.target.value)}
-                    style={{ height: "45px" }}
-                    placeholder="Enter your mobile number"
-                    className="w-full px-4 py-2 border rounded-xl focus:outline-none w-100"
-                  />
-                </div>
+          <div className="feature-item">
+            <span className="feature-icon">✓</span>
+            <p>Real-Time Availability</p>
+          </div>
+          <div className="feature-item">
+            <span className="feature-icon">✓</span>
+            <p>Secure & Reliable</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="login-right-section">
+        <div className="login-card">
+          {!activeForm ? (
+            <div className="login-form-wrapper">
+              <div className="form-header">
+                <h2>{!showOTPSent ? "Welcome Back" : "Enter OTP"}</h2>
+                <p>{!showOTPSent ? "Sign in to your account" : "We've sent an OTP to your mobile"}</p>
               </div>
-              {/* OTP Section */}
-              {showOTPSent && !activeForm && (
-                <div className="mt-3">
-                  <label className="block text-gray-600 mb-1">OTP</label>
-                  <input
-                    type="text"
-                    value={getOTPnumber}
-                    onChange={(e) => handleCheckOTPNumber(e.target.value)}
-                    placeholder="Enter OTP"
-                    style={{ height: "45px" }}
-                    className="w-full px-4 py-2 border rounded-xl focus:outline-none w-100"
-                  />
-                </div>
-              )}
-              {activeForm && (
-                <Fragment>
-                  <div className="form-row mt-3">
-                    <div className="form-col">
-                      <label className="input-label">
-                        {"First name"} <sup>*</sup>{" "}
-                      </label>
+
+              <form className="modern-form">
+                {!showOTPSent ? (
+                  <div className="form-group">
+                    <label className="form-label">
+                      Mobile Number <span className="required">*</span>
+                    </label>
+                    <div className="input-wrapper">
+                      <AiOutlinePhone className="input-icon" />
                       <input
-                        className="input-type"
+                        ref={inputRef}
+                        type="tel"
+                        value={mobile}
+                        onChange={(e) => handleCheckMobilenumber(e.target.value)}
+                        placeholder="Enter your 10-digit mobile number"
+                        className="modern-input"
+                        maxLength="10"
+                      />
+                    </div>
+                    {errorMsg.phone && (
+                      <span className="error-text">Please enter a valid phone number</span>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <div className="form-group">
+                      <label className="form-label">
+                        OTP <span className="required">*</span>
+                      </label>
+                      <div className="input-wrapper">
+                        <input
+                          type="text"
+                          value={getOTPnumber}
+                          onChange={(e) => handleCheckOTPNumber(e.target.value)}
+                          placeholder="Enter 6-digit OTP"
+                          className="modern-input"
+                          maxLength="6"
+                        />
+                      </div>
+                    </div>
+                    {otpTimer > 0 && (
+                      <p className="otp-timer">OTP expires in: {otpTimer}s</p>
+                    )}
+                  </>
+                )}
+
+                <div className="form-button-group">
+                  {!showOTPSent ? (
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      disabled={enableOTPsent}
+                      className="btn btn-primary btn-block"
+                    >
+                      Send OTP
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={(e) => handleLogin(e)}
+                        disabled={getOTPnumber.length < 6 || inProgress}
+                        className="btn btn-primary btn-block"
+                      >
+                        {inProgress ? "Logging in..." : "Login"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSendOtp}
+                        disabled={otpTimer > 0}
+                        className="btn btn-secondary btn-block"
+                      >
+                        {otpTimer > 0 ? `Resend in ${otpTimer}s` : "Resend OTP"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowOTPSent(false);
+                          setGetOTPnumber("");
+                          setOtpTimer(0);
+                        }}
+                        className="btn btn-text btn-block"
+                      >
+                        Change Number
+                      </button>
+                    </>
+                  )}
+                </div>
+              </form>
+
+              <div className="divider">
+                <span>Don't have an account?</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveForm(true);
+                  setShowOTPSent(false);
+                }}
+                className="btn btn-outline btn-block"
+              >
+                Create New Account
+              </button>
+            </div>
+          ) : (
+            <div className="signup-form-wrapper">
+              <div className="form-header">
+                <h2>Create Account</h2>
+                <p>Join us today to start booking tables</p>
+              </div>
+
+              <form className="modern-form">
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">
+                      First Name <span className="required">*</span>
+                    </label>
+                    <div className="input-wrapper">
+                      <AiOutlineUser className="input-icon" />
+                      <input
+                        type="text"
                         value={formData.firstName}
                         onChange={(e) =>
                           setFormData({
@@ -218,19 +326,19 @@ export default function Login() {
                             firstName: e.target?.value,
                           })
                         }
-                        style={{ height: "45px" }}
-                        placeholder={"First name"}
-                        maxLength={"50"}
-                        autofocus
+                        placeholder="First name"
+                        className="modern-input"
+                        maxLength="50"
+                        autoFocus
                       />
-                      <label className="error-msg">
-                        {errorMsg.firstName === true && "First name"}
-                      </label>
                     </div>
-                    <div className="form-col">
-                      <label className="input-label"> {"Last name"} </label>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Last Name</label>
+                    <div className="input-wrapper">
+                      <AiOutlineUser className="input-icon" />
                       <input
-                        className="input-type"
+                        type="text"
                         value={formData.lastName}
                         onChange={(e) =>
                           setFormData({
@@ -238,178 +346,109 @@ export default function Login() {
                             lastName: e.target?.value,
                           })
                         }
-                        style={{ height: "45px" }}
-                        maxLength={"50"}
-                        placeholder={"Last name"}
+                        placeholder="Last name"
+                        className="modern-input"
+                        maxLength="50"
                       />
                     </div>
                   </div>
-                  <div className="form-row">
-                    <div className="form-col">
-                      <label className="input-label">
-                        {" "}
-                        {"Email"} <sup>*</sup>{" "}
-                      </label>
-                      <input
-                        className="input-type"
-                        value={formData.email}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            email: e.target?.value,
-                          })
-                        }
-                        style={{ height: "45px" }}
-                        placeholder={"Email"}
-                      />
-                      <label className="error-msg">
-                        {errorMsg.email === true &&
-                          formData.email === "" &&
-                          "Please enter your email address."}
-                        {errorMsg.email === true &&
-                          formData.email !== "" &&
-                          errorMsg.invalidEmail === true &&
-                          "Please enter a valid email address."}
-                      </label>
-                    </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">
+                    Email <span className="required">*</span>
+                  </label>
+                  <div className="input-wrapper">
+                    <AiOutlineMail className="input-icon" />
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          email: e.target?.value,
+                        })
+                      }
+                      placeholder="your@email.com"
+                      className="modern-input"
+                    />
                   </div>
-                  <div className="form-row">
-                    <div className="form-col">
-                      <label className="input-label">
-                        {" "}
-                        {"location"} <sup>*</sup>{" "}
-                      </label>
-                      <input
-                        className="input-type"
-                        value={formData.location}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            location: e.target?.value,
-                          })
-                        }
-                        style={{ height: "45px" }}
-                        placeholder={"Email"}
-                      />
-                      <label className="error-msg">
-                        {errorMsg.email === true &&
-                          formData.email === "" &&
-                          "Please enter your location."}
-                        {errorMsg.email === true &&
-                          formData.email !== "" &&
-                          errorMsg.invalidEmail === true &&
-                          "Please enter a valid location."}
-                      </label>
-                    </div>
+                  {errorMsg.email && (
+                    <span className="error-text">Please enter a valid email</span>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">
+                    Mobile Number <span className="required">*</span>
+                  </label>
+                  <div className="input-wrapper">
+                    <AiOutlinePhone className="input-icon" />
+                    <input
+                      type="tel"
+                      value={mobile}
+                      onChange={(e) => handleCheckMobilenumber(e.target.value)}
+                      placeholder="10-digit mobile number"
+                      className="modern-input"
+                      maxLength="10"
+                    />
                   </div>
-                  <button
-                    className="login-form-container-button-common mt-10"
-                    onClick={handleSubmitForm}
-                    tabIndex={0}
-                  >
-                    {"Sign Up"}
-                  </button>{" "}
-                </Fragment>
-              )}
-            </div>
-            {!showOTPSent && !activeForm ? (
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">
+                    Location <span className="required">*</span>
+                  </label>
+                  <div className="input-wrapper">
+                    <AiOutlineEnvironment className="input-icon" />
+                    <input
+                      type="text"
+                      value={formData.location}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          location: e.target?.value,
+                        })
+                      }
+                      placeholder="Your location"
+                      className="modern-input"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSubmitForm}
+                  className="btn btn-primary btn-block btn-lg"
+                >
+                  Sign Up
+                </button>
+              </form>
+
+              <div className="divider">
+                <span>Already have an account?</span>
+              </div>
+
               <button
-                onClick={handleSendOtp}
-                className="login-form-container-button-common mt-3"
-                disabled={enableOTPsent}
-                style={{
-                  background: !enableOTPsent
-                    ? "#0bc1ba"
-                    : "var(--color-primary)",
-                }}
-                tabIndex={0}
-              >
-                Send OTP
-              </button>
-            ) : (
-              <>
-                {inProgress && (
-                  <button
-                    className="login-form-container-button"
-                    style={{
-                      background: "var(--color-primary)",
-                      width: "100%",
-                      border: "none",
-                      borderRadius: "6px",
-                      height: "44px",
-                      marginTop: "20px",
-                    }}
-                    tabIndex={0}
-                  >
-                    <span>{"Loading"}...</span>
-                  </button>
-                )}
-                {!inProgress && !activeForm && (
-                  <div className="login-form-container-button form-row">
-                    {/* LOGIN BUTTON */}
-                    <div className="col-6">
-                      <button
-                        className="login-form-container-button-common"
-                        style={{
-                          background:
-                            getOTPnumber.length > 0
-                              ? "#0bc1ba"
-                              : "var(--color-primary)",
-                          width: "100%",
-                          border: "none",
-                          borderRadius: "6px",
-                          height: "44px",
-                          marginTop: "20px",
-                        }}
-                        onClick={(e) => handleLogin(e)}
-                        disabled={getOTPnumber.length > 0 ? false : true}
-                        tabIndex={0}
-                      >
-                        {"Login"}
-                      </button>
-                    </div>
-                    <div className="col-6">
-                      <button
-                        className="login-form-container-button-common"
-                        style={{
-                          background:
-                            getOTPnumber.length > 0
-                              ? "#0bc1ba"
-                              : "var(--color-primary)",
-                          width: "100%",
-                          border: "none",
-                          borderRadius: "6px",
-                          height: "44px",
-                          marginTop: "20px",
-                        }}
-                        onClick={(e) => handleLogin(e)}
-                        disabled={getOTPnumber.length > 0 ? false : true}
-                        tabIndex={0}
-                      >
-                        {"Resend"}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-            <p className="login-form-container-signupbtn">
-              {!activeForm
-                ? "Don't have an account"
-                : "Already have an account"}{" "}
-              <span
+                type="button"
                 onClick={() => {
-                  setActiveForm(!activeForm);
+                  setActiveForm(false);
                   setShowOTPSent(false);
+                  setMobile("");
+                  setGetOTPnumber("");
                 }}
+                className="btn btn-outline btn-block"
               >
-                {!activeForm ? "Signup" : "Login"}
-              </span>{" "}
-              ?
-            </p>
-          </div>
+                Back to Login
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="login-footer">
+          <p>© 2024 HotelApp. All rights reserved.</p>
         </div>
       </div>
-    </>
+    </div>
   );
 }
