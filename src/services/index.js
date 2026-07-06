@@ -47,7 +47,7 @@ export const updateReservation = (reservationId, body) => baseAPI.PUT(`${API.RES
 export const updateDiningStatus = (reservationId, body) =>baseAPI.PATCH(`${API.RESERVATION_API}/${reservationId}/dining-status`, body);
 export const getReservationByHotel = (params) => baseAPI.GET(API.GET_RESERVATION_HOTEL+"/"+params.hotel_id);
 export const getReservationByUser = (params) => baseAPI.GET(API.GET_RESERVATION_USER);
-export const getDashboardSummary = (params) => baseAPI.GET(API.DASHBOARD_SUMMARY, params);
+export const getDashboardSummary = (params) => baseAPI.POST(API.DASHBOARD_SUMMARY, params);
 export const deleteReservation = (params) => baseAPI.DELETE(API.RESERVATION_API+"/"+params.reservation_id+"/cancel");
 
 /** Masters */

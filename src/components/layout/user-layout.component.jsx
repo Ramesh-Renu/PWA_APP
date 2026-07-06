@@ -1,6 +1,7 @@
 import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { Fragment, useState, useEffect, useCallback } from "react";
 import SideNav from "./sidenav/sidenav.component";
+import ThemeToggle from "components/common/ThemeToggle";
 import { useGlobalContext } from "store/context/GlobalProvider";
 import useAuth from "hooks/useAuth";
 import { getRefreshTocken } from "services";
@@ -76,6 +77,16 @@ const UserLayout = () => {
       <div className={`layout-container ${collapseNav ? "" : "left-sidebar"}`}>
         <SideNav onChange={tempChange} />
         <div className="container layout-page">
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              padding: "1rem 0",
+            }}
+          >
+            <ThemeToggle />
+          </div>
           <Outlet />
         </div>
       </div>

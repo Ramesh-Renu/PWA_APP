@@ -6,7 +6,17 @@
       "@core/*": ["core/*"],
       "@hooks/*": ["hooks/*"],
       "@shared/*": ["shared/*"],
-      "@assets/*": ["assets/*"]
+      "@assets/*": ["assets/*"],
+      "components/*": ["components/*"],
+      "pages/*": ["pages/*"],
+      "store/*": ["store/*"],
+      "services/*": ["services/*"],
+      "styles/*": ["styles/*"],
+      "assets/*": ["assets/*"],
+      "config/*": ["config/*"],
+      "constant/*": ["constant/*"],
+      "utils/*": ["utils/*"],
+      "theme/*": ["theme/*"]
     }
   },
   "include": ["src"]
