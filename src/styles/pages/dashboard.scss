@@ -24,7 +24,7 @@
   margin-bottom: 24px;
   color: #fff;
   border-radius: 26px;
-  background: linear-gradient(120deg, #5138cc 0%, #7c3aed 48%, #c026d3 100%);
+  background: linear-gradient(120deg, #0a4b43 0%, #0f766e 48%, #0a5f58 100%);
   box-shadow: 0 18px 45px rgba(91, 53, 213, 0.25);
 }
 .dashboard-header .eyebrow {
@@ -106,7 +106,7 @@ input {
 }
 .dashboard-filters select:focus,
 input:focus {
-  border-color: #7c3aed;
+  border-color: #0f766e;
 }
 .dashboard-filters .filter-inputs {
   display: grid;
@@ -116,7 +116,7 @@ input:focus {
 }
 .dashboard-filters .filter-apply-button {
   border: 0;
-  background: linear-gradient(135deg, #7c3aed, #c026d3);
+  background: linear-gradient(135deg, #0f766e, #0a5f58);
   color: #fff;
   border-radius: 14px;
   padding: 12px 22px;
@@ -159,15 +159,15 @@ input:focus {
   cursor: pointer;
 }
 .dashboard-filters .custom-range-preview input:focus {
-  border-color: #7c3aed;
+  border-color: #0f766e;
 }
 .dashboard-filters .range-picker-button {
   min-height: 48px;
   padding: 12px 18px;
   border-radius: 14px;
-  border: 1px solid #7c3aed;
+  border: 1px solid #0f766e;
   background: transparent;
-  color: #7c3aed;
+  color: #0f766e;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
@@ -354,7 +354,7 @@ display: none !important;
   background: #fb7185;
 }
 .metric-card.purple:after {
-  background: #8b5cf6;
+  background: #0f766e;
 }
 .metric-card.blue:after {
   background: #0ea5e9;
@@ -385,7 +385,7 @@ display: none !important;
   box-shadow: 0 9px 20px rgba(249, 115, 22, 0.23);
 }
 .metric-icon.purple {
-  background: linear-gradient(135deg, #8b5cf6, #c026d3);
+  background: linear-gradient(135deg, #0f766e, #0a5f58);
   box-shadow: 0 9px 20px rgba(139, 92, 246, 0.24);
 }
 .metric-icon.blue {
@@ -442,8 +442,8 @@ display: none !important;
 }
 .live-chip,
 .table-count {
-  background: linear-gradient(135deg, #ede9fe, #fae8ff);
-  color: #7c3aed;
+  background: linear-gradient(135deg, #edf5f1, #fae8ff);
+  color: #0f766e;
   border-radius: 20px;
   padding: 7px 10px;
   font-size: 8px;
@@ -496,7 +496,7 @@ display: none !important;
   width: 100%;
   max-width: 40px;
   height: 155px;
-  background: linear-gradient(180deg, #f1efff, #f8f7ff);
+  background: linear-gradient(180deg, #f1efff, #f7fbfa);
   border-radius: 10px 10px 5px 5px;
   display: flex;
   align-items: flex-end;
@@ -504,7 +504,7 @@ display: none !important;
 }
 .bar-fill {
   width: 100%;
-  background: linear-gradient(180deg, #a78bfa, #7c3aed);
+  background: linear-gradient(180deg, #14b8a6, #0f766e);
   border-radius: 10px 10px 4px 4px;
   transition: height 0.4s;
   box-shadow: 0 -4px 14px rgba(124, 58, 237, 0.25);
@@ -523,7 +523,7 @@ display: none !important;
   display: grid;
   grid-template-columns: 1fr;
   align-items: flex-start;
-  background: linear-gradient(145deg, #fff 55%, #f5f3ff);
+  background: linear-gradient(145deg, #fff 55%, #edf5f1);
 }
 .status-panel .panel-heading {
   grid-column: 1/-1;
@@ -542,7 +542,7 @@ display: none !important;
   min-width: 140px;
   border-radius: 50%;
   background: conic-gradient(
-    #8b5cf6 0 var(--progress),
+    #0f766e 0 var(--progress),
     #ebe8f8 var(--progress) 100%
   );
   display: grid;
@@ -594,7 +594,7 @@ display: none !important;
   transition: all 0.2s;
 }
 .status-value-box:hover {
-  background: #f5f3ff;
+  background: #edf5f1;
   border-color: #e9e5fa;
 }
 .status-dot-inline {
@@ -624,7 +624,7 @@ display: none !important;
   background: #3b82f6;
 }
 .status-value-box.seated .status-dot-inline {
-  background: #8b5cf6;
+  background: #0f766e;
 }
 .status-value-box.completed .status-dot-inline {
   background: #10b981;
@@ -689,8 +689,8 @@ display: none !important;
   background: #dbeafe;
 }
 .status-badge.seated {
-  color: #7c3aed;
-  background: #ede9fe;
+  color: #0f766e;
+  background: #edf5f1;
 }
 .status-badge.completed {
   color: #059669;
@@ -715,7 +715,7 @@ display: none !important;
 }
 .empty-reservations svg {
   width: 33px;
-  color: #8b5cf6;
+  color: #0f766e;
 }
 .empty-reservations h3 {
   color: #343850;
@@ -738,13 +738,13 @@ display: none !important;
   width: 38px;
   height: 38px;
   border: 3px solid #e9e5fa;
-  border-top-color: #7c3aed;
+  border-top-color: #0f766e;
   border-radius: 50%;
   animation: dashboard-spin 0.7s linear infinite;
 }
 .dashboard-error button {
   border: 0;
-  background: linear-gradient(135deg, #7c3aed, #c026d3);
+  background: linear-gradient(135deg, #0f766e, #0a5f58);
   color: #fff;
   border-radius: 10px;
   padding: 10px 17px;
@@ -911,7 +911,7 @@ display: none !important;
 }
 .view-all-reservations:hover {
   color: #fff;
-  background: linear-gradient(135deg, #7c3aed, #c026d3);
+  background: linear-gradient(135deg, #0f766e, #0a5f58);
   border-color: transparent;
   transform: translateY(-1px);
 }
@@ -948,3 +948,4 @@ display: none !important;
     padding: 7px 9px;
   }
 }
+

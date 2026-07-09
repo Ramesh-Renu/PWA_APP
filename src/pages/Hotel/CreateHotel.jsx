@@ -17,6 +17,7 @@ import * as images from "../../assets/images/index";
 import { useNavigate } from "react-router-dom";
 import ToolTipPopup from "components/common/ToolTipPopup";
 import { renderArea, renderLocation } from "utils/common";
+
 const CreateHotel = () => {
   const [listOfHotel, setListOfHotel] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState([]);
@@ -65,6 +66,7 @@ const CreateHotel = () => {
       getAllLocation();
     }
   }, []);
+  
   const [updateHotel, setUpdateHotel] = useState(false);
   const [reloadTable, setReloadTable] = useState(false);
   const fetchHotels = async () => {
@@ -84,14 +86,18 @@ const CreateHotel = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedLocation.length > 0) {
-      setGetLocationBasedArea(
-        areaList.data.filter(
-          (area) => area.location_id === selectedLocation[0].id
-        )
-      );
+    if (selectedLocation.length === 0) {
+      setGetLocationBasedArea([]);
+      return;
     }
-  }, [selectedLocation]);
+
+    const selectedLocationId = String(selectedLocation[0]?.id);
+    setGetLocationBasedArea(
+      (areaList?.data || []).filter(
+        (area) => String(area.location_id) === selectedLocationId
+      )
+    );
+  }, [selectedLocation, areaList?.data]);
 
   const fetchCreateHotel = async (hotelData) => {
     setLoadingHotelListApp(true);
@@ -143,6 +149,7 @@ const CreateHotel = () => {
 
   const selectedHotelLocated = (value) => {
     setSelectedLocation(value);
+    setSelectedArea([]);
     setErrorMessage({ ...errorMessage, location: false });
   };
 
@@ -191,6 +198,8 @@ const CreateHotel = () => {
 
   /** HANDLE EDIT OR DELETE TABLE  VALUE */
   const handleEditDeleteValue = (e, getVal, rowData) => {
+    console.log('e',getVal);
+    
     if (rowData?.isProcessOrder && e.name.props.children.includes("Delete"))
       return;
     if (e.id === 2) {
@@ -311,9 +320,11 @@ const CreateHotel = () => {
   /** HANDLE DELETE ORDER */
   const handleDeleteOrder = async (param) => {
     setShowDeleteHotel(false);
+    console.log('param' ,param);
+    
     try {
       const response = await deleteHotel({
-        ticket_id: param,
+        hotel_id: param,
       });
       if (response?.status) {
         showToast({
@@ -321,6 +332,9 @@ const CreateHotel = () => {
           variant: "success",
         });
         setReloadTable(true);
+        const hotels = await getAllHotel();
+        setListOfHotel(hotels?.data);
+        setLoadingHotelListApp(false);      
       } else {
         showToast({
           message: response.data.message,
@@ -588,7 +602,7 @@ const CreateHotel = () => {
                 <label className="create-hotel-label">
                   Area <sup>*</sup>
                 </label>
-                {locationList?.data && (
+                 {areaList?.data && (
                   <SelectDropDown
                     multi={false}
                     options={getLocationBasedArea || []}
@@ -598,9 +612,13 @@ const CreateHotel = () => {
                     searchable={true}
                     placeholder={"Select Area"}
                     className="single-select-dropdownRenderer"
-                    disabled={selectedLocation?.length === 0 ? true : false}
+                    disabled={
+                      hotelName === "" || locationList?.data?.length === 0
+                        ? true
+                        : false
+                    }
                     onChange={selectedHotelArea}
-                    dropdownPosition="auto"
+                    dropdownPosition="top"
                     optionType="radio"
                   />
                 )}

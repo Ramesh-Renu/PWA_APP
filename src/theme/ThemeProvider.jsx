@@ -40,10 +40,14 @@ export const AppThemeProvider = ({ children }) => {
         palette: {
           mode,
           primary: {
-            main: "#1976d2",
+            main: "#0f766e",
+            dark: "#0a5f58",
+            light: "#14b8a6",
           },
           secondary: {
-            main: "#9c27b0",
+            main: "#ffd166",
+            dark: "#c9860a",
+            light: "#fff4d8",
           },
         },
         typography: {

@@ -1,5 +1,5 @@
-import { Outlet, Navigate, useLocation } from "react-router-dom";
-import { Fragment, useState, useEffect, useCallback } from "react";
+import { Outlet } from "react-router-dom";
+import { Fragment, useEffect, useCallback } from "react";
 import SideNav from "./sidenav/sidenav.component";
 import ThemeToggle from "components/common/ThemeToggle";
 import { useGlobalContext } from "store/context/GlobalProvider";
@@ -7,26 +7,26 @@ import useAuth from "hooks/useAuth";
 import { getRefreshTocken } from "services";
 
 const UserLayout = () => {
-  const [collapseNav, setCollapseNav] = useState(false);
-  const { authState, dispatch } = useGlobalContext(); // using context instead of redux
-  const [{ data }, { setAuth, getUserInfoData, logoutUser }] = useAuth();
-  const location = useLocation();
+  const { dispatch } = useGlobalContext(); // using context instead of redux
+  const [{ data }, { getUserInfoData, logoutUser }] = useAuth();
   const token = localStorage.getItem("token");
   const refreshTokenValue = localStorage.getItem("refreshToken");
 
-  if (token && !data.accessToken) {
-    dispatch({ type: "SET_AUTH", payload: token });
-  }
+  useEffect(() => {
+    if (token && token !== "null" && !data?.accessToken) {
+      dispatch({ type: "SET_AUTH", payload: token });
+    }
+  }, [token, data?.accessToken, dispatch]);
   
   useEffect(() => {
-    if (token !== "null" || token !== null) {
+    if (token && token !== "null") {
       getUserInfoData();
     } else {  
       dispatch({ type: "SET_AUTH", payload: null });
       localStorage.setItem("token", null);
       localStorage.setItem("userInfo", null);
     }
-  }, [token, getUserInfoData, setAuth]);
+  }, [token, getUserInfoData, dispatch]);
 
   const refreshToken = useCallback(() => {
     // Logic to refresh the token
@@ -45,7 +45,7 @@ const UserLayout = () => {
       console.error("Error refreshing token:", error);
     }
     // Example: Call an API to refresh the token and update localStorage and context
-  }, []);
+  }, [refreshTokenValue, dispatch]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -62,22 +62,15 @@ const UserLayout = () => {
     }, 60000); // Check every 1 minute
 
     return () => clearInterval(interval);
-  }, []);
-
-  const tempChange = (status) => {
-    console.log("status",status);
-    
-    setCollapseNav(status);
-    return;
-  };
+  }, [refreshToken, logoutUser]);
 
   return (
     <Fragment>
       {/* <Header /> */}
-      <div className={`layout-container ${collapseNav ? "" : "left-sidebar"}`}>
-        <SideNav onChange={tempChange} />
+      <div className="layout-container app-topnav-layout">
+        <SideNav />
         <div className="container layout-page">
-          <div
+          {/* <div
             style={{
               display: "flex",
               justifyContent: "flex-end",
@@ -86,7 +79,7 @@ const UserLayout = () => {
             }}
           >
             <ThemeToggle />
-          </div>
+          </div> */}
           <Outlet />
         </div>
       </div>

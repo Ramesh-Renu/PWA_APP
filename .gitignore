@@ -17,6 +17,12 @@ dist
 dist-ssr
 *.local
 
+/.cursor
+/graphify-out
+/.claude
+/docs
+CLAUDE.md
+
 # testing
 /coverage
 

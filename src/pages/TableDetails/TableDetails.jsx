@@ -64,8 +64,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
       getSeatsStatusMatsers();
     }
   }, []);
-  console.log("floorsState", floorsState);
-
+  
   useEffect(() => {
     fetchHotelbyId(data);
   }, []);

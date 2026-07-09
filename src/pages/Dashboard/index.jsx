@@ -137,8 +137,6 @@ const Dashboard = () => {
     }
   }, [filterType, loadDashboard]);
 
-  console.log("loading", loading);
-
   const handleViewReservationDetails = (reservation) => {
     const hotelId = reservation.hotel_id || reservation.hotel?.id;
     if (!hotelId) return;

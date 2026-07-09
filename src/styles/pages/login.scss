@@ -1,1206 +1,623 @@
-// Modern Login Page Styles
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-.modern-login-container {
-  display: flex;
+.tableflow-login {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -10%;
-    width: 500px;
-    height: 500px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    animation: float 6s ease-in-out infinite;
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -30%;
-    left: -5%;
-    width: 400px;
-    height: 400px;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 50%;
-    animation: float 8s ease-in-out infinite reverse;
-  }
+  display: flex;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 196, 87, 0.2), transparent 28%),
+    linear-gradient(135deg, #f7fbfa 0%, #eef7f3 42%, #fff6e8 100%);
+  color: #17211d;
+  font-family: "Montserrat", "Segoe UI", sans-serif;
 }
 
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(30px);
-  }
-}
-
-.login-left-section {
-  flex: 1;
+.tableflow-login__brand {
+  width: 50%;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
+  padding: 48px;
+  color: #ffffff;
+  background:
+    linear-gradient(rgba(10, 75, 67, 0.88), rgba(10, 75, 67, 0.82)),
+    url("../../assets/images/login-banner.png") center / cover no-repeat;
+}
+
+.tableflow-login__logo {
+  width: fit-content;
+  color: inherit;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.tableflow-login__brand-content {
+  max-width: 560px;
+}
+
+.tableflow-login__brand-content h1 {
+  margin: 0 0 22px;
+  font-size: clamp(42px, 5vw, 64px);
+  font-weight: 800;
+  line-height: 1.04;
+}
+
+.tableflow-login__brand-content p {
+  max-width: 520px;
+  margin: 0 0 34px;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 19px;
+  line-height: 1.6;
+}
+
+.tableflow-login__features {
+  display: grid;
+  gap: 16px;
+  max-width: 420px;
+}
+
+.tableflow-login__feature {
+  display: flex;
   align-items: center;
-  color: white;
-  padding: 40px;
-  position: relative;
-  z-index: 1;
-
-  .login-brand {
-    text-align: center;
-    margin-bottom: 20px;
-
-    .brand-title {
-      font-size: 48px;
-      font-weight: 800;
-      margin-bottom: 10px;
-      text-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      letter-spacing: -1px;
-    }
-
-    .brand-subtitle {
-      font-size: 18px;
-      font-weight: 300;
-      opacity: 0.9;
-      letter-spacing: 0.5px;
-    }
-  }
-
-  .login-illustration {
-    width: 100%;
-    max-width: 350px;
-    margin-bottom: 20px;
-    opacity: 0.95;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 20px;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    img {
-      width: 100%;
-      height: auto;
-      filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.2));
-    }
-  }
-
-  .login-features {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    width: 100%;
-    max-width: 350px;
-
-    .feature-item {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      padding: 15px 20px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      transition: all 0.3s ease;
-
-      &:hover {
-        background: rgba(255, 255, 255, 0.15);
-        transform: translateX(5px);
-      }
-
-      .feature-icon {
-        font-size: 24px;
-        font-weight: bold;
-        color: #4ade80;
-      }
-
-      p {
-        font-size: 15px;
-        margin: 0;
-        font-weight: 500;
-      }
-    }
-  }
+  gap: 14px;
+  padding: 14px 0;
 }
 
-.login-right-section {
-  flex: 1;
+.tableflow-login__feature-icon {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffd166;
+  font-size: 24px;
+}
+
+.tableflow-login__feature strong,
+.tableflow-login__feature small {
+  display: block;
+}
+
+.tableflow-login__feature strong {
+  margin-bottom: 4px;
+  font-size: 16px;
+}
+
+.tableflow-login__feature small {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+}
+
+.tableflow-login__copyright {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+}
+
+.tableflow-login__panel {
+  width: 50%;
+  min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
   align-items: center;
-  padding: 40px;
-  position: relative;
-  z-index: 1;
-
-  .login-card {
-    width: 100%;
-    max-width: 450px;
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    padding: 50px 40px;
-    animation: slideUp 0.6s ease-out;
-
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .login-form-wrapper,
-    .signup-form-wrapper {
-      width: 100%;
-    }
-
-    .form-header {
-      text-align: center;
-      margin-bottom: 40px;
-
-      h2 {
-        font-size: 32px;
-        color: #1a1a1a;
-        margin-bottom: 10px;
-        font-weight: 700;
-        letter-spacing: -0.5px;
-      }
-
-      p {
-        font-size: 15px;
-        color: #666;
-        margin: 0;
-        font-weight: 400;
-      }
-    }
-  }
-
-  .login-footer {
-    text-align: center;
-    margin-top: 30px;
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 13px;
-    position: relative;
-    z-index: 1;
-
-    p {
-      margin: 0;
-    }
-  }
+  justify-content: center;
+  padding: 40px 24px;
 }
 
-// Form Styles
-.modern-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-
-  .form-row {
-    display: flex;
-    gap: 15px;
-
-    .form-group {
-      flex: 1;
-    }
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-
-    .form-label {
-      font-size: 14px;
-      font-weight: 600;
-      color: #1a1a1a;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-
-      .required {
-        color: #ef4444;
-        font-weight: bold;
-      }
-    }
-
-    .input-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-
-      .input-icon {
-        position: absolute;
-        left: 15px;
-        font-size: 18px;
-        color: #999;
-        pointer-events: none;
-      }
-
-      .modern-input {
-        width: 100%;
-        padding: 12px 15px 12px 45px;
-        border: 2px solid #e5e7eb;
-        border-radius: 10px;
-        font-size: 14px;
-        font-family: inherit;
-        transition: all 0.3s ease;
-        background: #f9fafb;
-
-        &:focus {
-          outline: none;
-          border-color: #667eea;
-          background: white;
-          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        &::placeholder {
-          color: #9ca3af;
-        }
-
-        &:disabled {
-          background: #f3f4f6;
-          cursor: not-allowed;
-          opacity: 0.6;
-        }
-      }
-    }
-
-    .error-text {
-      font-size: 12px;
-      color: #ef4444;
-      margin-top: -4px;
-    }
-
-    .otp-timer {
-      font-size: 12px;
-      color: #667eea;
-      margin-top: -12px;
-      font-weight: 500;
-    }
-  }
-
-  .form-button-group {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 10px;
-  }
+.tableflow-login__card {
+  width: min(100%, 460px);
+  padding: 8px 0;
 }
 
-// Button Styles
-.btn {
-  padding: 12px 20px;
-  border: none;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
+.tableflow-login__mobile-brand {
+  display: none;
+  margin-bottom: 28px;
+  text-align: center;
+  color: #0a4b43;
+}
+
+.tableflow-login__mobile-brand p {
+  margin: 8px 0 0;
+  color: #67736f;
+}
+
+.tableflow-login__role-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 28px;
+  padding: 6px;
+  border: 1px solid #dce7e2;
+  border-radius: 8px;
+  background: #edf5f1;
+}
+
+.tableflow-login__role-toggle button {
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #67736f;
+  font: inherit;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  position: relative;
-  overflow: hidden;
+  transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
 
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+.tableflow-login__role-toggle button svg {
+  font-size: 20px;
+}
+
+.tableflow-login__role-toggle button.active {
+  background: #ffffff;
+  color: #17211d;
+  box-shadow: 0 8px 24px rgba(23, 33, 29, 0.08);
+}
+
+.tableflow-login__form {
+  display: grid;
+  gap: 20px;
+}
+
+.tableflow-login__form label {
+  display: grid;
+  gap: 8px;
+}
+
+.tableflow-login__form label span {
+  color: #24332e;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.tableflow-login__form input[type="tel"],
+.tableflow-login__form input[type="password"] {
+  width: 100%;
+  height: 52px;
+  padding: 0 16px;
+  border: 1px solid #cfddd7;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  color: #17211d;
+  font: inherit;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.tableflow-login__form input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.13);
+}
+
+.tableflow-login__error {
+  color: #c2410c;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tableflow-login__form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tableflow-login__remember {
+  display: inline-flex !important;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 8px !important;
+  width: fit-content;
+  color: #67736f;
+  font-size: 14px;
+}
+
+.tableflow-login__remember input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+}
+
+.tableflow-login__remember span {
+  color: #67736f !important;
+  font-weight: 500 !important;
+}
+
+.tableflow-login__link-button {
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tableflow-login__otp-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.tableflow-login__otp-button {
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.tableflow-login__otp-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.tableflow-login__otp-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  box-shadow: none;
+  transform: none;
+}
+
+.tableflow-login__otp-button--primary {
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: #ffffff;
+  box-shadow: 0 12px 26px rgba(15, 118, 110, 0.22);
+}
+
+.tableflow-login__otp-button--primary:hover:not(:disabled) {
+  background: #0a5f58;
+  border-color: #0a5f58;
+}
+
+.tableflow-login__otp-button--secondary {
+  border: 1px solid #d69e2e;
+  background: #fff4d8;
+  color: #7c4a03;
+}
+
+.tableflow-login__otp-button--secondary:hover:not(:disabled) {
+  background: #ffd166;
+  border-color: #c9860a;
+  color: #3f2a04;
+  box-shadow: 0 10px 22px rgba(201, 134, 10, 0.18);
+}
+
+.tableflow-login__otp-button--ghost {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-primary);
+  padding-inline: 10px;
+}
+
+.tableflow-login__otp-button--ghost:hover:not(:disabled) {
+  background: rgba(15, 118, 110, 0.08);
+}
+
+.tableflow-login__submit,
+.tableflow-login__social button {
+  min-height: 52px;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.tableflow-login__submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  background: var(--color-primary);
+  color: #ffffff;
+  box-shadow: 0 14px 30px rgba(15, 118, 110, 0.24);
+}
+
+.tableflow-login__submit:hover,
+.tableflow-login__social button:hover {
+  transform: translateY(-1px);
+}
+
+.tableflow-login__submit:hover {
+  background: #0a5f58;
+}
+
+.tableflow-login__submit:disabled {
+  cursor: not-allowed;
+  background: #8ab7b1;
+  box-shadow: none;
+  transform: none;
+}
+
+.tableflow-login__button-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: tableflow-login-spin 800ms linear infinite;
+}
+
+@keyframes tableflow-login-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tableflow-login__divider {
+  position: relative;
+  margin: 30px 0;
+  text-align: center;
+}
+
+.tableflow-login__divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #dce7e2;
+}
+
+.tableflow-login__divider span {
+  position: relative;
+  z-index: 1;
+  padding: 0 12px;
+  background: #f7fbfa;
+  color: #67736f;
+  font-size: 14px;
+}
+
+.tableflow-login__social {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.tableflow-login__social button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #dce7e2;
+  background: #ffffff;
+  color: #24332e;
+}
+
+.tableflow-login__social svg {
+  font-size: 22px;
+}
+
+.tableflow-login__signup {
+  margin: 0 0 24px;
+  color: #67736f;
+  text-align: center;
+}
+
+.tableflow-login__signup a {
+  margin-left: 6px;
+  color: var(--color-primary);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.tableflow-login__tip {
+  margin-bottom: 22px;
+  padding: 14px;
+  border: 1px solid rgba(15, 118, 110, 0.18);
+  border-radius: 8px;
+  background: rgba(15, 118, 110, 0.08);
+  color: #24332e;
+  font-size: 14px;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.tableflow-login__demo {
+  display: grid;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.tableflow-login__demo div {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border-radius: 8px;
+  background: #edf5f1;
+  color: #67736f;
+}
+
+.tableflow-login__demo strong {
+  color: #24332e;
+}
+
+.modern-form {
+  display: grid;
+  gap: 18px;
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+  padding-top: 6px;
+}
+
+.form-group {
+  display: grid;
+  gap: 8px;
+}
+
+.form-label {
+  margin: 0;
+  color: #24332e;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.required {
+  color: #c2410c;
+  font-weight: 800;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+}
+
+.input-icon {
+  position: absolute;
+  left: 16px;
+  z-index: 1;
+  color: #60756f;
+  font-size: 20px;
+  pointer-events: none;
+}
+
+.modern-input {
+  width: 100%;
+  height: 52px;
+  padding: 0 16px 0 46px;
+  border: 1px solid #cfddd7;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #17211d;
+  font: inherit;
+  font-size: 15px;
+  line-height: 52px;
+  box-shadow: 0 10px 28px rgba(23, 33, 29, 0.04);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.modern-input::placeholder {
+  color: #71817c;
+}
+
+.modern-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.13);
+}
+
+.input-wrapper:focus-within .input-icon {
+  color: var(--color-primary);
+}
+
+.error-text {
+  color: #c2410c;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.modern-form + .tableflow-login__signup,
+.tableflow-login__card:has(.modern-form) .tableflow-login__signup {
+  margin-top: 22px !important;
+}
+
+@media (max-width: 980px) {
+  .tableflow-login__brand {
+    display: none;
   }
 
-  &.btn-block {
+  .tableflow-login__panel {
     width: 100%;
+  }
+
+  .tableflow-login__mobile-brand {
     display: block;
   }
-
-  &.btn-lg {
-    padding: 14px 20px;
-    font-size: 16px;
-  }
-
-  &.btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-
-    &:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
-    }
-
-    &:active:not(:disabled) {
-      transform: translateY(0);
-    }
-  }
-
-  &.btn-secondary {
-    background: #f3f4f6;
-    color: #667eea;
-    border: 2px solid #667eea;
-
-    &:hover:not(:disabled) {
-      background: #667eea;
-      color: white;
-    }
-  }
-
-  &.btn-outline {
-    background: transparent;
-    color: white;
-    border: 2px solid white;
-
-    &:hover:not(:disabled) {
-      background: white;
-      color: #667eea;
-    }
-  }
-
-  &.btn-text {
-    background: transparent;
-    color: #667eea;
-    text-decoration: underline;
-
-    &:hover:not(:disabled) {
-      color: #764ba2;
-    }
-  }
 }
 
-// Divider
-.divider {
-  text-align: center;
-  margin: 25px 0 20px;
-  position: relative;
-
-  span {
-    font-size: 13px;
-    color: #999;
-    background: white;
-    padding: 0 10px;
-    position: relative;
-    z-index: 2;
+@media (max-width: 560px) {
+  .tableflow-login__panel {
+    align-items: flex-start;
+    padding: 28px 18px;
   }
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: #e5e7eb;
+  .tableflow-login__card {
+    padding: 0;
   }
-}
 
-// Responsive Design
-@media (max-width: 1024px) {
-  .modern-login-container {
-    .login-left-section {
-      display: none;
-    }
-
-    .login-right-section {
-      flex: 1;
-      justify-content: center;
-      padding: 20px;
-
-      .login-card {
-        max-width: 100%;
-        width: 100%;
-        padding: 40px 30px;
-      }
-    }
+  .tableflow-login__role-toggle button {
+    min-height: 46px;
+    font-size: 14px;
   }
-}
 
-@media (max-width: 768px) {
-  .modern-login-container {
-    flex-direction: column;
+  .tableflow-login__form-row,
+  .tableflow-login__otp-actions,
+  .tableflow-login__social {
+    grid-template-columns: 1fr;
+  }
 
-    .login-left-section {
-      display: flex;
-      min-height: auto;
-      padding: 30px 20px;
-      justify-content: center;
-      order: -1;
+  .tableflow-login__form-row {
+    display: grid;
+    align-items: start;
+  }
 
-      .login-brand {
-        margin-bottom: 20px;
-
-        .brand-title {
-          font-size: 36px;
-        }
-
-        .brand-subtitle {
-          font-size: 14px;
-        }
-      }
-
-      .login-illustration {
-        max-width: 250px;
-        margin-bottom: 20px;
-      }
-
-      .login-features {
-        .feature-item {
-          flex-direction: row;
-
-          .feature-icon {
-            font-size: 20px;
-            min-width: 20px;
-          }
-
-          p {
-            font-size: 13px;
-          }
-        }
-      }
-    }
-
-    .login-right-section {
-      padding: 20px;
-      min-height: auto;
-
-      .login-card {
-        padding: 30px 25px;
-        border-radius: 16px;
-
-        .form-header {
-          margin-bottom: 30px;
-
-          h2 {
-            font-size: 24px;
-          }
-
-          p {
-            font-size: 13px;
-          }
-        }
-      }
-
-      .login-footer {
-        font-size: 12px;
-      }
-    }
+  .tableflow-login__link-button {
+    justify-self: start;
   }
 
   .modern-form {
-    gap: 15px;
-
-    .form-row {
-      flex-direction: column;
-      gap: 0;
-
-      .form-group {
-        width: 100%;
-      }
-    }
-
-    .form-group {
-      gap: 6px;
-
-      .input-wrapper .modern-input {
-        padding: 10px 12px 10px 40px;
-        font-size: 13px;
-      }
-    }
-  }
-
-  .btn {
-    padding: 11px 18px;
-    font-size: 13px;
+    max-width: 100%;
   }
 }
-
-@media (max-width: 480px) {
-  .modern-login-container {
-    &::before,
-    &::after {
-      display: none;
-    }
-
-    .login-left-section {
-      padding: 20px 15px;
-
-      .login-brand {
-        margin-bottom: 15px;
-
-        .brand-title {
-          font-size: 28px;
-        }
-
-        .brand-subtitle {
-          font-size: 12px;
-        }
-      }
-
-      .login-illustration {
-        max-width: 200px;
-        margin-bottom: 15px;
-      }
-
-      .login-features {
-        gap: 10px;
-
-        .feature-item {
-          padding: 10px 15px;
-          gap: 10px;
-
-          .feature-icon {
-            font-size: 18px;
-            min-width: 18px;
-          }
-
-          p {
-            font-size: 12px;
-          }
-        }
-      }
-    }
-
-    .login-right-section {
-      padding: 15px;
-      min-height: auto;
-      justify-content: flex-start;
-
-      .login-card {
-        padding: 25px 20px;
-        max-width: 100%;
-
-        .form-header {
-          margin-bottom: 25px;
-
-          h2 {
-            font-size: 20px;
-          }
-
-          p {
-            font-size: 12px;
-          }
-        }
-      }
-
-      .login-footer {
-        margin-top: 20px;
-        font-size: 11px;
-      }
-    }
-  }
-
-  .modern-form {
-    gap: 12px;
-
-    .form-group {
-      gap: 5px;
-
-      .form-label {
-        font-size: 13px;
-      }
-
-      .input-wrapper .modern-input {
-        padding: 9px 10px 9px 38px;
-        font-size: 13px;
-        border-radius: 8px;
-      }
-
-      .error-text {
-        font-size: 11px;
-      }
-    }
-  }
-
-  .divider {
-    margin: 20px 0 15px;
-
-    span {
-      font-size: 12px;
-    }
-  }
-
-  .btn {
-    padding: 10px 16px;
-    font-size: 12px;
-    border-radius: 8px;
-  }
+.tableflow-login__signup-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-primary);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 18px;
+  cursor: pointer;
 }
 
-@media (max-width: 360px) {
-  .modern-login-container {
-    .login-left-section {
-      .login-brand {
-        .brand-title {
-          font-size: 24px;
-        }
-      }
-
-      .login-illustration {
-        max-width: 150px;
-      }
-    }
-
-    .login-right-section {
-      .login-card {
-        padding: 20px 15px;
-
-        .form-header {
-          margin-bottom: 20px;
-
-          h2 {
-            font-size: 18px;
-          }
-        }
-      }
-    }
-  }
-}
-
-// Legacy styles for backward compatibility
-.login-page {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background-color: #009dd9;
-  background-image: url("../../assets/images/login-background.svg");
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center center;
-
-  .login-form {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: var(--color-primary-dark);
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.16);
-    overflow: hidden;
-    margin: 0 auto;
-    border-radius: 12px;
-
-    &-banner {
-      display: flex;
-      align-items: flex-end;
-      max-width: 1200px;
-      min-height: 100%;
-      background-color: var(--color-white);
-      img {
-        display: block;
-        width: 100%;
-      }
-    }
-
-    &-container {
-      flex: 1 0 100%;
-      max-width: 480px;
-      width: 100%;
-      padding: 0 60px;
-      background-color: var(--color-primary-dark);
-      text-align: center;
-
-      &-title {
-        color: var(--color-white);
-        font-size: 44px;
-        font-style: normal;
-        font-weight: 800;
-        line-height: normal;
-        letter-spacing: 0.44px;
-        margin-bottom: 20px;
-      }
-      &-subtitle {
-        color: var(--color-white);
-        font-size: 28px;
-        font-style: normal;
-        font-weight: 600;
-        line-height: normal;
-        letter-spacing: 0.44px;
-        margin-bottom: 25px;
-      }
-
-      &-button {
-        display: flex;
-        flex-direction: row;
-        column-gap: 25px;
-        &-common {
-          background-color: var(--color-primary);
-          color: var(--color-white);
-          height: 50px;
-          letter-spacing: 1px;
-          border-radius: 4px;
-          width: 100%;
-          font-size: 17px;
-          font-style: normal;
-          font-weight: 500;
-          line-height: normal;
-          border: none;
-          margin-bottom: 18px;
-        }
-        &-agency {
-          background-color: transparent;
-          border: 1px solid var(--color-white);
-          margin-bottom: 60px;
-        }
-      }
-
-      a {
-        font-size: 15px;
-        font-style: normal;
-        font-weight: 500;
-        line-height: 100%;
-        color: var(--color-white);
-        text-decoration: none;
-      }
-
-      &-signupbtn {
-        font-size: 17px;
-        font-style: normal;
-        font-weight: 400;
-        line-height: 20px;
-        color: var(--color-white);
-        span {
-          color: var(--color-primary);
-          cursor: pointer;
-        }
-      }
-
-      &-signup-success {
-        display: flex;
-        flex-direction: column;
-        gap: 150px;
-        margin: 100px 0 0;
-        &-content {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-          &-head {
-            font-size: 26px;
-            font-style: normal;
-            font-weight: 700;
-            line-height: normal;
-            letter-spacing: 0.44px;
-            color: var(--color-white);
-            margin: 0;
-          }
-          .icon-success-tick {
-            font-size: 62px;
-            .path1::before {
-              color: var(--color-white);
-            }
-            .path2::before {
-              color: var(--color-primary-dark);
-            }
-          }
-          &-msg {
-            font-size: 22px;
-            font-style: normal;
-            font-weight: 600;
-            line-height: normal;
-            letter-spacing: 0.44px;
-            color: var(--color-white);
-            margin: 0;
-          }
-        }
-        &-footer {
-          font-size: 14px;
-          font-style: normal;
-          font-weight: 400;
-          color: var(--color-white);
-          display: inline-flex;
-          flex-direction: column;
-          gap: 10px;
-          a {
-            color: var(--color-primary);
-          }
-        }
-      }
-    }
-
-    &-signup {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      margin: 20px 0 0;
-      .form-row {
-        display: flex;
-        flex-direction: row;
-        column-gap: 25px;
-        // margin: 20px 0 0px;
-        .form-col {
-          display: flex;
-          flex-wrap: nowrap;
-          flex-direction: column;
-          row-gap: 6px;
-          justify-content: flex-start;
-          align-items: flex-start;
-          margin: 0;
-          position: relative;
-          width: 100%;
-          .form-col-inline-flex {
-            display: inline-flex;
-            flex-direction: row;
-            column-gap: 6px;
-            position: relative;
-            align-items: center;
-            justify-content: space-between;
-            margin: 0;
-            label {
-              display: block;
-            }
-            .checkedIcon {
-              width: 16px;
-              height: 16px;
-            }
-          }
-          .input-label {
-            font-size: 14px;
-            font-weight: 400;
-            line-height: 14.4px;
-            color: var(--color-white);
-            sup {
-              vertical-align: sub;
-              color: var(--color-light-red);
-              font-size: 14px;
-            }
-            &.error-msg {
-              color: var(--color-light-red);
-              font-size: 12px;
-              margin: 0px;
-              padding: 0px;
-            }
-          }
-          .input-type {
-            width: 100%;
-            height: 38px;
-            font-size: 14px;
-            padding: 15px;
-            border-radius: 6px;
-            color: var(--color-oldSilver);
-            display: block;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            border: none;
-            &::placeholder {
-              color: var(--color-light-gray-1);
-              font-size: 14px;
-            }
-          }
-          .custom-agencyDropdown {
-            background: var(--color-white);
-            border-radius: 6px;
-            width: 362px;
-            height: 38px;
-            padding: 15px;
-            & .react-dropdown-select-dropdown {
-              margin: 0;
-              overflow: auto;
-              border-radius: 6px;
-              width: 100%;
-              top: 40px;
-              &::-webkit-scrollbar {
-                width: 6px;
-                height: 8px;
-                background-color: #f5f5f5;
-              }
-              &::-webkit-scrollbar-track {
-                -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
-                border-radius: 10px;
-                background-color: #f5f5f5;
-              }
-              &::-webkit-scrollbar-thumb {
-                border-radius: 10px;
-                -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
-                background-color: rgb(167, 165, 165);
-              }
-              .react-dropdown-select-item {
-                padding: 12.563px;
-                background: var(--color-white);
-                font-size: 14px;
-                font-style: normal;
-                font-weight: 400;
-                line-height: normal;
-                text-transform: capitalize;
-                &:hover {
-                  background: var(--color-light-gray);
-                }
-                &:first-child {
-                  border-bottom: 1px solid var(--color-light-light-gray);
-                  background: none;
-                  color: var(--color-gray);
-                  cursor: default;
-                  ins {
-                    display: none;
-                  }
-                }
-
-                &:last-child {
-                  border-top: 1px solid var(--color-light-light-gray);
-                  background: var(--color-light-red-1);
-                  border-bottom: none;
-                }
-              }
-              .react-dropdown-select-item-selected {
-                background: var(--color-light-light-gray);
-                color: var(--color-gray);
-              }
-              .dropdwonList-main {
-                padding: 0 12px;
-                background-color: var(--color-white);
-                box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.2);
-                .dropdwonList-head {
-                  font-size: 14px;
-                  font-style: normal;
-                  font-weight: 500;
-                  line-height: normal;
-                  color: var(--color-gray);
-                  margin: 0 0 12px 0;
-                  padding-bottom: 12px;
-                  border-bottom: 1px solid var(--color-light-gray);
-                }
-                .dropdwonLists {
-                  overflow: auto;
-                  max-height: 180px;
-                  padding: 0px 12px 0px 12px;
-                  // margin: 0 8px 10px 0px;
-                  position: relative;
-                  &.single {
-                    margin: 0;
-                    padding: 0;
-                  }
-                  &::-webkit-scrollbar {
-                    width: 8px;
-                    height: 4px;
-                    background-color: var(--color-light-light-gray);
-                    border-radius: 10px;
-                  }
-                  &::-webkit-scrollbar-track {
-                    -webkit-box-shadow: inset 0 0 6px
-                      var(--color-light-light-gray);
-                    border-radius: 10px;
-                    background-color: var(--color-light-light-gray);
-                  }
-                  &::-webkit-scrollbar-thumb {
-                    border-radius: 10px;
-                    -webkit-box-shadow: inset 0 0 6px var(--color-oldSilver);
-                    background-color: var(--color-oldSilver);
-                  }
-                  .dropdwonList-subhead,
-                  .dropdwonLists-label {
-                    margin: 0 0 16px 0;
-                    font-size: 14px;
-                    font-style: normal;
-                    font-weight: 400;
-                    line-height: normal;
-                    color: var(--color-gray);
-                    display: flex;
-                    flex-direction: row;
-                    align-items: flex-start;
-                    column-gap: 8px;
-                    padding: 10px 0;
-                    margin: 0;
-                    border-bottom: 1px solid #ccc;
-                    &.disabled,
-                    &:disabled {
-                      pointer-events: none;
-                      cursor: not-allowed;
-                      opacity: 0.5;
-                    }
-                    &:last-child {
-                      margin: 0 0 0 0;
-                      border: none;
-                    }
-                    &.sub-list {
-                      margin-left: 8px;
-                    }
-                    .lable-field {
-                      display: inline-flex;
-                      align-items: flex-start;
-                      flex-direction: column;
-                      row-gap: 0px;
-                      padding: 0;
-                      margin: 0 0 0 0px;
-                      label {
-                        cursor: pointer;
-                      }
-                    }
-                    label {
-                      cursor: pointer;
-                    }
-                  }
-                  .error-show {
-                    font-size: 13px;
-                    font-style: normal;
-                    font-weight: 400;
-                    line-height: normal;
-                    margin: 0;
-                    padding: 10px;
-                    color: var(--color-light-red);
-                    text-align: center;
-                  }
-                }
-              }
-            }
-            .react-dropdown-select-content {
-              background: transparent;
-              font-size: 14px;
-              font-style: normal;
-              font-weight: 400;
-              line-height: normal;
-              color: var(--color-gray);
-              text-overflow: ellipsis;
-              white-space: nowrap;
-              overflow: hidden;
-              flex-wrap: nowrap;
-              text-overflow: ellipsis;
-              justify-content: flex-start;
-              .react-dropdown-select-option {
-                background: var(--color-white);
-                color: var(--color-gray);
-                font-size: 14px;
-                font-style: normal;
-                font-weight: 400;
-                line-height: normal;
-                white-space: nowrap;
-                margin: 0;
-              }
-              input {
-                margin: unset;
-              }
-            }
-          }
-          .termsCondition {
-            // & input{
-            //   transform: scale(1.1);
-            // }
-            background: transparent;
-            padding: 0;
-            border: none;
-            font-size: 14px;
-            font-style: normal;
-            font-weight: 400;
-            line-height: normal;
-            color: var(--color-white);
-            display: inline-flex;
-            flex-direction: row;
-            align-items: center;
-            column-gap: 8px;
-          }
-          .error-msg {
-            padding: 0;
-            font-size: 10px;
-            font-style: normal;
-            font-weight: 400;
-            line-height: 100%;
-            color: var(--color-light-red);
-            height: 12px;
-            display: block;
-          }
-          .form-flex {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            .dial-code {
-              padding: 10px;
-              border-right: 1px solid var(--color-light-light-gray);
-              border-radius: 4px 0 0 4px;
-              font-size: 14px;
-              color: var(--color-oldSilver);
-              white-space: nowrap;
-              background: var(--color-white);
-              height: 38px;
-              display: block;
-              min-width: 30px;
-            }
-            .input-type {
-              border-radius: unset;
-              border-top-right-radius: 6px;
-              border-bottom-right-radius: 6px;
-            }
-          }
-          .suggestion-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            position: absolute;
-            top: 77%;
-            left: 0;
-            z-index: 1;
-            width: 100%;
-            background-color: var(--color-white);
-            border: 1px solid var(--color-light-light-gray);
-            border-radius: 4px;
-            font-size: 14px;
-            font-style: normal;
-            font-weight: 400;
-            color: var(--color-oldSilver);
-            max-height: 200px;
-            overflow: auto;
-            overflow-x: hidden;
-            li {
-              padding: 8px;
-              cursor: pointer;
-              border-bottom: 1px solid var(--color-light-light-gray);
-              text-align: left;
-              &.agency-not-found {
-                color: var(--color-light-red);
-              }
-            }
-            li:hover {
-              background-color: #f0f0f0;
-            }
-
-            &::-webkit-scrollbar {
-              width: 8px;
-              height: 4px;
-              background-color: var(--color-light-light-gray);
-              border-radius: 10px;
-            }
-            &::-webkit-scrollbar-track {
-              -webkit-box-shadow: inset 0 0 6px var(--color-light-light-gray);
-              border-radius: 10px;
-              background-color: var(--color-light-light-gray);
-            }
-            &::-webkit-scrollbar-thumb {
-              border-radius: 10px;
-              -webkit-box-shadow: inset 0 0 6px var(--color-oldSilver);
-              background-color: var(--color-oldSilver);
-            }
-          }
-        }
-      }
-
-      .mt-10 {
-        margin-top: 10px;
-      }
-    }
-  }
-}
-
-@media screen and (max-width: 1023px) {
-  .login-page {
-    .login-form {
-      flex-direction: column;
+.tableflow-login__create-account {
+  min-height: 52px;
+  width: 100%;
+  border-radius: 8px;
+  background: var(--color-primary);
+  border: none;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  margin: 10px 0 0;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease; 
+    &:disabled {
+      cursor: not-allowed;
+      background: #8ab7b1;
       box-shadow: none;
-      &-banner {
-        max-width: 100%;
-        min-height: auto;
-      }
-      &-container {
-        max-width: 100%;
-        padding: 20px;
-      }
+      transform: none;
     }
-  }
 }

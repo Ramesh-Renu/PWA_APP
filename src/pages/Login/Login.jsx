@@ -1,27 +1,53 @@
-import React, { useState, useEffect, useRef, Fragment } from "react";
-import { useNavigate } from "react-router-dom";
-import { loginBanner } from "../../assets/images/index";
-import appConstants from "constant/common";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  AiOutlineMail,
+  AiOutlineDashboard,
+  AiOutlineShop,
+  AiOutlineUser,
+  AiOutlinePhone,
+  AiOutlineEnvironment,
+} from "react-icons/ai";
+import { MdOutlineRestaurant, MdOutlineSmartphone } from "react-icons/md";
+import { getOTp, createUser } from "services";
 import useToast from "hooks/useToast";
 import useAuth from "hooks/useAuth";
-import { createUser, getOTp } from "services";
-import { AiOutlineMail, AiOutlinePhone, AiOutlineUser, AiOutlineEnvironment } from "react-icons/ai";
-import { MdOutlineVisibility, MdOutlineVisibilityOff } from "react-icons/md";
+
+const features = [
+  {
+    icon: <MdOutlineRestaurant />,
+    title: "Smart Booking",
+    desc: "Easy table reservations",
+  },
+  {
+    icon: <AiOutlineDashboard />,
+    title: "Full Management",
+    desc: "Control your restaurant",
+  },
+  {
+    icon: <MdOutlineSmartphone />,
+    title: "Mobile-First Design",
+    desc: "Works everywhere",
+  },
+];
 
 export default function Login() {
   const { showToast } = useToast();
   const [{ data }, { setAuth, getAuth }] = useAuth();
-  const navigate = useNavigate();
-  const [activateSignUpSuccess, setActivateSignUpSuccess] = useState(false);
-  const [inProgress, setInProgress] = useState(false);
   const [mobile, setMobile] = useState("");
-  const [isTokenSuccess, setIsTokenSuccess] = useState();
-  const [getOTPnumber, setGetOTPnumber] = useState("");
+  const [role, setRole] = useState("guest");
+  const [mobileError, setMobileError] = useState("");
+  const navigate = useNavigate();
+  const [otpTimer, setOtpTimer] = useState(0);
   const [showOTPSent, setShowOTPSent] = useState(false);
   const [enableOTPsent, setEnableOTPsent] = useState(true);
-  const [activeForm, setActiveForm] = useState(false);
+  const [inProgress, setInProgress] = useState(false);
+  const [isTokenSuccess, setIsTokenSuccess] = useState();
+  const [getOTPnumber, setGetOTPnumber] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [activeForm, setActiveForm] = useState(false);
+  const [createForm, setCreateForm] = useState(false);
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -36,9 +62,37 @@ export default function Login() {
     mobilenumber: false,
     location: false,
   });
-  const [otpTimer, setOtpTimer] = useState(0);
+
+  const handleCheckMobilenumber = (value) => {
+    const digitsOnly = value.replace(/\D/g, "").slice(0, 10);
+
+    setMobile(digitsOnly);
+    setEnableOTPsent(digitsOnly.length !== 10);
+
+    if (!digitsOnly || digitsOnly.length === 10) {
+      setMobileError("");
+      return;
+    }
+
+    setMobileError("Please enter a valid 10-digit mobile number");
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (mobile.length !== 10) {
+      setMobileError("Please enter a valid 10-digit mobile number");
+      return;
+    }
+    navigate("/hotel");
+  };
+
   const handleSendOtp = (e) => {
     e.preventDefault();
+    if (mobile.length !== 10) {
+      setMobileError("Please enter a valid 10-digit mobile number");
+      return;
+    }
+    setGetOTPnumber("");
     setShowOTPSent(true);
     setOtpTimer(60);
     try {
@@ -46,8 +100,6 @@ export default function Login() {
         mobilenumber: mobile,
       });
       response.then((res) => {
-        console.log("response", res);
-
         if (res.success) {
           showToast({ message: res.message, variant: "success" });
           setOtpTimer(60);
@@ -65,37 +117,10 @@ export default function Login() {
     }
   };
 
-  const handleCheckMobilenumber = (value) => {
-    const checkNumber = new RegExp(
-      appConstants.VALIDATION_PATTERNS.phonenumberHyphens,
-    ).test(value);
-    if (checkNumber) {
-      const trimmed = value.slice(0, 10);
-
-      setMobile(trimmed);
-      setEnableOTPsent(trimmed?.length === 10 ? false : true);
-    } else {
-      setErrorMsg({
-        ...errorMsg,
-        phone: true,
-      });
-      setMobile("");
-    }
-  };
-
-  const handleCheckOTPNumber = (value) => {
-    const checkNumber = new RegExp(
-      appConstants.VALIDATION_PATTERNS.phonenumberHyphens,
-    ).test(value);
-    if (checkNumber) {
-      setGetOTPnumber(value);
-    } else {
-      setGetOTPnumber("");
-    }
-  };
-
   const handleLogin = async (e) => {
     e.preventDefault();
+    console.log("e", e);
+
     setInProgress(true);
     const response = await getAuth({
       mobilenumber: mobile,
@@ -110,7 +135,6 @@ export default function Login() {
         variant: "success",
       });
       navigate("/hotel");
-      setActivateSignUpSuccess(true);
     } else {
       setInProgress(false);
       setIsTokenSuccess(false);
@@ -120,14 +144,6 @@ export default function Login() {
       });
     }
   };
-
-  /** AUTO FOCUS ON FIRST INPUT FIELD */
-  const inputRef = useRef(null);
-  useEffect(() => {
-    if (activeForm && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [activeForm]);
   const handleSubmitForm = (e) => {
     e.preventDefault();
     setIsSubmitted(true);
@@ -138,10 +154,9 @@ export default function Login() {
     };
     delete updatedFormData.firstName; // Remove firstName
     delete updatedFormData.lastName; // Remove lastName
+   
     // TRIGGER API CALL TO REGISTER AGENCY USER
     try {
-      // localStorage.setItem("token","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibW9iaWxlbnVtYmVyIjoiOTg3NjU0MzIxMCIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzY2MTM5ODYzLCJleHAiOjE3NjYxNDA3NjN9.7HNbuciiOysoDkHEMMG46HPiewzWBJqtGd8ZIEF_4bo", updatedFormData);
-
       const response = createUser(updatedFormData);
       response.then((res) => {
         if (res.success) {
@@ -154,8 +169,10 @@ export default function Login() {
             location: "",
           });
           setActiveForm(true);
+          setCreateForm(false);
         } else {
           showToast({ message: res.data.message, variant: "danger" });
+          setCreateForm(true);
         }
       });
     } catch (error) {
@@ -163,292 +180,303 @@ export default function Login() {
       showToast({ message: error, variant: "danger" });
     }
   };
+
   return (
-    <div className="modern-login-container">
-      <div className="login-left-section">
-        <div className="login-brand">
-          <h1 className="brand-title">HotelApp</h1>
-          <p className="brand-subtitle">Table Reservation System</p>
-        </div>
-        <div className="login-illustration">
-          <img src={loginBanner} alt="Hotel Booking" />
-        </div>
-        <div className="login-features">
-          <div className="feature-item">
-            <span className="feature-icon">✓</span>
-            <p>Quick & Easy Booking</p>
-          </div>
-          <div className="feature-item">
-            <span className="feature-icon">✓</span>
-            <p>Real-Time Availability</p>
-          </div>
-          <div className="feature-item">
-            <span className="feature-icon">✓</span>
-            <p>Secure & Reliable</p>
-          </div>
-        </div>
-      </div>
+    <div className="tableflow-login">
+      <aside className="tableflow-login__brand">
+        <Link to="/" className="tableflow-login__logo">
+          Table Bokking
+        </Link>
 
-      <div className="login-right-section">
-        <div className="login-card">
-          {!activeForm ? (
-            <div className="login-form-wrapper">
-              <div className="form-header">
-                <h2>{!showOTPSent ? "Welcome Back" : "Enter OTP"}</h2>
-                <p>{!showOTPSent ? "Sign in to your account" : "We've sent an OTP to your mobile"}</p>
+        <div className="tableflow-login__brand-content">
+          <h1>Welcome Back to Table Bokking</h1>
+          <p>
+            Manage your restaurant or make your next reservation. Choose your
+            role and get started.
+          </p>
+
+          <div className="tableflow-login__features">
+            {features.map((item) => (
+              <div className="tableflow-login__feature" key={item.title}>
+                <span className="tableflow-login__feature-icon">
+                  {item.icon}
+                </span>
+                <span>
+                  <strong>{item.title}</strong>
+                  <small>{item.desc}</small>
+                </span>
               </div>
+            ))}
+          </div>
+        </div>
 
-              <form className="modern-form">
-                {!showOTPSent ? (
-                  <div className="form-group">
-                    <label className="form-label">
-                      Mobile Number <span className="required">*</span>
-                    </label>
-                    <div className="input-wrapper">
-                      <AiOutlinePhone className="input-icon" />
-                      <input
-                        ref={inputRef}
-                        type="tel"
-                        value={mobile}
-                        onChange={(e) => handleCheckMobilenumber(e.target.value)}
-                        placeholder="Enter your 10-digit mobile number"
-                        className="modern-input"
-                        maxLength="10"
-                      />
-                    </div>
-                    {errorMsg.phone && (
-                      <span className="error-text">Please enter a valid phone number</span>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    <div className="form-group">
-                      <label className="form-label">
-                        OTP <span className="required">*</span>
-                      </label>
-                      <div className="input-wrapper">
-                        <input
-                          type="text"
-                          value={getOTPnumber}
-                          onChange={(e) => handleCheckOTPNumber(e.target.value)}
-                          placeholder="Enter 6-digit OTP"
-                          className="modern-input"
-                          maxLength="6"
-                        />
-                      </div>
-                    </div>
-                    {otpTimer > 0 && (
-                      <p className="otp-timer">OTP expires in: {otpTimer}s</p>
-                    )}
-                  </>
-                )}
+        <p className="tableflow-login__copyright">
+          © 2026 TableFlow. All rights reserved.
+        </p>
+      </aside>
 
-                <div className="form-button-group">
-                  {!showOTPSent ? (
-                    <button
-                      type="button"
-                      onClick={handleSendOtp}
-                      disabled={enableOTPsent}
-                      className="btn btn-primary btn-block"
-                    >
-                      Send OTP
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        onClick={(e) => handleLogin(e)}
-                        disabled={getOTPnumber.length < 6 || inProgress}
-                        className="btn btn-primary btn-block"
-                      >
-                        {inProgress ? "Logging in..." : "Login"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleSendOtp}
-                        disabled={otpTimer > 0}
-                        className="btn btn-secondary btn-block"
-                      >
-                        {otpTimer > 0 ? `Resend in ${otpTimer}s` : "Resend OTP"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowOTPSent(false);
-                          setGetOTPnumber("");
-                          setOtpTimer(0);
-                        }}
-                        className="btn btn-text btn-block"
-                      >
-                        Change Number
-                      </button>
-                    </>
-                  )}
-                </div>
-              </form>
-
-              <div className="divider">
-                <span>Don't have an account?</span>
-              </div>
-
+      <main className="tableflow-login__panel">
+        <div className="tableflow-login__card" id="get-started">
+          <div className="tableflow-login__mobile-brand">
+            <Link to="/" className="tableflow-login__logo">
+              TableFlow
+            </Link>
+            <p>Sign in to your account</p>
+          </div>
+          {!createForm && (
+            <div
+              className="tableflow-login__role-toggle"
+              aria-label="Account role"
+            >
               <button
                 type="button"
-                onClick={() => {
-                  setActiveForm(true);
-                  setShowOTPSent(false);
-                }}
-                className="btn btn-outline btn-block"
+                className={role === "guest" ? "active" : ""}
+                onClick={() => setRole("guest")}
               >
-                Create New Account
+                <AiOutlineUser />
+                Guest
               </button>
-            </div>
-          ) : (
-            <div className="signup-form-wrapper">
-              <div className="form-header">
-                <h2>Create Account</h2>
-                <p>Join us today to start booking tables</p>
-              </div>
-
-              <form className="modern-form">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">
-                      First Name <span className="required">*</span>
-                    </label>
-                    <div className="input-wrapper">
-                      <AiOutlineUser className="input-icon" />
-                      <input
-                        type="text"
-                        value={formData.firstName}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            firstName: e.target?.value,
-                          })
-                        }
-                        placeholder="First name"
-                        className="modern-input"
-                        maxLength="50"
-                        autoFocus
-                      />
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Last Name</label>
-                    <div className="input-wrapper">
-                      <AiOutlineUser className="input-icon" />
-                      <input
-                        type="text"
-                        value={formData.lastName}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            lastName: e.target?.value,
-                          })
-                        }
-                        placeholder="Last name"
-                        className="modern-input"
-                        maxLength="50"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">
-                    Email <span className="required">*</span>
-                  </label>
-                  <div className="input-wrapper">
-                    <AiOutlineMail className="input-icon" />
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          email: e.target?.value,
-                        })
-                      }
-                      placeholder="your@email.com"
-                      className="modern-input"
-                    />
-                  </div>
-                  {errorMsg.email && (
-                    <span className="error-text">Please enter a valid email</span>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">
-                    Mobile Number <span className="required">*</span>
-                  </label>
-                  <div className="input-wrapper">
-                    <AiOutlinePhone className="input-icon" />
-                    <input
-                      type="tel"
-                      value={mobile}
-                      onChange={(e) => handleCheckMobilenumber(e.target.value)}
-                      placeholder="10-digit mobile number"
-                      className="modern-input"
-                      maxLength="10"
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">
-                    Location <span className="required">*</span>
-                  </label>
-                  <div className="input-wrapper">
-                    <AiOutlineEnvironment className="input-icon" />
-                    <input
-                      type="text"
-                      value={formData.location}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          location: e.target?.value,
-                        })
-                      }
-                      placeholder="Your location"
-                      className="modern-input"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleSubmitForm}
-                  className="btn btn-primary btn-block btn-lg"
-                >
-                  Sign Up
-                </button>
-              </form>
-
-              <div className="divider">
-                <span>Already have an account?</span>
-              </div>
-
               <button
                 type="button"
-                onClick={() => {
-                  setActiveForm(false);
-                  setShowOTPSent(false);
-                  setMobile("");
-                  setGetOTPnumber("");
-                }}
-                className="btn btn-outline btn-block"
+                className={role === "restaurant" ? "active" : ""}
+                onClick={() => setRole("restaurant")}
               >
-                Back to Login
+                <AiOutlineShop />
+                Restaurant
               </button>
             </div>
           )}
-        </div>
+          {!createForm && (
+            <form className="tableflow-login__form" onSubmit={handleSubmit}>
+              <label>
+                <span>Mobile Number</span>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]{10}"
+                  placeholder="Enter 10-digit mobile number"
+                  value={mobile}
+                  onChange={(e) => handleCheckMobilenumber(e.target.value)}
+                  maxLength="10"
+                  aria-invalid={Boolean(mobileError)}
+                  required
+                />
+                {mobileError && (
+                  <small className="tableflow-login__error">
+                    {mobileError}
+                  </small>
+                )}
+              </label>
+              {showOTPSent && (
+                <label>
+                  <span>OTP</span>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    value={getOTPnumber}
+                    onChange={(e) => setGetOTPnumber(e.target.value)}
+                    required
+                  />
+                </label>
+              )}
+              <div className="tableflow-login__otp-actions">
+                {!showOTPSent ? (
+                  <button
+                    type="button"
+                    onClick={handleSendOtp}
+                    disabled={enableOTPsent}
+                    className="tableflow-login__otp-button tableflow-login__otp-button--primary"
+                  >
+                    Send OTP
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSendOtp}
+                    disabled={otpTimer > 0}
+                    className="tableflow-login__otp-button tableflow-login__otp-button--secondary"
+                  >
+                    {otpTimer > 0 ? `Resend in ${otpTimer}s` : "Resend OTP"}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowOTPSent(false);
+                    setOtpTimer(0);
+                  }}
+                  className="tableflow-login__otp-button tableflow-login__otp-button--ghost"
+                >
+                  Change Number
+                </button>
+              </div>
+              {showOTPSent && (
+                <button
+                  type="submit"
+                  className="tableflow-login__submit"
+                  onClick={handleLogin}
+                  disabled={inProgress || getOTPnumber.length < 6}
+                >
+                  {inProgress && (
+                    <span className="tableflow-login__button-spinner" />
+                  )}
+                  {inProgress ? "Signing In..." : "Sign In"}
+                </button>
+              )}
+            </form>
+          )}
+          {createForm && (
+            <form className="modern-form" onSubmit={handleSubmitForm}>
+              <div className="form-group">
+                <label className="form-label">
+                  First Name <span className="required">*</span>
+                </label>
+                <div className="input-wrapper">
+                  <AiOutlineUser className="input-icon" />
+                  <input
+                    type="text"
+                    value={formData.firstName}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        firstName: e.target?.value,
+                      })
+                    }
+                    placeholder="First name"
+                    className="modern-input"
+                    maxLength="50"
+                    autoFocus
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Last Name</label>
+                <div className="input-wrapper">
+                  <AiOutlineUser className="input-icon" />
+                  <input
+                    type="text"
+                    value={formData.lastName}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        lastName: e.target?.value,
+                      })
+                    }
+                    placeholder="Last name"
+                    className="modern-input"
+                    maxLength="50"
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">
+                  Email <span className="required">*</span>
+                </label>
+                <div className="input-wrapper">
+                  <AiOutlineMail className="input-icon" />
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        email: e.target?.value,
+                      })
+                    }
+                    placeholder="your@email.com"
+                    className="modern-input"
+                  />
+                </div>
+                {errorMsg.email && (
+                  <span className="error-text">Please enter a valid email</span>
+                )}
+              </div>
 
-        <div className="login-footer">
-          <p>© 2024 HotelApp. All rights reserved.</p>
+              <div className="form-group">
+                <label className="form-label">
+                  Mobile Number <span className="required">*</span>
+                </label>
+                <div className="input-wrapper">
+                  <AiOutlinePhone className="input-icon" />
+                  <input
+                    type="tel"
+                    value={mobile}
+                    onChange={(e) => handleCheckMobilenumber(e.target.value)}
+                    placeholder="10-digit mobile number"
+                    className="modern-input"
+                    maxLength="10"
+                  />
+                </div>
+                {mobileError && (
+                  <small className="tableflow-login__error">
+                    {mobileError}
+                  </small>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">
+                  Location <span className="required">*</span>
+                </label>
+                <div className="input-wrapper">
+                  <AiOutlineEnvironment className="input-icon" />
+                  <input
+                    type="text"
+                    value={formData.location}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        location: e.target?.value,
+                      })
+                    }
+                    placeholder="Your location"
+                    className="modern-input"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="tableflow-login__create-account"
+                disabled={isSubmitted}
+              >
+                {isSubmitted ? "Creating Account..." : "Create Account"}
+              </button>
+            </form>
+          )}
+          {/* 
+          <div className="tableflow-login__divider">
+            <span>Or continue with</span>
+          </div>
+
+          <div className="tableflow-login__social">
+            <button type="button">
+              <AiOutlineApple />
+              Apple
+            </button>
+            <button type="button">
+              <FcGoogle />
+              Google
+            </button>
+          </div> */}
+
+          <p className="tableflow-login__signup mt-5">
+            {createForm ? "Already have an account?" : "Don't have an account?"}{" "}
+            <button
+              onClick={() => setCreateForm(!createForm)}
+              className="tableflow-login__signup-link"
+            >
+              {createForm ? "Sign In" : "Sign up"}
+            </button>
+          </p>
+          {!createForm && (
+            <div className="tableflow-login__tip">
+              <strong>Pro Tip:</strong> Add TableFlow to your home screen for
+              quick access. Look for "Install" or "Add to Home Screen" in your
+              browser menu.
+            </div>
+          )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
