@@ -26,26 +26,26 @@ const SideNav = () => {
   const navItems = [
     {
       label: "Dashboard",
-      to: "/hotel/dashboard",
+      to: "/dashboard",
       match: "dashboard",
     },
     ...(isAdmin
       ? [
           {
             label: "Hotels",
-            to: "/hotel/create",
+            to: "/hotellist",
             match: "hotel/create|hotel/details",
           },
         ]
       : []),
     {
       label: "Reservations",
-      to: "/hotel/booked-table",
+      to: "/booked-table",
       match: "booked-table",
     },
     {
       label: "Book a table",
-      to: "/hotel/book-table",
+      to: "/book-table",
       match: "book-table",
     },
   ];
@@ -62,7 +62,7 @@ const SideNav = () => {
         {mobileOpen ? <AiOutlineClose /> : <AiOutlineMenu />}
       </button>
 
-      <NavLink to="/hotel/dashboard" className="app-topnav__brand">
+      <NavLink to="/dashboard" className="app-topnav__brand">
         Table Bokking
       </NavLink>
 

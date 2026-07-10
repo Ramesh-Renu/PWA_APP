@@ -190,7 +190,7 @@ const CreateHotel = () => {
   /** HANDLE HOTEL TABLE VIEW */
   const handleHotelView = (hotelId, hotelData, isEditable=true, isBooking=false) => {
     if (hotelId) {
-      navigate(`/hotel/details/${hotelId}`, {
+      navigate(`/details/${hotelId}`, {
         state: { hotelData, isEditable ,isBooking },
       });
     }

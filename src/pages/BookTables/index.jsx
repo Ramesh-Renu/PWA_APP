@@ -88,7 +88,7 @@ const BookTables = () => {
   /** HANDLE HOTEL TABLE VIEW */
   const handleHotelView = (hotelId, hotelData, isEditable=false, isBooking=false) => {
     if (hotelId) {
-      navigate(`/hotel/book-table/details/${hotelId}`, {
+      navigate(`/book-table/details/${hotelId}`, {
         state: { hotelData, isEditable, isBooking },
       });
     }
@@ -236,7 +236,7 @@ const BookTables = () => {
 
   const handleTabSelect = (tab) => {
     if (tab === "reservations") {
-      navigate("/hotel/booked-table");
+      navigate("/booked-table");
       return;
     }
 

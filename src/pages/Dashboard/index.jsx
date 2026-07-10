@@ -6,6 +6,11 @@ import useAuth from "hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { getDashboardSummaryParams } from "utils/dashboard";
 import ReservationStatusDonut from "./ReservationStatusDonut";
+import useGlobalMaster from "hooks/useGlobalMaster";
+import { renderArea, renderLocation } from "utils/common";
+import Table from "components/common/Table";
+import { createColumnHelper } from "@tanstack/react-table";
+import dayjs from "dayjs";
 const statusMeta = {
   1: { label: "Confirmed", className: "confirmed" },
   2: { label: "Seated", className: "seated" },
@@ -59,6 +64,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [{ data: auth }] = useAuth();
   const [data, setData] = useState(null);
+  const [recentReservationData, setRecentReservationData] = useState(null);
+  const columnHelper = createColumnHelper();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filterType, setFilterType] = useState(
@@ -69,11 +76,21 @@ const Dashboard = () => {
   const [rangeEnd, setRangeEnd] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
   const dateTimeRef = useRef(null);
+  const { areaList, locationList, getAllArea, getAllLocation } =
+    useGlobalMaster();
 
   const selectedOption = useMemo(
     () => BOARD_FILTER_OPTIONS.find((option) => option.value === filterType),
     [filterType],
   );
+  useEffect(() => {
+    if (areaList.data.length === 0) {
+      getAllArea();
+    }
+    if (locationList.data.length === 0) {
+      getAllLocation();
+    }
+  }, []);
 
   const onSelectedCustomMonthRange = (values) => {
     if (!Array.isArray(values) || values.length === 0) return;
@@ -116,7 +133,8 @@ const Dashboard = () => {
       setError("");
       try {
         const response = await getDashboardSummary(params);
-        setData(response.data);
+        setData(response.data || []);
+        setRecentReservationData(response?.data?.recent || []);
       } catch (err) {
         setError(
           err?.response?.data?.message ||
@@ -141,7 +159,7 @@ const Dashboard = () => {
     const hotelId = reservation.hotel_id || reservation.hotel?.id;
     if (!hotelId) return;
 
-    navigate(`/hotel/book-table/details/${hotelId}`, {
+    navigate(`/book-table/details/${hotelId}`, {
       state: {
         hotelData: reservation.hotel || { id: hotelId },
         isBooking: true,
@@ -204,6 +222,70 @@ const Dashboard = () => {
       note: `${totals.occupiedSeats || 0} seats currently in use`,
     },
   ];
+  /** COLUMNS DEFINITION */
+  const columns = [
+    columnHelper.accessor("hotel", {
+      header: () => <span className="customHeader">Name</span>,
+      cell: (info) => {
+        const rowData = info.row.original;
+        return (
+          <span>
+            {rowData?.hotel?.hotel_name || rowData?.hotel_name || "N/A"}
+          </span>
+        );
+      },
+    }),
+    columnHelper.accessor("reservation_id", {
+      header: () => <span className="customHeader">Reservation</span>,
+      cell: (info) => {
+        const rowData = info.row.original;
+        console.log("rowData", rowData);
+        
+        return (
+          <div
+            tabIndex={0}
+            className="truncate-2-lines"
+            title={rowData?.id}
+            onClick={() => handleHotelView(rowData?.id, rowData, true)}
+          >
+            <strong>#{String(rowData?.id).padStart(4, "0")}</strong>
+          </div>
+        );
+      },
+    }),
+    columnHelper.accessor("dining_date", {
+      header: () => <span className="customHeader">Date</span>,
+      cell: (info) => {
+        return dayjs(info?.getValue()).format("MM/DD/YYYY") || "N/A";
+      },
+    }),
+    columnHelper.accessor("start_time", {
+      header: () => <span className="customHeader">Time</span>,
+      cell: (info) => {
+        return info?.getValue() || "N/A";
+      },
+    }),
+    columnHelper.accessor("table_id", {
+      header: () => <span className="customHeader">Table Number</span>,
+      cell: (info) => {
+        const tableList = (info.row.original.seat_status || [])
+          .map(({ table_id }) => table_id)
+          .join(", ");
+        return <span className={`status-badge`}>{tableList || "N/A"}</span>;
+      },
+    }),
+    columnHelper.accessor("seat_status", {
+      header: () => <span className="customHeader">Seats Count</span>,
+      cell: (info) => {
+        const guests = (info.row.original.seat_status || []).reduce(
+          (sum, table) => sum + (table.seat_ids?.length || 0),
+          0,
+        );
+        return <span className={`status-badge`}>{guests || "N/A"}</span>;
+      },
+    }),
+  ];
+  console.log("recentReservationData", recentReservationData);
 
   return (
     <main className="dashboard-page">
@@ -270,34 +352,6 @@ const Dashboard = () => {
       </section>
 
       <section className="dashboard-grid">
-        {/* <article className="dashboard-panel trend-panel">
-          <div className="panel-heading">
-            <div>
-              <h2>Booking trend</h2>
-              <p>{trendSubtitle}</p>
-            </div>
-            <span className="live-chip">
-              {aggregationMode === "weekly" ? "WEEKLY" : "DAILY"}
-            </span>
-          </div>
-          <div className="bar-chart">
-            {aggregatedTrend.map((item, index) => (
-              <div className="bar-column" key={`${item.label}-${index}`}>
-                <span className="bar-value">{item.bookings}</span>
-                <div className="bar-track">
-                  <div
-                    className="bar-fill"
-                    style={{
-                      height: `${Math.max(5, (item.bookings / maxBookings) * 100)}%`,
-                    }}
-                  />
-                </div>
-                <span>{item.label}</span>
-              </div>
-            ))}
-          </div>
-        </article> */}
-
         <article className="dashboard-panel status-panel">
           <div className="panel-heading">
             <div>
@@ -359,7 +413,7 @@ const Dashboard = () => {
             </span>
             <button
               className="view-all-reservations"
-              onClick={() => navigate("/hotel/booked-table")}
+              onClick={() => navigate("/booked-table")}
             >
               View all history <span>→</span>
             </button>
@@ -373,57 +427,16 @@ const Dashboard = () => {
           </div>
         ) : (
           <div className="reservation-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Reservation</th>
-                  <th>Hotel</th>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Guests</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.recent.map((item) => {
-                  const meta = statusMeta[item.dining_status] || statusMeta[5];
-                  const guests = (item.seat_status || []).reduce(
-                    (sum, table) => sum + (table.seat_ids?.length || 0),
-                    0,
-                  );
-                  return (
-                    <tr key={item.id}>
-                      <td>
-                        <strong>#{String(item.id).padStart(4, "0")}</strong>
-                      </td>
-                      <td>{item.hotel?.hotel_name || "—"}</td>
-                      <td>
-                        {new Date(item.dining_date).toLocaleDateString(
-                          undefined,
-                          { day: "2-digit", month: "short", year: "numeric" },
-                        )}
-                      </td>
-                      <td>{String(item.start_time || "—").slice(0, 5)}</td>
-                      <td>{guests || "—"}</td>
-                      <td>
-                        <span className={`status-badge ${meta.className}`}>
-                          {meta.label}
-                        </span>
-                      </td>
-                      <td>
-                        <button
-                          className="view-detail-button"
-                          onClick={() => handleViewReservationDetails(item)}
-                        >
-                          View details
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <Table
+              columns={columns}
+              columnData={recentReservationData || []}
+              className={"products__body-table dashboard_table"}
+              tableName="Order_list"
+              noDataContent={"Do not render any no data content while loading"}
+              tableHeight={"calc(100vh - 95px)"}
+              loading={loading}
+              //onScrollEnd={handleInfiniteScroll}
+            />
           </div>
         )}
       </article>

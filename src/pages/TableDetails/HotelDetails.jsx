@@ -80,7 +80,7 @@ const HotelDetails = () => {
     <main className="hotel-details-page">
       <div className="hotel-breadcrumb">
         <Breadcrumb className="mb-1 p-0">
-          <Breadcrumb.Item onClick={() => navigate("/hotel/book-table")}>
+          <Breadcrumb.Item onClick={() => navigate("/book-table")}>
             Hotel Table
           </Breadcrumb.Item>
           <span className="breadcrumb-item-divider">

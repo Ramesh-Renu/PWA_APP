@@ -153,7 +153,7 @@ const BookedTableDetails = ({ data }) => {
     if (e.id === 2) {
       deleteConfirmation(getVal);
     } else {
-      navigate("/hotel/book-table/details/" + rowData.hotel_id, {
+      navigate("/book-table/details/" + rowData.hotel_id, {
         state: { hotel_id: rowData.hotel_id },
       });
     }
@@ -349,7 +349,7 @@ const BookedTableDetails = ({ data }) => {
   };
 
   const handleGoToBookingPage = () => {
-    navigate("/hotel/book-table");
+    navigate("/book-table");
   };
   return (
     <Fragment>

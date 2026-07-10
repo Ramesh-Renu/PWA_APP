@@ -34,7 +34,7 @@ const App = () => {
         <Route element={<UserLayout />}>
           
           {/* Hotel */}
-          <Route path="hotel" element={<Home />}>
+          <Route path="" element={<Home />}>
             
             {/* Default redirect */}
             <Route
@@ -44,7 +44,7 @@ const App = () => {
 
             {/* Routes */}
             <Route path="dashboard" element={<Dashboard />} />
-            <Route path="create" element={<CreateHotel />} />
+            <Route path="hotellist" element={<CreateHotel />} />
             {auth?.details &&
             <Route path="booked-table" element={<BookedTableDetails data={auth}/>} />
             }

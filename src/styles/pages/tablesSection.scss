@@ -222,7 +222,10 @@
         &.id,
         &.seatCount,
         &.tables_per_floor,
+        &.floorCount,
         &.tableCount,
+        &.table_id,
+        &.seat_status,
         &.floor {
           text-align: center;
         }
