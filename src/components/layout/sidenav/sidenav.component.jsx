@@ -16,11 +16,12 @@ const SideNav = () => {
   useEffect(() => setMobileOpen(false), [location.pathname]);
 
   const userLogout = () => {
+    console.log('logout');
     localStorage.removeItem("token");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("userInfo");
     dispatch({ type: "LOGOUT" });
-    navigate("/");
+    navigate("/", { replace: true });
   };
 
   const navItems = [

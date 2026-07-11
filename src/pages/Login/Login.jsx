@@ -33,7 +33,7 @@ const features = [
 
 export default function Login() {
   const { showToast } = useToast();
-  const [{ data }, { setAuth, getAuth }] = useAuth();
+  const [{ data }, { setAuth, getAuth, getUserInfoData  }] = useAuth();
   const [mobile, setMobile] = useState("");
   const [role, setRole] = useState("guest");
   const [mobileError, setMobileError] = useState("");
@@ -83,7 +83,7 @@ export default function Login() {
       setMobileError("Please enter a valid 10-digit mobile number");
       return;
     }
-    navigate("/hotel");
+    navigate("/dashboard", { replace: true });
   };
 
   const handleSendOtp = (e) => {
@@ -118,32 +118,34 @@ export default function Login() {
   };
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-    console.log("e", e);
+  e.preventDefault();
 
-    setInProgress(true);
-    const response = await getAuth({
-      mobilenumber: mobile,
-      otp: getOTPnumber,
+  setInProgress(true);
+
+  const response = await getAuth({
+    mobilenumber: mobile,
+    otp: getOTPnumber,
+  });
+
+  if (response?.data?.success) {
+    // Load profile
+    await getUserInfoData();
+
+    showToast({
+      title: "Welcome!",
+      message: response.data.message,
+      variant: "success",
     });
 
-    if (response.data.success) {
-      setIsTokenSuccess(true);
-      showToast({
-        title: `${"Welcome"}!`,
-        message: response.data.message,
-        variant: "success",
-      });
-      navigate("/hotel");
-    } else {
-      setInProgress(false);
-      setIsTokenSuccess(false);
-      showToast({
-        message: response.data.message,
-        variant: "danger",
-      });
-    }
-  };
+    navigate("/dashboard", { replace: true });
+  } else {
+    setInProgress(false);
+    showToast({
+      message: response.data.message,
+      variant: "danger",
+    });
+  }
+};
   const handleSubmitForm = (e) => {
     e.preventDefault();
     setIsSubmitted(true);

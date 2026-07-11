@@ -5,22 +5,25 @@ const ReservationStatusDonut = ({ data, loading }) => {
   const created = data?.todayStatus?.created || 0;
   const cancelled = data?.todayStatus?.cancelled || 0;
   const completed = data?.todayStatus?.completed || 0;
-  const total = created + cancelled + completed;
-
+  const seated = data?.todayStatus?.seated || 0;
+  const pending = data?.todayStatus?.pending || 0;  
+  const total = created + cancelled + completed + seated + pending;
   const donutPayload = {
-    allCountries: [
-      { countryId: "created", countryName: "Created", countryCount: created },
-      { countryId: "cancelled", countryName: "Cancelled", countryCount: cancelled },
-      { countryId: "completed", countryName: "Completed", countryCount: completed },
+    all: [
+      { statusId: "created", statusName: "Created", statusCount: created },
+      { statusId: "cancelled", statusName: "Cancelled", statusCount: cancelled },
+      { statusId: "completed", statusName: "Completed", statusCount: completed },
+      { statusId: "seated", statusName: "Seated", statusCount: seated },
+      { statusId: "pending", statusName: "Pending", statusCount: pending },
     ],
-    overallCountryCount: total,
+    overallStatusCount: total,
   };
 
   return (
     <DonutChart
       title="Reservation status"
       centerLabel="Reservations"
-      variant="country"
+      variant="status"
       data={donutPayload}
       loading={loading}
     />

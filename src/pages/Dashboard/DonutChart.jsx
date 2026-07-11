@@ -32,39 +32,58 @@ const DISTRIBUTION_SCHEMAS = {
     count: "regionCount",
     id: "regionId",
   },
-  country: {
-    topFive: "topFiveCountries",
-    all: "allCountries",
-    overall: "overallCountryCount",
-    name: "countryName",
-    count: "countryCount",
-    id: "countryId",
+  status: {
+    topFive: "all",
+    all: "all",
+    overall: "overallStatusCount",
+    name: "statusName",
+    count: "statusCount",
+    id: "statusId",
   },
 };
 
-const WORKSPACE_HEALTH_SEGMENTS = [
-  { id: "healthy", name: "Healthy", metricKey: "healthy", colorKey: "healthy" },
+const RESERVATION_HEALTH_SEGMENTS = [
+  { id: "created", name: "Created", metricKey: "created", colorKey: "healthy" },
   {
-    id: "needsAttention",
-    name: "Needs Attention",
-    metricKey: "needsAttention",
-    colorKey: "needsAttention",
+    id: "completed",
+    name: "Completed",
+    metricKey: "completed",
+    colorKey: "completed",
   },
-  { id: "atRisk", name: "At Risk", metricKey: "atRisk", colorKey: "atRisk" },
+  {
+    id: "cancelled",
+    name: "Cancelled",
+    metricKey: "cancelled",
+    colorKey: "atRisk",
+  },
+  {
+    id: "seated",
+    name: "Seated",
+    metricKey: "seated",
+    colorKey: "atRisk",
+  },
+  {
+    id: "pending",
+    name: "Pending",
+    metricKey: "pending",
+    colorKey: "atRisk",
+  },
 ];
 
-const mapWorkspaceHealthRows = (data, dashboardMaterValue = []) => {
+const mapReservationHealthRows = (data, dashboardMaterValue = []) => {
+  console.log("segment", data);
   if (!data || typeof data !== "object") return [];
-
   const colors = COLORS_VALUES(dashboardMaterValue);
-  const overall = WORKSPACE_HEALTH_SEGMENTS.reduce(
+  const overall = RESERVATION_HEALTH_SEGMENTS.reduce(
     (sum, segment) => sum + getNumericMetric(data[segment.metricKey]),
     0,
   );
 
   if (!overall) return [];
 
-  return WORKSPACE_HEALTH_SEGMENTS.map((segment) => {
+  return RESERVATION_HEALTH_SEGMENTS.map((segment) => {
+    console.log("segment", segment);
+
     const count = getNumericMetric(data[segment.metricKey]);
     return {
       id: segment.id,
@@ -92,9 +111,11 @@ const getNumericMetric = (value, fallback = 0) => {
 
 const resolveDistributionSource = (data, variant) => {
   const schema = DISTRIBUTION_SCHEMAS[variant];
+
   if (!schema || !data || typeof data !== "object") return null;
 
   const nested = data[variant];
+
   if (
     nested &&
     typeof nested === "object" &&
@@ -102,14 +123,14 @@ const resolveDistributionSource = (data, variant) => {
   ) {
     return { ...schema, source: nested };
   }
-
+  console.log("nested", data);
+  console.log("schema.", schema);
   if (Array.isArray(data[schema.topFive]) || Array.isArray(data[schema.all])) {
     return { ...schema, source: data };
   }
 
   return null;
 };
-
 const mapDistributionRows = (
   items = [],
   schema,
@@ -121,6 +142,7 @@ const mapDistributionRows = (
       const count = getNumericMetric(row[schema.count]);
       const name = row[schema.name] ?? "—";
       const id = row[schema.id] ?? `${name}-${index}`;
+
       return {
         id,
         name,
@@ -130,7 +152,8 @@ const mapDistributionRows = (
           DONUT_COLORS[index % DONUT_COLORS.length],
       };
     })
-    .filter((row) => row.count > 0)
+    // Remove this line
+    // .filter((row) => row.count > 0)
     .map((row) => ({
       ...row,
       percentage:
@@ -144,41 +167,6 @@ const buildColorMap = (rows = []) => {
     map.set(String(row.id), DONUT_COLORS[index % DONUT_COLORS.length]);
   });
   return map;
-};
-
-const buildDistributionLegendItems = (
-  topFiveRows = [],
-  allRows = [],
-  isExpanded = false,
-) => {
-  if (isExpanded) {
-    return allRows;
-  }
-
-  if (!topFiveRows.length) {
-    return allRows;
-  }
-
-  const topFiveIds = new Set(topFiveRows.map((row) => String(row.id)));
-  const hiddenRows = allRows.filter((row) => !topFiveIds.has(String(row.id)));
-  const othersCount = hiddenRows.reduce((sum, row) => sum + row.count, 0);
-
-  if (hiddenRows.length === 0 || othersCount <= 0) {
-    return topFiveRows;
-  }
-
-  return [
-    ...topFiveRows,
-    {
-      id: "__distribution-others__",
-      name: "+ Others",
-      count: othersCount,
-      value: othersCount,
-      percentage: 0,
-      color: OTHERS_LEGEND_COLOR,
-      isOthers: true,
-    },
-  ];
 };
 
 const DONUT_HOVER_OFFSET = 8;
@@ -227,7 +215,6 @@ const DonutSliceShape = ({
   index,
   hoveredSliceIndex,
   hoverProgress,
-  
 }) => {
   const offset =
     index === hoveredSliceIndex ? DONUT_HOVER_OFFSET * hoverProgress : 0;
@@ -252,36 +239,73 @@ const blurChartFocus = () => {
   }
 };
 
+const buildDistributionLegendItems = (
+  topFiveRows = [],
+  allRows = [],
+  isExpanded = false,
+) => {
+  if (isExpanded) {
+    return allRows;
+  }
+
+  if (!topFiveRows.length) {
+    return allRows;
+  }
+
+  const topFiveIds = new Set(topFiveRows.map((row) => String(row.id)));
+  const hiddenRows = allRows.filter((row) => !topFiveIds.has(String(row.id)));
+  const othersCount = hiddenRows.reduce((sum, row) => sum + row.count, 0);
+
+  if (hiddenRows.length === 0 || othersCount <= 0) {
+    return topFiveRows;
+  }
+
+  return [
+    ...topFiveRows,
+    {
+      id: "__distribution-others__",
+      name: "+ Others",
+      count: othersCount,
+      value: othersCount,
+      percentage: 0,
+      color: OTHERS_LEGEND_COLOR,
+      isOthers: true,
+    },
+  ];
+};
+
 const DonutChart = ({
   title = "",
   centerLabel = "Total",
-  variant = "region",
+  variant = "status",
   data = null,
   loading = false,
   dashboardMaterValue = [],
-  legendItems,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeSliceIndex, setActiveSliceIndex] = useState(null);
   const [hoveredSliceIndex, setHoveredSliceIndex] = useState(null);
-  const isWorkspaceHealth = variant === "workspaceHealth";
+  const isWorkspaceHealth = variant === "workspace";
 
   const distribution = useMemo(
     () => (isWorkspaceHealth ? null : resolveDistributionSource(data, variant)),
     [data, variant, isWorkspaceHealth],
   );
+  console.log("data", data);
 
   const allRows = useMemo(() => {
-    if (isWorkspaceHealth) {
-      return mapWorkspaceHealthRows(data, dashboardMaterValue);
-    }
+    // if (isWorkspaceHealth) {
+    //   return mapReservationHealthRows(data, dashboardMaterValue);
+    // }
 
     if (!distribution) return [];
+
     const allItems = distribution.source[distribution.all] ?? [];
     const overallCount = getNumericMetric(
       distribution?.source?.[distribution?.overall],
     );
     const rows = mapDistributionRows(allItems, distribution, overallCount);
+    console.log("allRows", rows);
     const colorById = buildColorMap(rows);
     return rows.map((row) => ({
       ...row,
@@ -387,6 +411,7 @@ const DonutChart = ({
     innerRadius: expanded ? 88 : 62,
     outerRadius: expanded ? 128 : 92,
   });
+  const legendItems = buildDistributionLegendItems(topFiveRows, allRows, true);
 
   return (
     <Fragment>
@@ -401,76 +426,70 @@ const DonutChart = ({
         </div>
       )}
       {!loading && !showEmptyState && (
-      <div
-        className={`task-stage-distribution__performance`}
-      >
-        <div
-          className="task-stage-distribution__donut-wrap"
-          onMouseDown={(event) => {
-            if (!event.target.closest(".recharts-sector")) {
-              blurChartFocus();
-            }
-          }}
-        >
-          <ResponsiveContainer
-            width="100%"
+        <div className={`task-stage-distribution__performance`}>
+          <div
+            className="task-stage-distribution__donut-wrap"
+            onMouseDown={(event) => {
+              if (!event.target.closest(".recharts-sector")) {
+                blurChartFocus();
+              }
+            }}
           >
-            <PieChart onMouseLeave={handleChartMouseLeave}>
-              <Pie
-                data={allRows}
-                dataKey="value"
-                nameKey="name"
-                paddingAngle={2}
-                stroke="none"
-                isAnimationActive
-                animationDuration={450}
-                animationEasing="ease-out"
-                shape={renderDonutSliceShape}
-                onMouseEnter={handlePieEnter}
-                onMouseLeave={handlePieLeave}
-                onClick={blurChartFocus}
-              >
-                {allRows.map((entry) => (
-                  <Cell key={entry.id} fill={entry.color} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="task-stage-distribution__donut-center" aria-hidden>
-            <strong>{centerDisplay.count}</strong>
-            <span>{centerDisplay.label}</span>
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart onMouseLeave={handleChartMouseLeave}>
+                <Pie
+                  data={allRows}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={55} // 👈 Required for donut
+                  outerRadius={85}
+                  paddingAngle={2}
+                  stroke="none"
+                  isAnimationActive
+                  animationDuration={450}
+                  animationEasing="ease-out"
+                  shape={renderDonutSliceShape}
+                  onMouseEnter={handlePieEnter}
+                  onMouseLeave={handlePieLeave}
+                  onClick={blurChartFocus}
+                >
+                  {allRows.map((entry) => (
+                    <Cell key={entry.id} fill={entry.color} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="task-stage-distribution__donut-center" aria-hidden>
+              <strong>{centerDisplay.count}</strong>
+              <span>{centerDisplay.label}</span>
+            </div>
           </div>
+          <ul className={`task-stage-distribution__legend`}>
+            {legendItems?.map((row) => {
+              return (
+                <li
+                  key={row.id}
+                  className={`task-stage-distribution__legend-item${
+                    row.isOthers
+                      ? " task-stage-distribution__legend-item--others"
+                      : ""
+                  }`}
+                >
+                  <span
+                    className="task-stage-distribution__legend-dot"
+                    style={{ backgroundColor: row.color }}
+                  />
+                  <span className="task-stage-distribution__legend-label">
+                    {row.name}
+                  </span>
+                  <span className="task-stage-distribution__legend-value">
+                    {isWorkspaceHealth ? `${row.count}%` : row.count}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
         </div>
-        <ul
-          className={`task-stage-distribution__legend`}
-        >
-          {legendItems?.map((row) => {
-           
-            return (
-              <li
-                key={row.id}
-                className={`task-stage-distribution__legend-item${
-                  row.isOthers
-                    ? " task-stage-distribution__legend-item--others"
-                    : ""
-                }`}
-               
-              >
-                <span
-                  className="task-stage-distribution__legend-dot"
-                  style={{ backgroundColor: row.color }}
-                />
-                <span className="task-stage-distribution__legend-label">
-                  {row.name}
-                </span>
-                <span className="task-stage-distribution__legend-value">
-                  {isWorkspaceHealth ? `${row.count}%` : row.count}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
       )}
     </Fragment>
   );

@@ -58,6 +58,8 @@ const UserLayout = () => {
         }
       } else {
         logoutUser();
+        navigate("/", { replace: true });
+
       }
     }, 60000); // Check every 1 minute
 

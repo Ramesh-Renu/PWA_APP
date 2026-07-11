@@ -25,7 +25,7 @@ const useAuth = () => {
         dispatch({ type: "SET_LOADING", payload: false });
       }
     },
-    [dispatch]
+    [dispatch],
   );
 
   const getUserInfoData = useCallback(
@@ -38,12 +38,16 @@ const useAuth = () => {
         dispatch({ type: "SET_ACTIVE_USER_INFO", payload: data });
       } catch (error) {
         dispatch({ type: "SET_ERROR", payload: error });
-        localStorage.setItem("token" , null);
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("userInfo");
+
+        dispatch({ type: "LOGOUT" });
       } finally {
         dispatch({ type: "SET_LOADING", payload: false });
       }
     },
-    [dispatch]
+    [dispatch],
   );
   // 🚪 LOGOUT
   const logoutUser = useCallback(() => {

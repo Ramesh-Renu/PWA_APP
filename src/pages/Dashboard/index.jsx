@@ -239,8 +239,6 @@ const Dashboard = () => {
       header: () => <span className="customHeader">Reservation</span>,
       cell: (info) => {
         const rowData = info.row.original;
-        console.log("rowData", rowData);
-        
         return (
           <div
             tabIndex={0}
@@ -285,8 +283,7 @@ const Dashboard = () => {
       },
     }),
   ];
-  console.log("recentReservationData", recentReservationData);
-
+  
   return (
     <main className="dashboard-page">
       <header className="dashboard-header">
