@@ -61,3 +61,16 @@ export const getSeatsStatusMatsers = (params) => baseAPI.GET(API.GETALL_SEATS_ST
 /** NOTIFICATION */
 export const getRecentNotification = (params) => baseAPI.POST(API.GET_RECENT_NOTIFICATION, params);
 
+/** Menu **/
+export const createMenu = (body) => baseAPI.POST(API.MENU_API, body);
+
+export const getAllMenu = (params) => baseAPI.GET(API.MENU_API, params);
+
+export const getMenuById = (menuId) =>
+  baseAPI.GET(`${API.MENU_API}/${menuId}`);
+
+export const updateMenu = (menuId, body) =>
+  baseAPI.PUT(`${API.MENU_API}/${menuId}`, body);
+
+export const deleteMenu = (menuId) =>
+  baseAPI.DELETE(`${API.MENU_API}/${menuId}`);

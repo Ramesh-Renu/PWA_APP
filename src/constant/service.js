@@ -25,6 +25,7 @@ export const API = {
   GETALL_DINING_STATUS_API: "/api/dining-status",
   CREATE_SEATS_STATUS_MASTER: "/api/seat-status",
   GETALL_SEATS_STATUS_MASTER: "/api/seat-status",
+  MENU_API: "/api/menu",
   
 
   /** NOTIFICATION */

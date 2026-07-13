@@ -42,8 +42,7 @@ const BookedTableDetails = ({ data }) => {
   const [selectedId, setSelectedId] = useState(null);
   const [loadingHotelListApp, setLoadingHotelListApp] = useState(true);
   const [hasMoreRecords, setHasMoreRecords] = useState(true);
-  console.log("diningStatusList", diningStatusList);
-
+  
   useEffect(() => {
     if (diningStatusList.data.length === 0) {
       getDiningStatus();
@@ -350,14 +349,10 @@ const BookedTableDetails = ({ data }) => {
 
   const handleGoToBookingPage = () => {
     navigate("/book-table");
-  };
+  };  
   return (
     <Fragment>
       <section className="app-page reservations-page">
-      <header className="app-page-header reservations-header">
-        <div><span className="page-kicker">RESERVATIONS</span><h1>Reservation management</h1><p>Track bookings, guest seating and dining status in one place.</p></div>
-        <button className="page-primary-action" onClick={handleGoToBookingPage}>+ New reservation</button>
-      </header>
       <div className="page-summary-strip">
         <div><span>All reservations</span><strong>{bookedData?.length || 0}</strong></div>
         <div><span>Confirmed</span><strong>{bookedData?.filter((item) => item.dining_status === 1).length || 0}</strong></div>

@@ -58,7 +58,7 @@
 
 /* Customer booking page */
 .customer-booking-page{min-height:100vh;background:#fff;color:#0f172a;font-family:"Montserrat",sans-serif}
-.customer-booking-shell{max-width:1180px;margin:0 auto;padding:28px 28px 44px}
+.customer-booking-shell{max-width:1580px;margin:0 auto;padding:28px 28px 44px}
 .customer-booking-header{margin-bottom:24px}.customer-booking-header h1{margin:0 0 8px;color:#050505;font-size:30px;font-weight:800;letter-spacing:-.4px}.customer-booking-header p{margin:0;color:#64748b;font-size:14px}
 .customer-booking-grid{display:grid;grid-template-columns:212px minmax(0,1fr);gap:26px;align-items:start}
 .customer-booking-sidebar{position:sticky;top:72px;display:grid;gap:8px}.customer-booking-sidebar button,.customer-booking-tabs button{min-height:40px;display:flex;align-items:center;border:1px solid #dedede;border-radius:7px;background:#fff;color:#242424;padding:0 14px;font:inherit;font-size:14px;font-weight:600;text-align:left;cursor:pointer;transition:background .16s,border-color .16s,color .16s}.customer-booking-sidebar button:before,.customer-booking-tabs button:before{width:20px;margin-right:8px;text-align:center}.customer-booking-sidebar button:nth-child(1):before,.customer-booking-tabs button:nth-child(1):before{content:"▦"}.customer-booking-sidebar button:nth-child(2):before,.customer-booking-tabs button:nth-child(2):before{content:"⌕"}.customer-booking-sidebar button:nth-child(3):before,.customer-booking-tabs button:nth-child(3):before{content:"◫"}.customer-booking-sidebar button:nth-child(4):before,.customer-booking-tabs button:nth-child(4):before{content:"▱"}

@@ -25,9 +25,6 @@ const BookedTableDetails = lazy(
 );
 const App = () => {
   const [{ data: auth }] = useAuth();
-  useEffect(() => {
-    console.log("AUTH:", auth);
-  }, [auth]);
   const token = localStorage.getItem("token");
 
   return (

@@ -1,0 +1,98 @@
+.reservation-card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 18px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.08);
+}
+
+.reservation-card__header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:16px;
+}
+
+.reservation-card__header h4{
+    margin:0;
+    font-size:20px;
+}
+
+.reservation-card__header span{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    color:#666;
+    font-size:13px;
+}
+
+.status{
+    padding:6px 14px;
+    border-radius:50px;
+    color:#fff;
+    font-size:12px;
+    font-weight:600;
+}
+
+.status-1{
+    background:#2F80ED;
+}
+
+.status-2{
+    background:#F2994A;
+}
+
+.status-3{
+    background:#27AE60;
+}
+
+.reservation-card__hotel{
+    display:flex;
+    gap:12px;
+    margin-bottom:16px;
+}
+
+.reservation-card__hotel h5{
+    margin:0;
+    font-size:16px;
+}
+
+.reservation-card__hotel p{
+    margin-top:4px;
+    color:#666;
+}
+
+.reservation-card__chips{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+}
+
+.chip{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:#F5F7FA;
+    padding:8px 12px;
+    border-radius:30px;
+    font-size:13px;
+}
+
+.reservation-card__footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.reservation-card__footer button{
+    border:none;
+    background:#2563eb;
+    color:white;
+    border-radius:10px;
+    padding:10px 18px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    cursor:pointer;
+}

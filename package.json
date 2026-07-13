@@ -17,6 +17,7 @@
     "bootstrap": "^5.3.8",
     "dayjs": "^1.11.19",
     "env": "^0.0.2",
+    "lucide-react": "^1.24.0",
     "or": "^0.2.0",
     "react": "^19.1.1",
     "react-bootstrap": "^2.10.10",

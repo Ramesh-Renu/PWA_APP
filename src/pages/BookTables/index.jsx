@@ -1,11 +1,5 @@
 import React, { Fragment, useEffect, useRef, useState } from "react";
-import SelectDropDown from "components/common/SelectDropDown";
-import { Col, Row } from "react-bootstrap";
-import {
-  getAllHotel,
-  searchHotelbyNameLocation,
-  deleteHotel,
-} from "services";
+import { getAllHotel, searchHotelbyNameLocation, deleteHotel } from "services";
 import useGlobalMaster from "hooks/useGlobalMaster";
 import PopupModal from "components/common/PopupModal";
 import Table from "components/common/Table";
@@ -16,9 +10,13 @@ import * as images from "../../assets/images/index";
 import { useNavigate } from "react-router-dom";
 import ToolTipPopup from "components/common/ToolTipPopup";
 import { renderArea, renderLocation } from "utils/common";
-
+import useAuth from "hooks/useAuth";
+import BookedTableDetails from "pages/TableDetails/BookedTableDetails";
+import ReservationPage from "pages/BoockedList/ReservationPage";
+import OrderHistory from "pages/OrderHistory/OrderHistory";
 const BookTables = () => {
   const [activeTab, setActiveTab] = useState("availability");
+  const [{ data: auth }] = useAuth();
   const [listOfHotel, setListOfHotel] = useState([]);
   const [showDeleteHotel, setShowDeleteHotel] = useState(false);
   const [loadingHotelListApp, setLoadingHotelListApp] = useState(false);
@@ -86,7 +84,12 @@ const BookTables = () => {
     }
   };
   /** HANDLE HOTEL TABLE VIEW */
-  const handleHotelView = (hotelId, hotelData, isEditable=false, isBooking=false) => {
+  const handleHotelView = (
+    hotelId,
+    hotelData,
+    isEditable = false,
+    isBooking = false,
+  ) => {
     if (hotelId) {
       navigate(`/book-table/details/${hotelId}`, {
         state: { hotelData, isEditable, isBooking },
@@ -235,10 +238,10 @@ const BookTables = () => {
   };
 
   const handleTabSelect = (tab) => {
-    if (tab === "reservations") {
-      navigate("/booked-table");
-      return;
-    }
+    // if (tab === "reservations") {
+    //   navigate("/booked-table");
+    //   return;
+    // }
 
     setActiveTab(tab);
   };
@@ -292,6 +295,7 @@ const BookTables = () => {
       });
     }
   };
+  console.log("activeTab", activeTab);
 
   return (
     <Fragment>
@@ -310,101 +314,154 @@ const BookTables = () => {
             <aside className="customer-booking-sidebar">
               {tabs.map(renderTabButton)}
             </aside>
-
-            <main className="customer-booking-main">
-              <div className="customer-booking-title-row">
-                <div>
-                  <h2>Check Availability</h2>
-                  <p>{listOfHotel?.length || 0} restaurants available for booking</p>
+            {activeTab === "reservations" && (
+              <main className="customer-booking-main">
+                <div className="customer-booking-title-row">
+                  <div>
+                    <h2>Reservations</h2>
+                    <ReservationPage />
+                  </div>
                 </div>
-              </div>
-
-              <div className="customer-booking-search-card">
-                <label htmlFor="hotel-search">Restaurant, location or area</label>
-                <input
-                  id="hotel-search"
-                  className="customer-booking-search"
-                  onChange={handleSearchHotel}
-                  placeholder="Search by restaurant, location or area..."
-                />
-              </div>
-
-              {seletedHotelId && seletedHotelId.length > 0 && (
-                <div className="table-details-preview p-2">
-                  <TableDetails data={seletedHotelId[0]} />
+              </main>
+            )}
+            {activeTab === "availability" && (
+              <main className="customer-booking-main">
+                <div className="customer-booking-title-row">
+                  <div>
+                    <h2>Check Availability</h2>
+                    <p>
+                      {listOfHotel?.length || 0} restaurants available for
+                      booking
+                    </p>
+                  </div>
                 </div>
-              )}
 
-              <div className="customer-booking-list">
-                {loadingHotelListApp && (
-                  <div className="customer-booking-empty">Loading restaurants...</div>
-                )}
+                <div className="customer-booking-search-card">
+                  <label htmlFor="hotel-search">
+                    Restaurant, location or area
+                  </label>
+                  <input
+                    id="hotel-search"
+                    className="customer-booking-search"
+                    onChange={handleSearchHotel}
+                    placeholder="Search by restaurant, location or area..."
+                  />
+                </div>
 
-                {!loadingHotelListApp &&
-                  listOfHotel?.map((hotel) => {
-                    const locationName =
-                      renderLocation(hotel?.location_id, locationList?.data || [])[0]?.name ||
-                      "N/A";
-                    const areaName =
-                      renderArea(hotel?.area_id, areaList?.data || [])[0]?.name || "N/A";
-
-                    return (
-                      <article className="customer-booking-card" key={hotel.id}>
-                        <div className="customer-booking-card__head">
-                          <div>
-                            <h3>{hotel?.hotel_name || "Restaurant"}</h3>
-                            <p>{areaName} • {locationName}</p>
-                          </div>
-                          <span className="customer-booking-status">Available</span>
-                        </div>
-
-                        <div className="customer-booking-meta">
-                          <div>
-                            <span>Address</span>
-                            <strong>{hotel?.address || "N/A"}</strong>
-                          </div>
-                          <div>
-                            <span>Floors</span>
-                            <strong>{hotel?.floorCount ?? "N/A"}</strong>
-                          </div>
-                          <div>
-                            <span>Seats</span>
-                            <strong>{hotel?.seatCount ?? "N/A"}</strong>
-                          </div>
-                        </div>
-
-                        <div className="customer-booking-actions">
-                          <button
-                            type="button"
-                            onClick={() => handleHotelView(hotel?.id, hotel, false, true)}
-                          >
-                            View Details
-                          </button>
-                          <button
-                            type="button"
-                            className="customer-booking-actions__primary"
-                            onClick={() => handleHotelView(hotel?.id, hotel, false, true)}
-                          >
-                            Book Table
-                          </button>
-                        </div>
-                      </article>
-                    );
-                  })}
-
-                {!loadingHotelListApp && listOfHotel?.length === 0 && (
-                  <div className="customer-booking-empty">
-                    No restaurants found. Try a different restaurant, location or area.
+                {seletedHotelId && seletedHotelId.length > 0 && (
+                  <div className="table-details-preview p-2">
+                    <TableDetails data={seletedHotelId[0]} />
                   </div>
                 )}
-              </div>
 
-              <div className="customer-booking-cta">
-                <h3>Book Another Table</h3>
-                <p>Find and reserve your next dining experience</p>
-                <button type="button">Make a New Reservation</button>
-              </div>
-            </main>
+                <div className="customer-booking-list">
+                  {loadingHotelListApp && (
+                    <div className="customer-booking-empty">
+                      Loading restaurants...
+                    </div>
+                  )}
+
+                  {!loadingHotelListApp &&
+                    listOfHotel?.map((hotel) => {
+                      const locationName =
+                        renderLocation(
+                          hotel?.location_id,
+                          locationList?.data || [],
+                        )[0]?.name || "N/A";
+                      const areaName =
+                        renderArea(hotel?.area_id, areaList?.data || [])[0]
+                          ?.name || "N/A";
+
+                      return (
+                        <article
+                          className="customer-booking-card"
+                          key={hotel.id}
+                        >
+                          <div className="customer-booking-card__head">
+                            <div>
+                              <h3>{hotel?.hotel_name || "Restaurant"}</h3>
+                              <p>
+                                {areaName} • {locationName}
+                              </p>
+                            </div>
+                            <span className="customer-booking-status">
+                              Available
+                            </span>
+                          </div>
+
+                          <div className="customer-booking-meta">
+                            <div>
+                              <span>Address</span>
+                              <strong>{hotel?.address || "N/A"}</strong>
+                            </div>
+                            <div>
+                              <span>Floors</span>
+                              <strong>{hotel?.floorCount ?? "N/A"}</strong>
+                            </div>
+                            <div>
+                              <span>Seats</span>
+                              <strong>{hotel?.seatCount ?? "N/A"}</strong>
+                            </div>
+                          </div>
+
+                          <div className="customer-booking-actions">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleHotelView(hotel?.id, hotel, false, true)
+                              }
+                            >
+                              View Details
+                            </button>
+                            <button
+                              type="button"
+                              className="customer-booking-actions__primary"
+                              onClick={() =>
+                                handleHotelView(hotel?.id, hotel, false, true)
+                              }
+                            >
+                              Book Table
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })}
+
+                  {!loadingHotelListApp && listOfHotel?.length === 0 && (
+                    <div className="customer-booking-empty">
+                      No restaurants found. Try a different restaurant, location
+                      or area.
+                    </div>
+                  )}
+                </div>
+
+                <div className="customer-booking-cta">
+                  <h3>Book Another Table</h3>
+                  <p>Find and reserve your next dining experience</p>
+                  <button type="button">Make a New Reservation</button>
+                </div>
+              </main>
+            )}
+            {activeTab === "menu" && (
+              <main className="customer-booking-main">
+                <div className="customer-booking-title-row">
+                  <div>
+                    <h2>Menu</h2>
+                    <p>Manage your existing reservations</p>
+                  </div>
+                </div>
+              </main>
+            )}
+            {activeTab === "orders" && (
+              <main className="customer-booking-main">
+                <div className="customer-booking-title-row">
+                  <div>
+                    <h2>Orders</h2>
+                    <OrderHistory />
+                  </div>
+                </div>
+              </main>
+            )}
           </div>
         </div>
       </section>

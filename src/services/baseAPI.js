@@ -20,6 +20,11 @@ axiosBase.interceptors.request.use(
 
     config.headers.Timezone = USER_TIMEZONE;
 
+    // Automatically handle FormData uploads
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -32,23 +37,29 @@ axiosBase.interceptors.response.use(
 );
 
 // CORE METHODS
-export const request = async (method, path, params, body) => {
+export const request = async (method, path, params, body, config = {}) => {
   switch (method) {
     case "GET":
-      return axiosBase.get(path, { params }).then((res) => res.data);
+      return axiosBase.get(path, { params, ...config }).then((res) => res.data);
 
     case "POST":
-      return axiosBase.post(path, body, { params }).then((res) => res.data);
+      return axiosBase
+        .post(path, body, { params, ...config })
+        .then((res) => res.data);
 
     case "PUT":
-      return axiosBase.put(path, body, { params }).then((res) => res.data);
+      return axiosBase
+        .put(path, body, { params, ...config })
+        .then((res) => res.data);
 
-    case "PATCH":                                                // ⭐ NEW
-      return axiosBase.patch(path, body, { params }).then((res) => res.data);
+    case "PATCH":
+      return axiosBase
+        .patch(path, body, { params, ...config })
+        .then((res) => res.data);
 
     case "DELETE":
       return axiosBase
-        .delete(path, { data: body, params })
+        .delete(path, { data: body, params, ...config })
         .then((res) => res.data);
 
     default:
@@ -56,11 +67,19 @@ export const request = async (method, path, params, body) => {
   }
 };
 
-
 export default {
-  GET: (path, params) => request("GET", path, params),
-  POST: (path, body, params) => request("POST", path, params, body),
-  PUT: (path, body, params) => request("PUT", path, params, body),
-  PATCH: (path, body, params) => request("PATCH", path, params, body),  // ⭐ NEW
-  DELETE: (path, body, params) => request("DELETE", path, params, body),
+  GET: (path, params, config) =>
+    request("GET", path, params, null, config),
+
+  POST: (path, body, params, config) =>
+    request("POST", path, params, body, config),
+
+  PUT: (path, body, params, config) =>
+    request("PUT", path, params, body, config),
+
+  PATCH: (path, body, params, config) =>
+    request("PATCH", path, params, body, config),
+
+  DELETE: (path, body, params, config) =>
+    request("DELETE", path, params, body, config),
 };

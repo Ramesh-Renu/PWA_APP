@@ -16,6 +16,7 @@ import useGlobalMaster from "hooks/useGlobalMaster";
 import { useEffect } from "react";
 import { getHotelbyid } from "services";
 import { hotelPlaceholderImage } from "assets/images";
+import MenuList from "pages/Menu/MenuList";
 
 const HotelDetails = () => {
   const { id } = useParams();
@@ -23,7 +24,7 @@ const HotelDetails = () => {
   const navigate = useNavigate();
   const [hotelData, setHotelData] = useState(location.state?.hotelData || null);
   const [isEditable, setIsEditable] = useState(false);
-  const [isBooking, setIsBooking] =useState(false);
+  const [isBooking, setIsBooking] = useState(false);
   const { areaList, locationList, getAllArea, getAllLocation } =
     useGlobalMaster();
   useEffect(() => {
@@ -39,7 +40,7 @@ const HotelDetails = () => {
     if (location?.state?.isEditable) {
       setIsEditable(true);
     }
-    if(location?.state?.isBooking) {
+    if (location?.state?.isBooking) {
       setIsBooking(true);
     }
   }, [location?.state]);
@@ -75,6 +76,10 @@ const HotelDetails = () => {
   };
 
   const stats = computeTotals(hotelData || {});
+  const [showMenuList, setShowMenuList] = useState(false);
+  const handleShowMenu = () => {
+    setShowMenuList(!showMenuList);
+  };
 
   return (
     <main className="hotel-details-page">
@@ -125,28 +130,34 @@ const HotelDetails = () => {
                   </Button>
                   <Button variant="outline-primary">Edit</Button>
                   <Button variant="outline-secondary">Export</Button>
+                  <Button variant="primary" onClick={() => handleShowMenu()}>
+                    Menus
+                  </Button>
                 </div>
               )}
             </Col>
-            <Col lg={4} md={4} xs={12}>
-              <Row className="hotel-stat-grid">
-                <Col xs={6} className="mb-2">
-                  <Card className="hotel-stat-card floor-stat">
-                    <Card.Body>
-                      <div className="h4 mb-0">{stats.floorCount || "-"}</div>
-                      <small className="text-muted">Floors</small>
-                    </Card.Body>
-                  </Card>
-                </Col>
-                <Col xs={6} className="mb-2">
-                  <Card className="hotel-stat-card table-stat">
-                    <Card.Body>
-                      <div className="h4 mb-0">{stats.totalTables || "-"}</div>
-                      <small className="text-muted">Tables</small>
-                    </Card.Body>
-                  </Card>
-                </Col>
-                {/* <Col xs={6} className="mb-2">
+            {!showMenuList && (
+              <Col lg={4} md={4} xs={12}>
+                <Row className="hotel-stat-grid">
+                  <Col xs={6} className="mb-2">
+                    <Card className="hotel-stat-card floor-stat">
+                      <Card.Body>
+                        <div className="h4 mb-0">{stats.floorCount || "-"}</div>
+                        <small className="text-muted">Floors</small>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                  <Col xs={6} className="mb-2">
+                    <Card className="hotel-stat-card table-stat">
+                      <Card.Body>
+                        <div className="h4 mb-0">
+                          {stats.totalTables || "-"}
+                        </div>
+                        <small className="text-muted">Tables</small>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                  {/* <Col xs={6} className="mb-2">
                   <Card className="hotel-stat-card seat-stat">
                     <Card.Body>
                       <div className="h4 mb-0">{stats.tables_per_floor || "-"}</div>
@@ -154,25 +165,33 @@ const HotelDetails = () => {
                     </Card.Body>
                   </Card>
                 </Col> */}
-                <Col xs={6} className="mb-2">
-                  <Card className="text-center border-0">
-                    <Card.Body>
-                      <div className="h4 mb-0">{stats.seatCount || "-"}</div>
-                      <small className="text-muted">Total Seats</small>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              </Row>
-            </Col>
+                  <Col xs={6} className="mb-2">
+                    <Card className="text-center border-0">
+                      <Card.Body>
+                        <div className="h4 mb-0">{stats.seatCount || "-"}</div>
+                        <small className="text-muted">Total Seats</small>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                </Row>
+              </Col>
+            )}
           </Row>
         </Card.Body>
       </Card>
-
-      <TableDetails
-        data={hotelData || { id }}
-        isEditable={isEditable}
-        isBooking={isBooking}
-      />
+      {!showMenuList && (
+        <TableDetails
+          data={hotelData || { id }}
+          isEditable={isEditable}
+          isBooking={isBooking}
+        />
+      )}
+      {showMenuList && (
+        <div className="menu-list-header">
+          <h3>Menu List</h3>
+          <MenuList hotelId={hotelData?.id} />
+        </div>
+      )}
     </main>
   );
 };
