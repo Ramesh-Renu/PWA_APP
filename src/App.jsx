@@ -24,8 +24,34 @@ const BookedTableDetails = lazy(
   () => import("pages/TableDetails/BookedTableDetails"),
 );
 const App = () => {
-  const [{ data: auth }] = useAuth();
+  const [{ data: auth }, { getUserInfoData }] = useAuth();
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    const restoreAuth = async () => {
+      if (auth?.details) {
+        setCheckingAuth(false);
+        return;
+      }
+
+      if (token && token !== "null") {
+        await getUserInfoData();
+      }
+
+      setCheckingAuth(false);
+    };
+
+    restoreAuth();
+  }, [auth?.details, token, getUserInfoData]);
+
+  const protectedElement = checkingAuth ? (
+    <Spinner />
+  ) : auth?.details ? (
+    <UserLayout />
+  ) : (
+    <Navigate to="/" replace />
+  );
 
   return (
     <Suspense fallback={<Spinner />}>
@@ -34,9 +60,7 @@ const App = () => {
         <Route path="/" element={<Login />} />
 
         {/* Protected routes */}
-        <Route
-          element={auth?.details ? <UserLayout /> : <Navigate to="/" replace />}
-        >
+        <Route element={protectedElement}>
           <Route element={<Home />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/hotellist" element={<CreateHotel />} />

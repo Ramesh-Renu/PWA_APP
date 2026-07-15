@@ -1,5 +1,4 @@
 import React, {Fragment, useState, useEffect} from "react";
-import BookedTableDetails from "pages/TableDetails/BookedTableDetails";
 import ReservationMobileList from "./ReservationMobileList";
 import useAuth from "hooks/useAuth";
 import {
@@ -7,6 +6,7 @@ import {
   updateDiningStatus,
   deleteReservation,
 } from "services";
+import SkeletonLoading from "components/common/SkeletonLoading";
 
 const ReservationPage = () => {
   const [{ data: auth }] = useAuth();
@@ -69,16 +69,25 @@ const ReservationPage = () => {
 
   return (
     <Fragment>
-      <div className="desktop-view">
-        <BookedTableDetails data={auth} />
-      </div>
-
-      <div className="mobile-view">
+      {loadingHotelListApp ?
+      <>
+      <SkeletonLoading flexDirection="row"
+              count={2}
+              height="150px"
+              width="100%"
+              borderRadius="8px"
+            /> 
+       <SkeletonLoading flexDirection="row"
+              count={2}
+              height="150px"
+              width="100%"
+              borderRadius="8px"
+            /></> :
         <ReservationMobileList
           reservations={bookedData}
           onEdit={handleEditDeleteValue}
         />
-      </div>
+         }
     </Fragment>
   );
 };

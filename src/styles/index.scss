@@ -27,3 +27,23 @@ body{min-height:100vh}
   margin-left: 3px;
   color: var(--color-light-red);
 }
+
+
+.loading-skeleton-container {
+  width: 100%;
+}
+
+.loading-skeleton {
+  width: 100%;
+  height: 120px;
+  border-radius: 8px;
+  background-color: var(--color-border-gray-12, #e5e7eb);
+  background-image: linear-gradient(
+    90deg,
+    var(--color-light-light-gray, #e0e0e0) 25%,
+    var(--color-light-light-gray-1, #e8e8e8) 50%,
+    var(--color-light-light-gray-4, #f7f7f7) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+}

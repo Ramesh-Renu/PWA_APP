@@ -1,5 +1,6 @@
 import axios from "axios";
 import Config from "../config";
+import { API } from "constant/service";
 
 const USER_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
 export const axiosBase = axios.create({
@@ -31,9 +32,51 @@ axiosBase.interceptors.request.use(
 );
 
 // ✅ RESPONSE INTERCEPTOR (OPTIONAL)
+const getRefreshedTokens = (response) => response?.data?.data || response?.data || {};
+
 axiosBase.interceptors.response.use(
   (response) => response,
-  (error) => Promise.reject(error)
+  async (error) => {
+    const originalRequest = error.config;
+    const status = error.response?.status;
+    const refreshToken = localStorage.getItem("refreshToken");
+
+    if (
+      status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      originalRequest.url !== API.GET_REFRESH_TOCKEN &&
+      refreshToken &&
+      refreshToken !== "null"
+    ) {
+      originalRequest._retry = true;
+
+      try {
+        const response = await axiosBase.post(API.GET_REFRESH_TOCKEN, {
+          refreshToken,
+        });
+        const tokens = getRefreshedTokens(response);
+
+        if (tokens?.accessToken) {
+          localStorage.setItem("token", tokens.accessToken);
+
+          if (tokens.refreshToken) {
+            localStorage.setItem("refreshToken", tokens.refreshToken);
+          }
+
+          originalRequest.headers.Authorization = `Bearer ${tokens.accessToken}`;
+          return axiosBase(originalRequest);
+        }
+      } catch (refreshError) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("userInfo");
+        return Promise.reject(refreshError);
+      }
+    }
+
+    return Promise.reject(error);
+  }
 );
 
 // CORE METHODS

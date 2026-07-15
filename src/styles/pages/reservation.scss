@@ -16,4 +16,30 @@
         display: block;
     }
 
+    .mobile-view {
+        width: 100%;
+        min-width: 0;
+
+        .app-page {
+            min-height: auto;
+            padding: 0;
+            background: transparent;
+        }
+
+        .reservations-page > .mt-4 {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .products__body-table.dashboard_table {
+            min-width: 760px;
+        }
+
+        .products__body-table.dashboard_table .table-container {
+            max-height: calc(100vh - 280px) !important;
+            overflow: auto;
+        }
+    }
+
 }

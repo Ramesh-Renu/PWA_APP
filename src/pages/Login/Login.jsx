@@ -461,7 +461,11 @@ export default function Login() {
             </button>
           </div> */}
 
-          <p className="tableflow-login__signup mt-5">
+          <p
+            className={`tableflow-login__signup ${
+              createForm ? "tableflow-login__signup--create" : ""
+            }`}
+          >
             {createForm ? "Already have an account?" : "Don't have an account?"}{" "}
             <button
               onClick={() => setCreateForm(!createForm)}

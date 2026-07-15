@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  Avatar,
   Button,
   TextField,
   MenuItem,
@@ -84,39 +85,45 @@ const MenuList = ({ hotelId }) => {
   const closeShowPopup = () => {
     setShowAddMenu(false);
   };
-const handleAddMenu = () => {
+  const handleAddMenu = () => {
     setShowAddMenu(!showAddMenu);
-  } 
+  };
+
   return (
     <Fragment>
-      <Box p={3}>
+      <Box className="menu-management-page">
         {/* Header */}
 
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          mb={3}
-        >
-          <Typography variant="h5" fontWeight={600}>
-            Menu Management
-          </Typography>
+        <Box className="menu-management-header">
+          <Box>
+            <Typography variant="h5" fontWeight={700} className="menu-management-title">
+              Menu Management
+            </Typography>
+            <Typography variant="body2" className="menu-management-subtitle">
+              Manage menu items, availability, and pricing.
+            </Typography>
+          </Box>
 
-          <Button variant="contained" onClick={() => handleAddMenu()}>
+          <Button
+            variant="contained"
+            className="menu-add-button"
+            onClick={handleAddMenu}
+          >
             Add Menu
           </Button>
         </Box>
 
         {/* Filters */}
 
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <Box display="grid" gridTemplateColumns="2fr 1fr 1fr" gap={2}>
+        <Paper className="menu-filter-panel">
+          <Box className="menu-filter-grid">
             <TextField
               fullWidth
               label="Search"
               name="search"
               value={filters.search}
               onChange={handleFilterChange}
+              size="small"
             />          
 
             <TextField
@@ -126,6 +133,7 @@ const handleAddMenu = () => {
               name="category_id"
               value={filters.category_id}
               onChange={handleFilterChange}
+              size="small"
             >
               <MenuItem value="">All Categories</MenuItem>
 
@@ -140,13 +148,8 @@ const handleAddMenu = () => {
 
         {/* Table */}
 
-        <Paper>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-            }}
-          >
+        <Paper className="menu-table-panel">
+          <table className="menu-table">
             <thead>
               <tr>
                 <th>Image</th>
@@ -187,38 +190,46 @@ const handleAddMenu = () => {
               ) : (
                 menus.map((menu) => (
                   <tr key={menu.id}>
-                    <td>
-                      <img
-                        src={menu.image_url}
-                        alt={menu.menu_name}
-                        width={60}
-                        height={60}
-                        style={{
-                          borderRadius: 8,
-                          objectFit: "cover",
-                        }}
-                      />
+                    <td data-label="Image">
+                      {menu.image_url ? (
+                        <img
+                          src={menu.image_url}
+                          alt={menu.menu_name}
+                          className="menu-item-image"
+                        />
+                      ) : (
+                        <Avatar className="menu-item-image menu-item-avatar">
+                          {menu.menu_name?.charAt(0) || "M"}
+                        </Avatar>
+                      )}
                     </td>
 
-                    <td>{menu.menu_name}</td>
+                    <td data-label="Menu Name">{menu.menu_name}</td>
 
-                    <td>{menu.category_name}</td>
+                    <td data-label="Category">{menu.category_name}</td>
 
-                    <td>₹ {menu.price}</td>
+                    <td data-label="Price">&#8377; {menu.price}</td>
 
-                    <td>{menu.is_veg ? "Veg" : "Non Veg"}</td>
+                    <td data-label="Veg">{menu.is_veg ? "Veg" : "Non Veg"}</td>
 
-                    <td>{menu.is_available ? "Available" : "Unavailable"}</td>
+                    <td data-label="Status">
+                      {menu.is_available ? "Available" : "Unavailable"}
+                    </td>
 
-                    <td>
+                    <td data-label="Actions">
                       <Button
                         size="small"
+                        className="menu-action-button"
                         onClick={() => navigate(`/menu/edit/${menu.id}`)}
                       >
                         Edit
                       </Button>
 
-                      <Button size="small" color="error">
+                      <Button
+                        size="small"
+                        color="error"
+                        className="menu-action-button"
+                      >
                         Delete
                       </Button>
                     </td>
@@ -234,8 +245,9 @@ const handleAddMenu = () => {
         onClose={closeShowPopup}
         header={"Add Menu"}
         className={"orderOrionDashboard bg-white rounded-4"}
-        width={"40vh"}
-      ><AddMenu />
+        customClassName="menu-modal-dialog"
+      >
+        <AddMenu />
       </PopupModal>
     </Fragment>
   );

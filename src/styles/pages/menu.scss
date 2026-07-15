@@ -1,0 +1,539 @@
+.menu-list-header {
+  width: 100%;
+  min-width: 0;
+
+  h3 {
+    margin: 0 0 14px;
+    color: #252941;
+    font-size: 22px;
+    font-weight: 700;
+  }
+}
+
+.menu-management-page {
+  width: 100%;
+  min-width: 0;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 4px 0 32px;
+  color: #252941;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.menu-management-page,
+.menu-management-page * {
+  box-sizing: border-box;
+}
+
+.menu-management-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.menu-management-title.MuiTypography-root {
+  color: #252941;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.menu-management-subtitle.MuiTypography-root {
+  margin-top: 4px;
+  color: #6f7389;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.menu-add-button.MuiButton-root {
+  min-width: 118px;
+  min-height: 40px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  background: #0f766e;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: none;
+  box-shadow: 0 8px 18px rgba(15, 118, 110, 0.2);
+}
+
+.menu-add-button.MuiButton-root:hover {
+  background: #0a5f58;
+}
+
+.menu-filter-panel.MuiPaper-root,
+.menu-table-panel.MuiPaper-root {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #e4e7ef;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 26px rgba(35, 30, 75, 0.06);
+}
+
+.menu-filter-panel.MuiPaper-root {
+  margin-bottom: 16px;
+  padding: 16px;
+}
+
+.menu-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 280px);
+  gap: 14px;
+  align-items: center;
+}
+
+.menu-filter-grid .MuiFormControl-root {
+  min-width: 0;
+}
+
+.menu-table-panel.MuiPaper-root {
+  overflow: hidden;
+}
+
+.menu-table {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.menu-table th,
+.menu-table td {
+  min-width: 0;
+  padding: 14px 16px;
+  border-bottom: 1px solid #edf0f5;
+  color: #34384f;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: left;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+
+.menu-table th {
+  color: #646a80;
+  background: #f7fbfa;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.menu-table th:nth-child(1),
+.menu-table td:nth-child(1) {
+  width: 88px;
+}
+
+.menu-table th:nth-child(4),
+.menu-table td:nth-child(4),
+.menu-table th:nth-child(5),
+.menu-table td:nth-child(5),
+.menu-table th:nth-child(6),
+.menu-table td:nth-child(6) {
+  width: 118px;
+}
+
+.menu-table th:nth-child(7),
+.menu-table td:nth-child(7) {
+  width: 148px;
+}
+
+.menu-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.menu-item-image {
+  width: 52px;
+  height: 52px;
+  max-width: 100%;
+  display: block;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.menu-item-avatar.MuiAvatar-root {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  background: #e7f3f1;
+  color: #0f766e;
+  font-weight: 800;
+}
+
+.menu-table td[data-label="Actions"] {
+  white-space: nowrap;
+}
+
+.menu-action-button.MuiButton-root {
+  min-width: 56px;
+  padding-inline: 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.menu-modal-dialog {
+  width: calc(100% - 32px);
+  max-width: 680px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.menu-modal-dialog .modal-content {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 28px 80px rgba(28, 24, 65, 0.24);
+}
+
+.menu-modal-dialog .modal-body {
+  max-height: calc(100vh - 80px);
+  padding: 22px 24px 24px !important;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.menu-form {
+  width: 100%;
+  min-width: 0;
+  margin: 0 !important;
+}
+
+.menu-form > .MuiGrid-item {
+  min-width: 0;
+  padding-top: 12px !important;
+  padding-left: 12px !important;
+}
+
+.menu-form .MuiTypography-h6 {
+  color: #252941;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.menu-form .MuiCard-root {
+  margin-bottom: 0;
+  border: 1px solid #e6eaf0;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.menu-form .MuiCardContent-root {
+  min-width: 0;
+  padding: 14px !important;
+}
+
+.menu-form .MuiFormControl-root,
+.menu-form .MuiInputBase-root {
+  min-width: 0;
+}
+
+.menu-form-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.menu-form-checks .MuiFormControlLabel-root {
+  margin-right: 0;
+}
+
+.menu-form-upload {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.menu-form-upload .MuiButton-root,
+.menu-form-submit.MuiButton-root {
+  border-radius: 8px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.menu-form-upload img {
+  width: 120px;
+  max-width: 100%;
+  height: auto;
+  margin-top: 0 !important;
+}
+
+.menu-form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.menu-form-submit.MuiButton-root {
+  min-width: 140px;
+  min-height: 42px;
+  background: #0f766e;
+}
+
+@media (max-width: 1024px) {
+  .menu-management-page {
+    padding-bottom: 28px;
+  }
+
+  .menu-table th,
+  .menu-table td {
+    padding: 12px 10px;
+    font-size: 12px;
+  }
+
+  .menu-table th:nth-child(1),
+  .menu-table td:nth-child(1) {
+    width: 72px;
+  }
+
+  .menu-table th:nth-child(4),
+  .menu-table td:nth-child(4),
+  .menu-table th:nth-child(5),
+  .menu-table td:nth-child(5),
+  .menu-table th:nth-child(6),
+  .menu-table td:nth-child(6) {
+    width: 96px;
+  }
+
+  .menu-table th:nth-child(7),
+  .menu-table td:nth-child(7) {
+    width: 122px;
+  }
+
+  .menu-item-image,
+  .menu-item-avatar.MuiAvatar-root {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (max-width: 768px) {
+  .menu-list-header h3 {
+    font-size: 20px;
+  }
+
+  .menu-management-header {
+    align-items: stretch;
+  }
+
+  .menu-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .menu-table th,
+  .menu-table td {
+    padding: 11px 8px;
+    font-size: 11px;
+  }
+
+  .menu-action-button.MuiButton-root {
+    min-width: 48px;
+    padding-inline: 6px;
+  }
+}
+
+@media (max-width: 560px) {
+  .menu-list-header h3 {
+    margin-bottom: 12px;
+    font-size: 18px;
+  }
+
+  .menu-management-page {
+    padding-bottom: 24px;
+  }
+
+  .menu-management-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .menu-management-title.MuiTypography-root {
+    font-size: 21px;
+  }
+
+  .menu-management-subtitle.MuiTypography-root {
+    font-size: 12px;
+  }
+
+  .menu-add-button.MuiButton-root {
+    width: 100%;
+  }
+
+  .menu-filter-panel.MuiPaper-root {
+    margin-bottom: 12px;
+    padding: 12px;
+  }
+
+  .menu-filter-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .menu-table,
+  .menu-table thead,
+  .menu-table tbody,
+  .menu-table tr,
+  .menu-table th,
+  .menu-table td {
+    display: block;
+    width: 100% !important;
+  }
+
+  .menu-table thead {
+    display: none;
+  }
+
+  .menu-table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .menu-table tbody {
+    padding: 10px;
+  }
+
+  .menu-table tbody tr {
+    margin-bottom: 10px;
+    padding: 12px;
+    border: 1px solid #e6eaf0;
+    border-radius: 8px;
+    background: #ffffff;
+  }
+
+  .menu-table tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .menu-table td {
+    display: grid;
+    grid-template-columns: minmax(82px, 34%) minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f2f6;
+    font-size: 13px;
+  }
+
+  .menu-table td::before {
+    content: attr(data-label);
+    color: #6f7389;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .menu-table td:nth-child(4)::before {
+    content: "Price";
+  }
+
+  .menu-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .menu-table tbody td[colspan] {
+    display: block !important;
+    padding: 20px 0 !important;
+  }
+
+  .menu-table tbody td[colspan]::before {
+    display: none;
+  }
+
+  .menu-item-image,
+  .menu-item-avatar.MuiAvatar-root {
+    width: 56px;
+    height: 56px;
+  }
+
+  .menu-table td[data-label="Actions"] {
+    align-items: stretch;
+    white-space: normal;
+  }
+
+  .menu-table td[data-label="Actions"]::after {
+    content: "";
+    display: block;
+  }
+
+  .menu-table td[data-label="Actions"] .menu-action-button {
+    width: calc(50% - 4px);
+    min-height: 36px;
+    margin-right: 8px;
+  }
+
+  .menu-table td[data-label="Actions"] .menu-action-button:last-child {
+    margin-right: 0;
+  }
+
+  .menu-modal-dialog {
+    width: calc(100% - 20px);
+    margin: 10px auto;
+  }
+
+  .menu-modal-dialog .modal-body {
+    max-height: calc(100vh - 40px);
+    padding: 16px 12px 18px !important;
+  }
+
+  .menu-form > .MuiGrid-item {
+    padding-left: 0 !important;
+  }
+
+  .menu-form .MuiTypography-h6 {
+    font-size: 18px;
+  }
+
+  .menu-form .MuiCardContent-root {
+    padding: 12px !important;
+  }
+
+  .menu-form-actions,
+  .menu-form-submit.MuiButton-root {
+    width: 100%;
+  }
+}
+
+@media (max-width: 375px) {
+  .menu-table tbody {
+    padding: 8px;
+  }
+
+  .menu-table tbody tr {
+    padding: 10px;
+  }
+
+  .menu-table td {
+    grid-template-columns: minmax(74px, 32%) minmax(0, 1fr);
+    gap: 8px;
+  }
+}
+
+@media (max-width: 320px) {
+  .menu-management-title.MuiTypography-root {
+    font-size: 19px;
+  }
+
+  .menu-table td {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .menu-table td::before {
+    font-size: 10px;
+  }
+
+  .menu-table td[data-label="Actions"] .menu-action-button {
+    width: 100%;
+    margin: 0 0 8px;
+  }
+
+  .menu-table td[data-label="Actions"] .menu-action-button:last-child {
+    margin-bottom: 0;
+  }
+}

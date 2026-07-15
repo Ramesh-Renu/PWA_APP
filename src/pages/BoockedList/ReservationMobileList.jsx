@@ -5,7 +5,7 @@ const ReservationMobileList = ({
   onEdit,
 }) => {
   return (
-    <div className="reservation-mobile">
+    <div className="reservation">
 
       {reservations.map((item) => (
         <ReservationCard

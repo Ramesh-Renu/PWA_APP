@@ -61,7 +61,11 @@ const ReservationCard = ({ reservation, onEdit }) => {
           <h5>{reservation.start_time}</h5>
         </div>
 
-        <button onClick={() => onEdit(reservation)}>
+        <button
+          type="button"
+          className="reservation-card__edit-btn"
+          onClick={() => onEdit(reservation)}
+        >
           <Pencil size={16} />
           Edit
         </button>

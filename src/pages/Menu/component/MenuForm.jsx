@@ -1,4 +1,17 @@
 import React, { useEffect, useState } from "react";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Checkbox,
+  FormControlLabel,
+  Grid,
+  MenuItem,
+  TextField,
+  Typography,
+} from "@mui/material";
+
 
 const defaultForm = {
   hotel_id: "",
@@ -80,175 +93,275 @@ const MenuForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>{isEdit ? "Edit Menu" : "Add Menu"}</h2>
-      <div>
-        <label>Category</label>
-        <select
-          name="category_id"
-          value={form.category_id}
-          onChange={handleChange}
-          required
+    <Grid
+      container
+      spacing={2}
+      component="form"
+      onSubmit={handleSubmit}
+      className="menu-form"
+    >
+      <Grid item xs={12}>
+        <Typography variant="h6" fontWeight={600}>
+          {isEdit ? "Edit Menu" : "Add Menu"}
+        </Typography>
+      </Grid>
+
+      {hotels.length > 0 && (
+        <Grid item xs={12}>
+          <Card sx={{ mb: 2 }}>
+            <CardContent>
+              <TextField
+                name="hotel_id"
+                value={form.hotel_id}
+                onChange={handleChange}
+                label="Hotel"
+                variant="outlined"
+                fullWidth
+                required
+                select
+                InputLabelProps={{ shrink: true }}
+              >
+                <MenuItem value="">Select Hotel</MenuItem>
+                {hotels.map((hotel) => (
+                  <MenuItem key={hotel.id} value={hotel.id}>
+                    {hotel.hotel_name || hotel.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </CardContent>
+          </Card>
+        </Grid>
+      )}
+
+      <Grid item xs={12}>
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <TextField
+              name="category_id"
+              value={form.category_id}
+              onChange={handleChange}
+              label="Category"
+              variant="outlined"
+              fullWidth
+              required
+              select
+              InputLabelProps={{ shrink: true }}
+            >
+              <MenuItem value="">Select Category</MenuItem>
+              {categories.map((category) => (
+                <MenuItem key={category.id} value={category.id}>
+                  {category.category_name}
+                </MenuItem>
+              ))}
+            </TextField>
+          </CardContent>
+        </Card>
+      </Grid>
+
+      <Grid item xs={12}>
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <TextField
+              name="menu_name"
+              value={form.menu_name}
+              onChange={handleChange}
+              label="Menu Name"
+              variant="outlined"
+              fullWidth
+              required
+              InputLabelProps={{ shrink: true }}
+            />
+          </CardContent>
+        </Card>
+      </Grid>
+
+      <Grid item xs={12}>
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <TextField
+              name="menu_code"
+              value={form.menu_code}
+              onChange={handleChange}
+              label="Menu Code"
+              variant="outlined"
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+            />
+          </CardContent>
+        </Card>
+      </Grid>
+
+      <Grid item xs={12}>
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <TextField
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              label="Description"
+              variant="outlined"
+              fullWidth
+              multiline
+              rows={4}
+              InputLabelProps={{ shrink: true }}
+            />
+          </CardContent>
+        </Card>
+      </Grid>
+
+      <Grid item xs={12} sm={6}>
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <TextField
+              type="number"
+              name="price"
+              value={form.price}
+              onChange={handleChange}
+              label="Price"
+              variant="outlined"
+              fullWidth
+              required
+              InputLabelProps={{ shrink: true }}
+            />
+          </CardContent>
+        </Card>
+      </Grid>
+
+      <Grid item xs={12} sm={6}>
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <TextField
+              type="number"
+              name="preparation_time"
+              value={form.preparation_time}
+              onChange={handleChange}
+              label="Preparation Time (Minutes)"
+              variant="outlined"
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+            />
+          </CardContent>
+        </Card>
+      </Grid>
+
+      <Grid item xs={12} sm={6}>
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <TextField
+              type="number"
+              name="calories"
+              value={form.calories}
+              onChange={handleChange}
+              label="Calories"
+              variant="outlined"
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+            />
+          </CardContent>
+        </Card>
+      </Grid>
+
+      <Grid item xs={12} sm={6}>
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <TextField
+              name="spice_level"
+              value={form.spice_level}
+              onChange={handleChange}
+              label="Spice Level"
+              variant="outlined"
+              fullWidth
+              select
+              InputLabelProps={{ shrink: true }}
+            >
+              <MenuItem value="Mild">Mild</MenuItem>
+              <MenuItem value="Medium">Medium</MenuItem>
+              <MenuItem value="Hot">Hot</MenuItem>
+            </TextField>
+          </CardContent>
+        </Card>
+      </Grid>
+
+      <Grid item xs={12}>
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <TextField
+              type="number"
+              name="display_order"
+              value={form.display_order}
+              onChange={handleChange}
+              label="Display Order"
+              variant="outlined"
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+            />
+          </CardContent>
+        </Card>
+      </Grid>
+
+      <Grid item xs={12}>
+        <Card sx={{ mb: 2 }}>
+          <CardContent className="menu-form-checks">
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={form.is_veg}
+                  onChange={handleChange}
+                  name="is_veg"
+                />
+              }
+              label="Veg"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={form.is_available}
+                  onChange={handleChange}
+                  name="is_available"
+                />
+              }
+              label="Available"
+            />
+          </CardContent>
+        </Card>
+      </Grid>
+
+      <Grid item xs={12}>
+        <Card sx={{ mb: 2 }}>
+          <CardContent className="menu-form-upload">
+            <Button variant="outlined" component="label">
+              Menu Image
+              <input type="file" accept="image/*" hidden onChange={handleImage} />
+            </Button>
+
+            {preview && (
+              <Box
+                component="img"
+                src={preview}
+                alt="Preview"
+                sx={{
+                  display: "block",
+                  width: 120,
+                  mt: 1.25,
+                  borderRadius: 1,
+                }}
+              />
+            )}
+          </CardContent>
+        </Card>
+      </Grid>
+
+      <Grid item xs={12} className="menu-form-actions">
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={loading}
+          className="menu-form-submit"
         >
-          <option value="">Select Category</option>
-
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.category_name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label>Menu Name</label>
-
-        <input
-          name="menu_name"
-          value={form.menu_name}
-          onChange={handleChange}
-          required
-        />
-      </div>
-
-      <div>
-        <label>Menu Code</label>
-
-        <input
-          name="menu_code"
-          value={form.menu_code}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div>
-        <label>Description</label>
-
-        <textarea
-          name="description"
-          value={form.description}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div>
-        <label>Price</label>
-
-        <input
-          type="number"
-          name="price"
-          value={form.price}
-          onChange={handleChange}
-          required
-        />
-      </div>
-
-      <div>
-        <label>Preparation Time (Minutes)</label>
-
-        <input
-          type="number"
-          name="preparation_time"
-          value={form.preparation_time}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div>
-        <label>Calories</label>
-
-        <input
-          type="number"
-          name="calories"
-          value={form.calories}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div>
-        <label>Spice Level</label>
-
-        <select
-          name="spice_level"
-          value={form.spice_level}
-          onChange={handleChange}
-        >
-          <option>Mild</option>
-          <option>Medium</option>
-          <option>Hot</option>
-        </select>
-      </div>
-
-      <div>
-        <label>Display Order</label>
-
-        <input
-          type="number"
-          name="display_order"
-          value={form.display_order}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div>
-        <label>
-          <input
-            type="checkbox"
-            name="is_veg"
-            checked={form.is_veg}
-            onChange={handleChange}
-          />
-          Veg
-        </label>
-      </div>
-
-      <div>
-        <label>
-          <input
-            type="checkbox"
-            name="is_available"
-            checked={form.is_available}
-            onChange={handleChange}
-          />
-          Available
-        </label>
-      </div>
-
-      <div>
-        <label>Menu Image</label>
-
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImage}
-        />
-
-        {preview && (
-          <img
-            src={preview}
-            alt="Preview"
-            width={120}
-            style={{
-              marginTop: 10,
-              borderRadius: 8,
-            }}
-          />
-        )}
-      </div>
-
-      <br />
-
-      <button
-        type="submit"
-        disabled={loading}
-      >
-        {loading
-          ? "Saving..."
-          : isEdit
-          ? "Update Menu"
-          : "Create Menu"}
-      </button>
-    </form>
+          {loading ? "Saving..." : isEdit ? "Update Menu" : "Create Menu"}
+        </Button>
+      </Grid>
+    </Grid>
   );
 };
 

@@ -453,21 +453,22 @@
   color: #24332e;
 }
 
-.modern-form {
+.tableflow-login .modern-form {
   display: grid;
-  gap: 18px;
+  gap: 16px;
   width: 100%;
-  max-width: 380px;
+  max-width: 420px;
   margin: 0 auto;
-  padding-top: 6px;
+  padding-top: 0;
 }
 
-.form-group {
+.tableflow-login .form-group {
   display: grid;
   gap: 8px;
+  width: 100%;
 }
 
-.form-label {
+.tableflow-login .form-label {
   margin: 0;
   color: #24332e;
   font-size: 14px;
@@ -475,28 +476,31 @@
   line-height: 1.35;
 }
 
-.required {
+.tableflow-login .required {
   color: #c2410c;
   font-weight: 800;
 }
 
-.input-wrapper {
+.tableflow-login .input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
   min-height: 52px;
 }
 
-.input-icon {
+.tableflow-login .input-icon {
   position: absolute;
   left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 1;
-  color: #60756f;
+  color: #546a63;
   font-size: 20px;
   pointer-events: none;
 }
 
-.modern-input {
+.tableflow-login .modern-input {
   width: 100%;
   height: 52px;
   padding: 0 16px 0 46px;
@@ -508,36 +512,36 @@
   font-size: 15px;
   line-height: 52px;
   box-shadow: 0 10px 28px rgba(23, 33, 29, 0.04);
+  appearance: none;
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease,
     background 160ms ease;
 }
 
-.modern-input::placeholder {
+.tableflow-login .modern-input::placeholder {
   color: #71817c;
 }
 
-.modern-input:focus {
+.tableflow-login .modern-input:focus {
   outline: none;
   border-color: var(--color-primary);
   background: #ffffff;
   box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.13);
 }
 
-.input-wrapper:focus-within .input-icon {
+.tableflow-login .input-wrapper:focus-within .input-icon {
   color: var(--color-primary);
 }
 
-.error-text {
+.tableflow-login .error-text {
   color: #c2410c;
   font-size: 12px;
   font-weight: 600;
 }
 
-.modern-form + .tableflow-login__signup,
-.tableflow-login__card:has(.modern-form) .tableflow-login__signup {
-  margin-top: 22px !important;
+.tableflow-login__signup--create {
+  margin-top: 22px;
 }
 
 @media (max-width: 980px) {
@@ -584,7 +588,7 @@
     justify-self: start;
   }
 
-  .modern-form {
+  .tableflow-login .modern-form {
     max-width: 100%;
   }
 }

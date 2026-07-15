@@ -315,13 +315,13 @@ const BookTables = () => {
               {tabs.map(renderTabButton)}
             </aside>
             {activeTab === "reservations" && (
-              <main className="customer-booking-main">
+              <main className="customer-booking-main customer-booking-main--reservations">
                 <div className="customer-booking-title-row">
-                  <div>
+                  <div className="customer-booking-title-content">
                     <h2>Reservations</h2>
-                    <ReservationPage />
                   </div>
                 </div>
+                <ReservationPage />
               </main>
             )}
             {activeTab === "availability" && (
