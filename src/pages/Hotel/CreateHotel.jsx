@@ -9,8 +9,6 @@ import {
 } from "services";
 import useGlobalMaster from "hooks/useGlobalMaster";
 import PopupModal from "components/common/PopupModal";
-import Table from "components/common/Table";
-import { createColumnHelper } from "@tanstack/react-table";
 import { createHotelAPi } from "services";
 import useToast from "hooks/useToast";
 import * as images from "../../assets/images/index";
@@ -28,18 +26,6 @@ const CreateHotel = () => {
   const { areaList, locationList, getAllArea, getAllLocation } =
     useGlobalMaster();
   const [getLocationBasedArea, setGetLocationBasedArea] = useState([]);
-  const [hasMoreRecords, setHasMoreRecords] = useState(true);
-  const [sortConfig, setSortConfig] = useState({
-    sortBy: "orderDate",
-    sortOrder: "desc",
-  });
-  const columnHelper = createColumnHelper();
-  const [sorting, setSorting] = useState([
-    {
-      id: "hotel_name",
-      desc: false,
-    },
-  ]);
   const [hotelName, setHotelName] = useState("");
   const [hotelAddress, setHotelAddress] = useState("");
   const [hotelFloorCount, setHotelFloorCount] = useState("");
@@ -66,9 +52,8 @@ const CreateHotel = () => {
       getAllLocation();
     }
   }, []);
-  
+
   const [updateHotel, setUpdateHotel] = useState(false);
-  const [reloadTable, setReloadTable] = useState(false);
   const fetchHotels = async () => {
     setLoadingHotelListApp(true);
     try {
@@ -94,8 +79,8 @@ const CreateHotel = () => {
     const selectedLocationId = String(selectedLocation[0]?.id);
     setGetLocationBasedArea(
       (areaList?.data || []).filter(
-        (area) => String(area.location_id) === selectedLocationId
-      )
+        (area) => String(area.location_id) === selectedLocationId,
+      ),
     );
   }, [selectedLocation, areaList?.data]);
 
@@ -172,14 +157,13 @@ const CreateHotel = () => {
     });
   };
 
-
   const handleUpdateHotel = (hotelData) => {
     // Logic to update hotel
     setShowCreateHotelForm(!showCreateHotelForm);
     setHotelName(hotelData[0].hotel_name);
     setSelectedArea(renderArea(hotelData[0].area_id, areaList?.data || []));
     setSelectedLocation(
-      renderLocation(hotelData[0].location_id, locationList?.data || [])
+      renderLocation(hotelData[0].location_id, locationList?.data || []),
     );
     setHotelAddress(hotelData[0].address);
     setHotelFloorCount(hotelData[0].floorCount);
@@ -188,26 +172,29 @@ const CreateHotel = () => {
   };
 
   /** HANDLE HOTEL TABLE VIEW */
-  const handleHotelView = (hotelId, hotelData, isEditable=true, isBooking=false) => {
+  const handleHotelView = (
+    hotelId,
+    hotelData,
+    isEditable = true,
+    isBooking = false,
+  ) => {
     if (hotelId) {
       navigate(`/details/${hotelId}`, {
-        state: { hotelData, isEditable ,isBooking },
+        state: { hotelData, isEditable, isBooking },
       });
     }
   };
 
   /** HANDLE EDIT OR DELETE TABLE  VALUE */
   const handleEditDeleteValue = (e, getVal, rowData) => {
-    console.log('e',getVal);
-    
-    if (rowData?.isProcessOrder && e.name.props.children.includes("Delete"))
-      return;
-    if (e.id === 2) {
+    console.log("e", getVal);
+
+    if (e === "Delete") {
       deleteConfirmation(getVal);
     } else {
       const getHotelId = getVal;
       const getHotelData = listOfHotel.filter(
-        (hotel) => hotel.id === getHotelId
+        (hotel) => hotel.id === getHotelId,
       );
       handleUpdateHotel(getHotelData);
       setSeletedHotelId(getHotelData);
@@ -221,107 +208,11 @@ const CreateHotel = () => {
     setShowDeleteHotel(true);
   };
 
-  /** COLUMNS DEFINITION */
-  const columns = [
-    columnHelper.accessor("hotel_name", {
-      header: () => <span className="customHeader">Hotel Name</span>,
-      cell: (info) => {
-        const rowData = info.row.original;
-        return (
-          <div
-            tabIndex={0}
-            className="truncate-2-lines"
-            title={info.getValue()}
-            onClick={() => handleHotelView(rowData?.id, rowData, true)}
-          >
-            {info.getValue()}
-          </div>
-        );
-      },
-    }),
-    columnHelper.accessor("location_id", {
-      header: () => <span className="customHeader">Location</span>,
-      cell: (info) => {
-        return (
-          renderLocation(info.getValue(), locationList?.data || [])[0]?.name ||
-          "N/A"
-        );
-      },
-    }),
-    columnHelper.accessor("area_id", {
-      header: () => <span className="customHeader">Area</span>,
-      cell: (info) => {
-        return (
-          renderArea(info.getValue(), areaList?.data || [])[0]?.name || "N/A"
-        );
-      },
-    }),
-    columnHelper.accessor("address", {
-      header: () => <span className="customHeader">Address</span>,
-      // cell: (info) => {
-      //   return renderArea(info.getValue(), areaList?.data || [])[0]?.name || "N/A";
-      // },
-    }),
-    columnHelper.accessor("floorCount", {
-      header: () => <span className="customHeader">Number of Floor</span>,
-    }),
-    columnHelper.accessor("tableCount", {
-      header: () => <span className="customHeader">Table Count</span>,
-    }),
-    columnHelper.accessor("tables_per_floor", {
-      header: () => <span className="customHeader">Table Per floor</span>,
-    }),
-    columnHelper.accessor("seatCount", {
-      header: () => <span className="customHeader">Seat Count</span>,
-    }),
-    columnHelper.accessor("id", {
-      header: () => <span className="customHeader">Action</span>,
-      cell: (info) => {
-        const rowData = info.row.original;
-        return (
-         
-            <ToolTipPopup
-              toolTipDatas={[
-                {
-                  name: (
-                    <button className="btn btn-0 p-0 border-0 m-0 w-100 d-flex justify-content-between">
-                      Edit
-                      <img src={images.pencilSimpleLine} alt="Edit Hotel" />
-                    </button>
-                  ),
-                  id: 1,
-                },
-                {
-                  name: (
-                    <button
-                      className="btn btn-0 p-0 m-0 w-100 border-0 text-danger d-flex justify-content-between"
-                      disabled={rowData?.isProcessOrder}
-                    >
-                      Delete
-                      <img src={images.trashIcon} alt="Remove Hotel" />
-                    </button>
-                  ),
-                  id: 2,
-                },
-              ]}
-              labelField="name"
-              valueField="id"
-              getSeletedVal={(e) =>
-                handleEditDeleteValue(e, info.getValue(), rowData)
-              }
-              canEdit={true}
-              isCustomFieldswithFilter={false}
-              arrow={true}
-            />
-        );
-      },
-    }),
-  ];
   /** HANDLE DELETE ORDER */
   const handleDeleteOrder = async (param) => {
     setShowDeleteHotel(false);
-    console.log('param' ,param);
-    
+    console.log("param", param);
+
     try {
       const response = await deleteHotel({
         hotel_id: param,
@@ -331,10 +222,9 @@ const CreateHotel = () => {
           message: response.data.message,
           variant: "success",
         });
-        setReloadTable(true);
         const hotels = await getAllHotel();
         setListOfHotel(hotels?.data);
-        setLoadingHotelListApp(false);      
+        setLoadingHotelListApp(false);
       } else {
         showToast({
           message: response.data.message,
@@ -348,17 +238,6 @@ const CreateHotel = () => {
       });
     }
   };
-  /** HANDLE TABLE SORT CHANGE */
-  const handleSortChange = (columnId, order) => {
-    const sortData = { sortBy: columnId, sortOrder: order };
-    setSortConfig(sortData);
-    setHasMoreRecords(true);
-    // dispatch({
-    //   type: "SET_FILTER",
-    //   payload: mergedFilters,
-    // });
-  };
-
   const handleCreateHotelShow = () => {
     // Logic to create hotel
     setShowCreateHotelForm(!showCreateHotelForm);
@@ -422,7 +301,7 @@ const CreateHotel = () => {
       };
       if (action === "Update") {
         const oldData = listOfHotel?.find(
-          (hotel) => hotel.id === seletedHotelId[0].id
+          (hotel) => hotel.id === seletedHotelId[0].id,
         );
         const compareHotelData = (hotelData, oldData) =>
           Object.keys(hotelData).some((key) => hotelData[key] !== oldData[key])
@@ -485,7 +364,7 @@ const CreateHotel = () => {
     } finally {
     }
   };
-  
+
   const handleSearchHotel = (e) => {
     // Logic to Search hotel
     const getValue = e.target.value;
@@ -499,44 +378,144 @@ const CreateHotel = () => {
   return (
     <Fragment>
       <section className="app-page hotels-admin-page">
-      <header className="app-page-header hotels-admin-header">
-        <div><span className="page-kicker">PROPERTY SETUP</span><h1>Hotels & table layouts</h1><p>Create properties and configure floors, tables and seating capacity.</p></div>
-        <div className="header-stat"><strong>{listOfHotel?.length || 0}</strong><span>properties managed</span></div>
-      </header>
-      <div className="create-hotel-page">
-        <div className="create-hotel-page-flex">
-          <div className="create-hotel-page-flex-column-one">
-            <input
-              className="search-hotel"
-              onChange={handleSearchHotel}
-              placeholder="Search Hotel name/location"
-            />
+        <header className="app-page-header hotels-admin-header">
+          <div>
+            <span className="page-kicker">HOTEL SETUP</span>
+            <h1>Hotels & table layouts</h1>
+            <p>
+              Create Hotel and configure floors, tables and seating capacity.
+            </p>
           </div>
-          <div className="create-hotel-page-flex-column-two">
-            {" "}
-            <button className="createHotel" onClick={handleCreateHotelShow}>
-              Create
-            </button>
+          <div className="header-stat">
+            <strong>{listOfHotel?.length || 0}</strong>
+            <span>hotel managed</span>
+          </div>
+        </header>
+        <div className="create-hotel-page">
+          <div className="create-hotel-page-flex">
+            <div className="create-hotel-page-flex-column-one">
+              <input
+                className="search-hotel"
+                onChange={handleSearchHotel}
+                placeholder="Search Hotel name/location"
+              />
+            </div>
+            <div className="create-hotel-page-flex-column-two">
+              {" "}
+              <button className="createHotel" onClick={handleCreateHotelShow}>
+                Create
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-      {listOfHotel?.length > 0 && (
-        <div className="page-table-shell">
-        <Table
-          columns={columns}
-          columnData={listOfHotel || []}
-          className={"products__body-table dashboard_table"}
-          onSortingChange={handleSortChange}
-          sorting={sorting}
-          setSorting={setSorting}
-          tableName="Order_list"
-          noDataContent={"Do not render any no data content while loading"}
-          tableHeight={"calc(100vh - 95px)"}
-          loading={loadingHotelListApp}
-          //onScrollEnd={handleInfiniteScroll}
-        />
-        </div>
-      )}
+        {listOfHotel?.length > 0 && (
+          <div className="page-table-shell hotel-list-shell">
+            {loadingHotelListApp ? (
+              <div className="hotel-list-state">Loading hotel...</div>
+            ) : (
+              <div className="hotel-list-grid">
+                {listOfHotel.map((hotel) => {
+                  const locationName =
+                    renderLocation(
+                      hotel.location_id,
+                      locationList?.data || [],
+                    )[0]?.name || "N/A";
+                  const areaName =
+                    renderArea(hotel.area_id, areaList?.data || [])[0]?.name ||
+                    "N/A";
+
+                  return (
+                    <article className="hotel-list-card" key={hotel.id}>
+                      <div className="hotel-list-card__header">
+                        <div className="hotel-list-card__identity">
+                          <button
+                            type="button"
+                            className="hotel-list-card__name"
+                            onClick={() =>
+                              handleHotelView(hotel.id, hotel, true)
+                            }
+                          >
+                            {hotel.hotel_name || "Unnamed Hotel"}
+                          </button>
+                          <p className="hotel-list-card__address">
+                            {hotel.address || "Address not provided"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="hotel-list-card__details">
+                        <div className="hotel-list-card__details--list">
+                          <span className="heading">Location</span>
+                          <span className="name">{locationName}</span>
+                        </div>
+                        <div className="hotel-list-card__details--list">
+                          <span className="heading">Area</span>
+                          <span className="name">{areaName}</span>
+                        </div>
+                        <div className="hotel-list-card__details--list">
+                          <span className="heading">Floors</span>
+                          <span className="name">
+                            {hotel.floorCount ?? hotel.floor_per_hotel ?? "N/A"}
+                          </span>
+                        </div>
+                        <div className="hotel-list-card__details--list">
+                          <span className="heading">Tables</span>
+                          <span className="name">
+                            {hotel.tableCount ?? "N/A"}
+                          </span>
+                        </div>
+                        <div className="hotel-list-card__details--list">
+                          <span className="heading">Per floor</span>
+                          <span className="name">
+                            {hotel.tables_per_floor ?? "N/A"}
+                          </span>
+                        </div>
+                        <div className="hotel-list-card__details--list">
+                          <span className="heading">Seats</span>
+                          <span className="name">
+                            {hotel.seatCount ?? "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="hotel-list-card__footer">
+                        <div className="hotel-list-card__footer--first-col">
+                          <button
+                            className="btn btn-0 p-0 border-0 m-0 w-100 d-flex justify-content-between"
+                            onClick={() =>
+                              handleEditDeleteValue("Edit", hotel.id, hotel)
+                            }
+                          >
+                            <img
+                              src={images.pencilSimpleLine}
+                              alt="Edit Hotel"
+                            />
+                          </button>
+
+                          <button
+                            className="btn btn-0 p-0 m-0 w-100 border-0 text-danger d-flex justify-content-between"
+                            disabled={hotel?.isProcessOrder}
+                            onClick={() =>
+                              handleEditDeleteValue("Delete", hotel.id, hotel)
+                            }
+                          >
+                            <img src={images.trashIcon} alt="Remove Hotel" />
+                          </button>
+                        </div>
+                        <div className="hotel-list-card__footer--second-col">
+                        <button
+                          type="button"
+                          onClick={() => handleHotelView(hotel.id, hotel, true)}
+                        >
+                          Open Hotel <span aria-hidden="true">→</span>
+                        </button>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </section>
       {showCreateHotelForm && (
         <PopupModal
@@ -544,12 +523,22 @@ const CreateHotel = () => {
           onClose={closeShowPopup}
           className={"create-hotel-page-popup-content bg-white rounded-4"}
           size="lg"
-          customClassName="property-modal-dialog"
+          customClassName="hotel-modal-dialog"
           header={true}
-          title={<span className="move-to-aarow">{updateHotel ? "Edit property" : "Create new property"}</span>}
+          title={
+            <span className="move-to-aarow">
+              {updateHotel ? "Edit hotel" : "Create new Hotel"}
+            </span>
+          }
         >
           <Fragment>
-            <div className="hotel-form-intro"><span>✦</span><div><strong>Property information</strong><p>Set up the hotel and its initial table capacity.</p></div></div>
+            <div className="hotel-form-intro">
+              <span>✦</span>
+              <div>
+                <strong>Hotel information</strong>
+                <p>Set up the hotel and its initial table capacity.</p>
+              </div>
+            </div>
             <Row className="p-2 top-content">
               <Col lg={6} md={6} xs={12} className="my-2">
                 <label className="create-hotel-label">
@@ -602,7 +591,7 @@ const CreateHotel = () => {
                 <label className="create-hotel-label">
                   Area <sup>*</sup>
                 </label>
-                 {areaList?.data && (
+                {areaList?.data && (
                   <SelectDropDown
                     multi={false}
                     options={getLocationBasedArea || []}
@@ -708,7 +697,7 @@ const CreateHotel = () => {
                     handleCreateHotelSubmit(updateHotel ? "Update" : "Create")
                   }
                 >
-                  {updateHotel ? "Save changes" : "Create property"}
+                  {updateHotel ? "Save changes" : "Create Hotel"}
                 </button>{" "}
                 <button className="btn btn-cancel" onClick={handleCancel}>
                   Cancel

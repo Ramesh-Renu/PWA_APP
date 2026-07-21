@@ -69,6 +69,19 @@
   transform: translateY(-2px);
   box-shadow: 0 12px 28px rgba(45, 18, 100, 0.28);
 }
+.refresh-button.MuiButton-root {
+  min-height: 46px;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #0a4b43;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: none;
+}
+.refresh-button.MuiButton-root:hover {
+  background: #edf5f1;
+}
 .dashboard-filters {
   margin: 0;
   padding: 0;
@@ -92,7 +105,7 @@
   min-width: 140px;
 }
 .dashboard-filters select,
-input {
+.dashboard-filters input {
   margin-top: 8px;
   padding: 12px 14px;
   border: 1px solid #dfe3f4;
@@ -104,8 +117,31 @@ input {
   min-width: 170px;
 }
 .dashboard-filters select:focus,
-input:focus {
+.dashboard-filters input:focus {
   border-color: #0f766e;
+}
+.dashboard-range-select.MuiFormControl-root {
+  min-width: 240px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+}
+.dashboard-range-select .MuiInputLabel-root {
+  color: #0f766e;
+  font-family: inherit;
+  font-weight: 700;
+}
+.dashboard-range-select .MuiOutlinedInput-root {
+  border-radius: 12px;
+  color: #20243a;
+  font-family: inherit;
+  font-weight: 700;
+}
+.dashboard-range-select .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.dashboard-range-select .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline,
+.dashboard-range-select .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #5eead4;
 }
 .dashboard-filters .filter-inputs {
   display: grid;
@@ -322,6 +358,18 @@ input:focus {
   border-radius: 20px;
   box-shadow: 0 8px 30px rgba(55, 48, 107, 0.07);
 }
+.metric-card.MuiCard-root,
+.dashboard-panel.MuiPaper-root {
+  border-radius: 20px;
+  font-family: inherit;
+}
+.metric-card__content.MuiCardContent-root {
+  min-width: 0;
+  padding: 0;
+}
+.metric-card__content.MuiCardContent-root:last-child {
+  padding-bottom: 0;
+}
 .metric-card {
   position: relative;
   overflow: hidden;
@@ -370,8 +418,10 @@ input:focus {
   color: #fff !important;
 }
 .metric-icon svg,
+.metric-icon .MuiSvgIcon-root,
 .empty-reservations svg {
   width: 23px;
+  height: 23px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
@@ -645,6 +695,53 @@ input:focus {
 }
 .reservation-table {
   overflow-x: auto;
+}
+.reservation-table.MuiTableContainer-root {
+  width: 100%;
+}
+.dashboard-mui-table.MuiTable-root {
+  min-width: 680px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.dashboard-mui-table .MuiTableHead-root {
+  background: linear-gradient(90deg, #f7f6ff, #fcfbff);
+}
+.dashboard-mui-table .MuiTableCell-head {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e8e6f2;
+  color: #70748a;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+.dashboard-mui-table .MuiTableCell-body {
+  padding: 12px 16px;
+  border-bottom: 1px solid #eeedf6;
+  color: #62667d;
+  font-family: inherit;
+  font-size: 13px;
+}
+.dashboard-mui-table .MuiTableRow-root {
+  transition: background 180ms ease;
+}
+.dashboard-mui-table .MuiTableRow-root:hover {
+  background: #faf9ff;
+}
+.dashboard-reservation-link.MuiButton-root {
+  min-width: 0;
+  padding: 0;
+  color: #393d56;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: none;
+}
+.dashboard-reservation-link.MuiButton-root:hover {
+  background: transparent;
+  color: var(--color-primary);
 }
 .reservation-table table {
   width: 100%;
@@ -925,6 +1022,21 @@ input:focus {
   background: linear-gradient(135deg, #0f766e, #0a5f58);
   border-color: transparent;
   transform: translateY(-1px);
+}
+.view-all-reservations.MuiButton-root {
+  border-color: #ded8f6;
+  border-radius: 10px;
+  color: #6d35db;
+  background: #f7f4ff;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: none;
+}
+.view-all-reservations.MuiButton-root:hover {
+  color: #ffffff;
+  background: linear-gradient(135deg, #0f766e, #0a5f58);
+  border-color: transparent;
 }
 .view-all-reservations span {
   margin-left: 4px;

@@ -462,6 +462,78 @@
   padding-top: 0;
 }
 
+.tableflow-login .modern-form .MuiTextField-root {
+  width: 100%;
+}
+
+.tableflow-login .modern-form .MuiOutlinedInput-root {
+  min-height: 52px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #17211d;
+  font-family: inherit;
+  box-shadow: 0 10px 28px rgba(23, 33, 29, 0.04);
+  transition:
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.tableflow-login .modern-form .MuiOutlinedInput-root:hover {
+  background: #ffffff;
+}
+
+.tableflow-login .modern-form .MuiOutlinedInput-root.Mui-focused {
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.13);
+}
+
+.tableflow-login .modern-form .MuiOutlinedInput-notchedOutline {
+  border-color: #cfddd7;
+}
+
+.tableflow-login .modern-form .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline,
+.tableflow-login .modern-form .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--color-primary);
+}
+
+.tableflow-login .modern-form .MuiInputLabel-root,
+.tableflow-login .modern-form .MuiInputBase-input,
+.tableflow-login .modern-form .MuiFormHelperText-root {
+  font-family: inherit;
+}
+
+.tableflow-login .modern-form .MuiInputLabel-root {
+  color: #546a63;
+  font-weight: 600;
+}
+
+.tableflow-login .modern-form .MuiInputLabel-root.Mui-focused {
+  color: var(--color-primary);
+}
+
+.tableflow-login .modern-form .MuiInputLabel-asterisk {
+  color: #c2410c;
+}
+
+.tableflow-login .modern-form .MuiInputBase-input {
+  font-size: 15px;
+}
+
+.tableflow-login .modern-form .MuiFormHelperText-root {
+  margin-left: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tableflow-login__mui-icon {
+  color: #546a63;
+  font-size: 21px;
+}
+
+.tableflow-login .modern-form .Mui-focused .tableflow-login__mui-icon {
+  color: var(--color-primary);
+}
+
 .tableflow-login .form-group {
   display: grid;
   gap: 8px;
@@ -607,6 +679,7 @@
   min-height: 52px;
   width: 100%;
   border-radius: 8px;
+  text-transform: none;
   background: var(--color-primary);
   border: none;
   color: #ffffff;

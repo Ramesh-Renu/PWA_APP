@@ -64,7 +64,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
       getSeatsStatusMatsers();
     }
   }, []);
-  
+
   useEffect(() => {
     fetchHotelbyId(data);
   }, []);
@@ -580,64 +580,56 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
               </Col>
             </Row>
           )}
-
-          {floorToShow && (
-            <div className="mb-3">
-              <Row className="mb-12 justify-content-between align-items-center w-100">
-                <Col xs={6}>
-                  <h5 className="mb-2 floor-name">
-                    {`Floor ${floorToShow.floor_number}` ||
-                      `Floor ${selectedFloorIndex + 1}`}
-                  </h5>
-                </Col>{" "}
-                <Col xs={6} className="">
-                  {isEditable && (
+          <div className="mb-12 justify-content-between align-items-center w-100">
+            <div xs={12} className="create-new-table-button">
+              {isEditable && (
+                <button
+                  className="addNewTable"
+                  onClick={() => fetchCreateTable(data)}
+                >
+                  + Add New Table
+                </button>
+              )}
+              {isBooking && enbaleBoooking && (
+                <Row className="justify-content-between align-items-center w-100">
+                  <Col md={4} xs={12}>
                     <button
                       className="addNewTable"
-                      onClick={() => fetchCreateTable(data)}
+                      onClick={() => createBookingTableinSeats(data)}
                     >
-                      + Add New Table
+                      Book Table
                     </button>
-                  )}
-                  {isBooking && enbaleBoooking && (
-                    <Row className="justify-content-between align-items-center w-100">
-                      <Col md={4} xs={12}>
-                        <button
-                          className="addNewTable"
-                          onClick={() => createBookingTableinSeats(data)}
-                        >
-                          Book Table
-                        </button>
+                  </Col>
+                  <Col md={8} xs={12}>
+                    <Row>
+                      <Col xs={6} className="mb-2">
+                        <Card className="text-center border-0">
+                          <Card.Body>
+                            <div className="h4 mb-0">
+                              {seletedSeatCount || "-"}
+                            </div>
+                            <small className="text-muted">Seats</small>
+                          </Card.Body>
+                        </Card>
                       </Col>
-                      <Col md={8} xs={12}>
-                        <Row>
-                          <Col xs={6} className="mb-2">
-                            <Card className="text-center border-0">
-                              <Card.Body>
-                                <div className="h4 mb-0">
-                                  {seletedSeatCount || "-"}
-                                </div>
-                                <small className="text-muted">Seats</small>
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                          <Col xs={6} className="mb-2">
-                            <Card className="text-center border-0">
-                              <Card.Body>
-                                <div className="h4 mb-0">
-                                  {seletedTableCount || "-"}
-                                </div>
-                                <small className="text-muted">Tables</small>
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                        </Row>
+                      <Col xs={6} className="mb-2">
+                        <Card className="text-center border-0">
+                          <Card.Body>
+                            <div className="h4 mb-0">
+                              {seletedTableCount || "-"}
+                            </div>
+                            <small className="text-muted">Tables</small>
+                          </Card.Body>
+                        </Card>
                       </Col>
                     </Row>
-                  )}
-                </Col>
-              </Row>
-
+                  </Col>
+                </Row>
+              )}
+            </div>
+          </div>
+          {floorToShow && (
+            <div className="mb-3">
               <div className="scroll-inner d-flex flex-row flex-wrap gap-2">
                 {Array.isArray(floorToShow.tables) &&
                   floorToShow.tables.map((table, tIndex) => {
@@ -671,7 +663,9 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                           auth?.details?.role === "Admin" ||
                           auth?.details?.is_admin) &&
                           (table?.seats?.length === 0 ||
-                            table?.seats.some((chair)=>chair.is_new === true)) && (
+                            table?.seats.some(
+                              (chair) => chair.is_new === true,
+                            )) && (
                             <div className="d-flex justify-content-between align-items-center mb-2">
                               <div className="d-flex justify-content-between gap-1 align-items-center w-100">
                                 <button

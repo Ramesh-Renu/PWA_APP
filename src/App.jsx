@@ -23,6 +23,9 @@ const NotFound = lazy(() => import("pages/NotFound/NotFound"));
 const BookedTableDetails = lazy(
   () => import("pages/TableDetails/BookedTableDetails"),
 );
+const MenuCategories = lazy(
+  () => import("pages/Settings/MenuCategories/MenuCategories"),
+);
 const App = () => {
   const [{ data: auth }, { getUserInfoData }] = useAuth();
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -61,6 +64,11 @@ const App = () => {
 
         {/* Protected routes */}
         <Route element={protectedElement}>
+          <Route path="/settings/menu-categories" element={<MenuCategories />} />
+          <Route
+            path="/menu-categories"
+            element={<Navigate to="/settings/menu-categories" replace />}
+          />
           <Route element={<Home />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/hotellist" element={<CreateHotel />} />

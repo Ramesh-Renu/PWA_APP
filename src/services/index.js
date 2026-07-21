@@ -64,6 +64,12 @@ export const getRecentNotification = (params) => baseAPI.POST(API.GET_RECENT_NOT
 /** Menu **/
 export const createMenu = (body) => baseAPI.POST(API.MENU_API, body);
 
+export const uploadMenuImage = (body) =>
+  baseAPI.POST(API.MENU_IMAGE_UPLOAD_API, body);
+
+export const getAllSpiceLevels = (params) =>
+  baseAPI.GET(API.SPICE_LEVEL_API, params);
+
 export const getAllMenu = (params) => baseAPI.GET(API.MENU_API, params);
 
 export const getMenuById = (menuId) =>
@@ -74,3 +80,16 @@ export const updateMenu = (menuId, body) =>
 
 export const deleteMenu = (menuId) =>
   baseAPI.DELETE(`${API.MENU_API}/${menuId}`);
+
+/** Menu Categories master */
+export const getAllMenuCategories = (params) =>
+  baseAPI.GET(API.MENU_CATEGORY_API, params);
+
+export const createMenuCategory = (body) =>
+  baseAPI.POST(API.MENU_CATEGORY_API, body);
+
+export const updateMenuCategory = (categoryId, body) =>
+  baseAPI.PUT(`${API.MENU_CATEGORY_API}/${categoryId}`, body);
+
+export const deleteMenuCategory = (categoryId) =>
+  baseAPI.DELETE(`${API.MENU_CATEGORY_API}/${categoryId}`);

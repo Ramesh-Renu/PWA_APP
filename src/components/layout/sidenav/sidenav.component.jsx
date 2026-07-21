@@ -40,6 +40,11 @@ const SideNav = () => {
         ]
       : []),
     {
+      label: "Menu Categories",
+      to: "/settings/menu-categories",
+      match: "settings|menu-categories",
+    },
+    {
       label: "Reservations",
       to: "/booked-table",
       match: "booked-table",

@@ -26,6 +26,9 @@ export const API = {
   CREATE_SEATS_STATUS_MASTER: "/api/seat-status",
   GETALL_SEATS_STATUS_MASTER: "/api/seat-status",
   MENU_API: "/api/menu",
+  MENU_IMAGE_UPLOAD_API: "/api/upload",
+  SPICE_LEVEL_API: "/api/spice-levels",
+  MENU_CATEGORY_API: "/api/menu-categories",
   
 
   /** NOTIFICATION */

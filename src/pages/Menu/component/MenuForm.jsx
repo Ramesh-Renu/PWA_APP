@@ -22,7 +22,7 @@ const defaultForm = {
   price: "",
   preparation_time: "",
   is_veg: true,
-  spice_level: "Medium",
+  spice_level: "",
   calories: "",
   is_available: true,
   display_order: 1,
@@ -32,6 +32,8 @@ const MenuForm = ({
   initialValues = {},
   hotels = [],
   categories = [],
+  spiceLevels = [],
+  spiceLevelsLoading = false,
   loading = false,
   isEdit = false,
   onHotelChange,
@@ -42,16 +44,12 @@ const MenuForm = ({
   const [preview, setPreview] = useState("");
 
   useEffect(() => {
-    if (initialValues && Object.keys(initialValues).length > 0) {
-      setForm({
-        ...defaultForm,
-        ...initialValues,
-      });
-
-      if (initialValues.image_url) {
-        setPreview(initialValues.image_url);
-      }
-    }
+    setForm({
+      ...defaultForm,
+      ...(initialValues || {}),
+    });
+    setImage(null);
+    setPreview(initialValues?.image_url || initialValues?.image || "");
   }, [initialValues]);
 
   const handleChange = (e) => {
@@ -79,17 +77,30 @@ const MenuForm = ({
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const formData = new FormData();
+    const payload = {
+      hotel_id: Number(form.hotel_id),
+      category_id: Number(form.category_id),
+      menu_name: form.menu_name.trim(),
+      price: Number(form.price),
+      is_veg: Boolean(form.is_veg),
+      is_available: Boolean(form.is_available),
+      display_order: Number(form.display_order) || 0,
+    };
 
-    Object.entries(form).forEach(([key, value]) => {
-      formData.append(key, value);
+    const optionalTextFields = ["menu_code", "description"];
+    optionalTextFields.forEach((key) => {
+      if (String(form[key] ?? "").trim()) {
+        payload[key] = String(form[key]).trim();
+      }
     });
 
-    if (image) {
-      formData.append("image", image);
-    }
+    ["preparation_time", "calories", "spice_level"].forEach((key) => {
+      if (String(form[key] ?? "").trim()) {
+        payload[key] = Number(form[key]);
+      }
+    });
 
-    onSubmit(formData);
+    onSubmit({ ...payload, imageFile: image });
   };
 
   return (
@@ -274,9 +285,38 @@ const MenuForm = ({
               select
               InputLabelProps={{ shrink: true }}
             >
-              <MenuItem value="Mild">Mild</MenuItem>
-              <MenuItem value="Medium">Medium</MenuItem>
-              <MenuItem value="Hot">Hot</MenuItem>
+              <MenuItem value="">Select Spice Level</MenuItem>
+              {spiceLevelsLoading ? (
+                <MenuItem value="" disabled>
+                  Loading spice levels...
+                </MenuItem>
+              ) : spiceLevels.length === 0 ? (
+                <MenuItem value="" disabled>
+                  No spice levels available
+                </MenuItem>
+              ) : (
+                spiceLevels.map((spiceLevel) => {
+                  const id =
+                    spiceLevel?.id ??
+                    spiceLevel?.spice_level_id ??
+                    spiceLevel?.value;
+                  const name = String(
+                    spiceLevel?.spice_level ??
+                      spiceLevel?.name ??
+                      "",
+                  );
+                  const label = name
+                    .toLowerCase()
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+                  return id !== undefined && id !== null ? (
+                    <MenuItem key={id} value={String(id)}>
+                      {label}
+                    </MenuItem>
+                  ) : null;
+                })
+              )}
             </TextField>
           </CardContent>
         </Card>

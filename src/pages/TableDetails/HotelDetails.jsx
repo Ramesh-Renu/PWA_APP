@@ -25,6 +25,8 @@ const HotelDetails = () => {
   const [hotelData, setHotelData] = useState(location.state?.hotelData || null);
   const [isEditable, setIsEditable] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
+
+  const [showMenuList, setShowMenuList] = useState(false);
   const { areaList, locationList, getAllArea, getAllLocation } =
     useGlobalMaster();
   useEffect(() => {
@@ -76,7 +78,6 @@ const HotelDetails = () => {
   };
 
   const stats = computeTotals(hotelData || {});
-  const [showMenuList, setShowMenuList] = useState(false);
   const handleShowMenu = () => {
     setShowMenuList(!showMenuList);
   };
@@ -129,9 +130,8 @@ const HotelDetails = () => {
                     Back
                   </Button>
                   <Button variant="outline-primary">Edit</Button>
-                  <Button variant="outline-secondary">Export</Button>
                   <Button variant="primary" onClick={() => handleShowMenu()}>
-                    Menus
+                    {showMenuList ? "Tables" : "Menus"} 
                   </Button>
                 </div>
               )}
@@ -188,7 +188,6 @@ const HotelDetails = () => {
       )}
       {showMenuList && (
         <div className="menu-list-header">
-          <h3>Menu List</h3>
           <MenuList hotelId={hotelData?.id} />
         </div>
       )}

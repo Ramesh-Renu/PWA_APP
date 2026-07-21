@@ -8,6 +8,7 @@ import {
   AiOutlinePhone,
   AiOutlineEnvironment,
 } from "react-icons/ai";
+import { Button, InputAdornment, TextField } from "@mui/material";
 import { MdOutlineRestaurant, MdOutlineSmartphone } from "react-icons/md";
 import { getOTp, createUser } from "services";
 import useToast from "hooks/useToast";
@@ -61,6 +62,19 @@ export default function Login() {
     email: false,
     mobilenumber: false,
     location: false,
+  });
+
+  const getSignupTextFieldProps = (Icon) => ({
+    fullWidth: true,
+    variant: "outlined",
+    size: "medium",
+    InputProps: {
+      startAdornment: (
+        <InputAdornment position="start">
+          <Icon className="tableflow-login__mui-icon" />
+        </InputAdornment>
+      ),
+    },
   });
 
   const handleCheckMobilenumber = (value) => {
@@ -149,6 +163,24 @@ export default function Login() {
   const handleSubmitForm = (e) => {
     e.preventDefault();
     setIsSubmitted(true);
+    setErrorMsg({
+      firstName: !formData.firstName.trim(),
+      lastName: false,
+      email: !/^\S+@\S+\.\S+$/.test(formData.email),
+      mobilenumber: mobile.length !== 10,
+      location: !formData.location.trim(),
+    });
+
+    if (
+      !formData.firstName.trim() ||
+      !/^\S+@\S+\.\S+$/.test(formData.email) ||
+      mobile.length !== 10 ||
+      !formData.location.trim()
+    ) {
+      setIsSubmitted(false);
+      return;
+    }
+
     const updatedFormData = {
       ...formData, // Keep the existing properties
       mobilenumber: mobile,
@@ -170,16 +202,19 @@ export default function Login() {
             mobilenumber: "",
             location: "",
           });
+          setIsSubmitted(false);
           setActiveForm(true);
           setCreateForm(false);
         } else {
           showToast({ message: res.data.message, variant: "danger" });
+          setIsSubmitted(false);
           setCreateForm(true);
         }
       });
     } catch (error) {
       // Handle errors
       showToast({ message: error, variant: "danger" });
+      setIsSubmitted(false);
     }
   };
 
@@ -329,120 +364,90 @@ export default function Login() {
           )}
           {createForm && (
             <form className="modern-form" onSubmit={handleSubmitForm}>
-              <div className="form-group">
-                <label className="form-label">
-                  First Name <span className="required">*</span>
-                </label>
-                <div className="input-wrapper">
-                  <AiOutlineUser className="input-icon" />
-                  <input
-                    type="text"
-                    value={formData.firstName}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        firstName: e.target?.value,
-                      })
-                    }
-                    placeholder="First name"
-                    className="modern-input"
-                    maxLength="50"
-                    autoFocus
-                  />
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Last Name</label>
-                <div className="input-wrapper">
-                  <AiOutlineUser className="input-icon" />
-                  <input
-                    type="text"
-                    value={formData.lastName}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        lastName: e.target?.value,
-                      })
-                    }
-                    placeholder="Last name"
-                    className="modern-input"
-                    maxLength="50"
-                  />
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">
-                  Email <span className="required">*</span>
-                </label>
-                <div className="input-wrapper">
-                  <AiOutlineMail className="input-icon" />
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        email: e.target?.value,
-                      })
-                    }
-                    placeholder="your@email.com"
-                    className="modern-input"
-                  />
-                </div>
-                {errorMsg.email && (
-                  <span className="error-text">Please enter a valid email</span>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  Mobile Number <span className="required">*</span>
-                </label>
-                <div className="input-wrapper">
-                  <AiOutlinePhone className="input-icon" />
-                  <input
-                    type="tel"
-                    value={mobile}
-                    onChange={(e) => handleCheckMobilenumber(e.target.value)}
-                    placeholder="10-digit mobile number"
-                    className="modern-input"
-                    maxLength="10"
-                  />
-                </div>
-                {mobileError && (
-                  <small className="tableflow-login__error">
-                    {mobileError}
-                  </small>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  Location <span className="required">*</span>
-                </label>
-                <div className="input-wrapper">
-                  <AiOutlineEnvironment className="input-icon" />
-                  <input
-                    type="text"
-                    value={formData.location}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        location: e.target?.value,
-                      })
-                    }
-                    placeholder="Your location"
-                    className="modern-input"
-                  />
-                </div>
-              </div>
-              <button
+              <TextField
+                {...getSignupTextFieldProps(AiOutlineUser)}
+                label="First Name"
+                value={formData.firstName}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    firstName: e.target?.value,
+                  })
+                }
+                error={errorMsg.firstName}
+                helperText={errorMsg.firstName ? "First name is required" : ""}
+                inputProps={{ maxLength: 50 }}
+                required
+                autoFocus
+              />
+              <TextField
+                {...getSignupTextFieldProps(AiOutlineUser)}
+                label="Last Name"
+                value={formData.lastName}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    lastName: e.target?.value,
+                  })
+                }
+                inputProps={{ maxLength: 50 }}
+              />
+              <TextField
+                {...getSignupTextFieldProps(AiOutlineMail)}
+                label="Email"
+                type="email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    email: e.target?.value,
+                  })
+                }
+                error={errorMsg.email}
+                helperText={errorMsg.email ? "Please enter a valid email" : ""}
+                required
+              />
+              <TextField
+                {...getSignupTextFieldProps(AiOutlinePhone)}
+                label="Mobile Number"
+                type="tel"
+                value={mobile}
+                onChange={(e) => handleCheckMobilenumber(e.target.value)}
+                error={Boolean(mobileError) || errorMsg.mobilenumber}
+                helperText={
+                  mobileError ||
+                  (errorMsg.mobilenumber ? "Mobile number is required" : "")
+                }
+                inputProps={{
+                  inputMode: "numeric",
+                  pattern: "[0-9]{10}",
+                  maxLength: 10,
+                }}
+                required
+              />
+              <TextField
+                {...getSignupTextFieldProps(AiOutlineEnvironment)}
+                label="Location"
+                value={formData.location}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    location: e.target?.value,
+                  })
+                }
+                error={errorMsg.location}
+                helperText={errorMsg.location ? "Location is required" : ""}
+                required
+              />
+              <Button
                 type="submit"
                 className="tableflow-login__create-account"
+                variant="contained"
+                size="large"
                 disabled={isSubmitted}
               >
                 {isSubmitted ? "Creating Account..." : "Create Account"}
-              </button>
+              </Button>
             </form>
           )}
           {/* 

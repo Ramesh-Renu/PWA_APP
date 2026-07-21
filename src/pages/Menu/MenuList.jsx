@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Avatar,
   Button,
@@ -10,22 +9,41 @@ import {
   Box,
 } from "@mui/material";
 
-import { getAllMenu, getAllHotel } from "services";
+import {
+  deleteMenu,
+  getAllMenu,
+  getAllHotel,
+  getAllMenuCategories,
+} from "services";
 import { Fragment } from "react";
 import PopupModal from "components/common/PopupModal";
 import AddMenu from "./AddMenu";
 
 // import { getAllCategory } from "../../api/apiService";
 
-const MenuList = ({ hotelId }) => {
-  const navigate = useNavigate();
+const extractList = (response) => {
+  const candidates = [
+    response?.data?.data,
+    response?.data?.items,
+    response?.data?.rows,
+    response?.data?.menus,
+    response?.data,
+    response,
+  ];
 
+  return candidates.find(Array.isArray) || [];
+};
+
+const MenuList = ({ hotelId }) => {
   const [loading, setLoading] = useState(false);
 
   const [menus, setMenus] = useState([]);
   const [hotels, setHotels] = useState([]);
   const [categories, setCategories] = useState([]);
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [selectedMenu, setSelectedMenu] = useState(null);
+  const [deletingMenuId, setDeletingMenuId] = useState(null);
+  const [showDeleteCategory, setShowDeleteCategory] = useState(false);
 
   const [filters, setFilters] = useState({
     search: "",
@@ -35,6 +53,7 @@ const MenuList = ({ hotelId }) => {
 
   useEffect(() => {
     loadHotels();
+    loadCategories();
     loadMenus();
     setFilters({
       search: "",
@@ -50,10 +69,17 @@ const MenuList = ({ hotelId }) => {
   const loadHotels = async () => {
     try {
       const res = await getAllHotel();
+      setHotels(extractList(res));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-      if (res.success) {
-        setHotels(res.data || []);
-      }
+  const loadCategories = async () => {
+    try {
+      const res = await getAllMenuCategories();
+
+      setCategories(extractList(res));
     } catch (err) {
       console.error(err);
     }
@@ -64,10 +90,7 @@ const MenuList = ({ hotelId }) => {
       setLoading(true);
 
       const res = await getAllMenu(filters);
-
-      if (res.success) {
-        setMenus(res.data || []);
-      }
+      setMenus(res.rows);
     } catch (err) {
       console.error(err);
     } finally {
@@ -84,9 +107,41 @@ const MenuList = ({ hotelId }) => {
 
   const closeShowPopup = () => {
     setShowAddMenu(false);
+    setSelectedMenu(null);
   };
+
   const handleAddMenu = () => {
-    setShowAddMenu(!showAddMenu);
+    setSelectedMenu(null);
+    setShowAddMenu(true);
+  };
+
+  const handleEditMenu = (menu) => {
+    setSelectedMenu(menu);
+    setShowAddMenu(true);
+  };
+
+  const handleDeleteMenu = async (menu) => {
+    const menuId = menu?.id ?? menu?.menu_id;
+
+    if (
+      !window.confirm(
+        `Delete ${menu?.menu_name || menu?.name || "this menu item"}?`,
+      )
+    ) {
+      return;
+    }
+
+    setDeletingMenuId(menuId);
+
+    try {
+      await deleteMenu(menuId);
+      await loadMenus();
+    } catch (err) {
+      console.error(err);
+      window.alert("Unable to delete this menu item. Please try again.");
+    } finally {
+      setDeletingMenuId(null);
+    }
   };
 
   return (
@@ -96,7 +151,11 @@ const MenuList = ({ hotelId }) => {
 
         <Box className="menu-management-header">
           <Box>
-            <Typography variant="h5" fontWeight={700} className="menu-management-title">
+            <Typography
+              variant="h5"
+              fontWeight={700}
+              className="menu-management-title"
+            >
               Menu Management
             </Typography>
             <Typography variant="body2" className="menu-management-subtitle">
@@ -124,7 +183,7 @@ const MenuList = ({ hotelId }) => {
               value={filters.search}
               onChange={handleFilterChange}
               size="small"
-            />          
+            />
 
             <TextField
               select
@@ -147,7 +206,6 @@ const MenuList = ({ hotelId }) => {
         </Paper>
 
         {/* Table */}
-
         <Paper className="menu-table-panel">
           <table className="menu-table">
             <thead>
@@ -161,7 +219,6 @@ const MenuList = ({ hotelId }) => {
                 <th>Actions</th>
               </tr>
             </thead>
-
             <tbody>
               {loading ? (
                 <tr>
@@ -188,53 +245,60 @@ const MenuList = ({ hotelId }) => {
                   </td>
                 </tr>
               ) : (
-                menus.map((menu) => (
-                  <tr key={menu.id}>
-                    <td data-label="Image">
-                      {menu.image_url ? (
-                        <img
-                          src={menu.image_url}
-                          alt={menu.menu_name}
-                          className="menu-item-image"
-                        />
-                      ) : (
-                        <Avatar className="menu-item-image menu-item-avatar">
-                          {menu.menu_name?.charAt(0) || "M"}
-                        </Avatar>
-                      )}
-                    </td>
+                menus.map((menu) => {
+                  const menuId = menu.id ?? menu.menu_id;
+                  const menuName = menu.menu_name ?? menu.name;
+                  const imageUrl = menu.image_url ?? menu.image;
+                  const categoryName =
+                    menu.category_name ?? menu.category?.category_name;
 
-                    <td data-label="Menu Name">{menu.menu_name}</td>
+                  return (
+                    <tr key={menuId}>
+                      <td data-label="Image">
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt={menuName}
+                            className="menu-item-image"
+                          />
+                        ) : (
+                          <Avatar className="menu-item-image menu-item-avatar">
+                            {menuName?.charAt(0) || "M"}
+                          </Avatar>
+                        )}
+                      </td>
+                      <td data-label="Menu Name">{menuName}</td>
+                      <td data-label="Category">{categoryName}</td>
+                      <td data-label="Price">&#8377; {menu.price}</td>
+                      <td data-label="Veg">
+                        {menu.is_veg ? "Veg" : "Non Veg"}
+                      </td>
+                      <td data-label="Status">
+                        {menu.is_available ? "Available" : "Unavailable"}
+                      </td>
+                      <td data-label="Actions">
+                        <Button
+                          size="small"
+                          className="menu-action-button"
+                          onClick={() => handleEditMenu(menu)}
+                        >
+                          Edit
+                        </Button>
 
-                    <td data-label="Category">{menu.category_name}</td>
-
-                    <td data-label="Price">&#8377; {menu.price}</td>
-
-                    <td data-label="Veg">{menu.is_veg ? "Veg" : "Non Veg"}</td>
-
-                    <td data-label="Status">
-                      {menu.is_available ? "Available" : "Unavailable"}
-                    </td>
-
-                    <td data-label="Actions">
-                      <Button
-                        size="small"
-                        className="menu-action-button"
-                        onClick={() => navigate(`/menu/edit/${menu.id}`)}
-                      >
-                        Edit
-                      </Button>
-
-                      <Button
-                        size="small"
-                        color="error"
-                        className="menu-action-button"
-                      >
-                        Delete
-                      </Button>
-                    </td>
-                  </tr>
-                ))
+                        <Button
+                          size="small"
+                          color="error"
+                          className="menu-action-button"
+                          onClick={() =>
+                            setShowDeleteCategory(!showDeleteCategory)
+                          }
+                        >
+                          Delete
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -243,11 +307,48 @@ const MenuList = ({ hotelId }) => {
       <PopupModal
         show={showAddMenu}
         onClose={closeShowPopup}
-        header={"Add Menu"}
+        header
+        title={selectedMenu ? "Edit Menu" : "Add Menu"}
         className={"orderOrionDashboard bg-white rounded-4"}
         customClassName="menu-modal-dialog"
       >
-        <AddMenu />
+        <AddMenu
+          hotels={hotels}
+          categories={categories}
+          hotelId={hotelId}
+          menu={selectedMenu}
+          onSaved={async () => {
+            closeShowPopup();
+            await loadMenus();
+          }}
+        />
+      </PopupModal>
+      <PopupModal
+        show={showDeleteCategory}
+        onClose={() => setShowDeleteCategory(false)}
+        className={"popupModal bg-white rounded-4"}
+        width={"40vh"}
+      >
+        <div>
+          <h5 className="text-center">Do you want to Delete this Category ?</h5>
+          <div className="d-flex flex-row justify-content-center gap-3 mt-4 modalActions">
+            <button
+              className="btn btn-0 modalDelete_btn px-3"
+              onClick={() => handleDeleteMenu(menu)}
+            >
+              Yes
+            </button>
+            <button
+              className="btn btn-0 modalCancel_btn px-3"
+              onClick={() => {
+                setShowDeleteCategory(false);
+                setDeletingMenuId(null);
+              }}
+            >
+              No
+            </button>
+          </div>
+        </div>
       </PopupModal>
     </Fragment>
   );
