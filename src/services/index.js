@@ -9,13 +9,16 @@ import creatAPI from "./creatAPI";
  *  data: {Record<string, any>}
  * }>}
  */
-export const getOTp = (params) => creatAPI.POST(API.GET_OTP, params);
-export const getLogin = (params) => creatAPI.POST(API.GET_LOGIN, params);
-export const createUser = (params) => creatAPI.POST(API.CREATE_USER, params);
+export const getOTp = (params) =>
+  creatAPI.POST(API.GET_OTP, params, undefined, { skipAuth: true });
+export const getLogin = (params) =>
+  creatAPI.POST(API.GET_LOGIN, params, undefined, { skipAuth: true });
+export const createUser = (params) =>
+  creatAPI.POST(API.CREATE_USER, params, undefined, { skipAuth: true });
 export const logout = (params) => creatAPI.POST(API.LOGOUT, params);
 export const getUserInfo = (params) => baseAPI.GET(API.GET_USER_INFO, params);
-export const getRefreshTocken = (params) => baseAPI.POST(API.GET_REFRESH_TOCKEN, params);
-export const getPhotoSync = (params) => baseAPI.PUT(API.GET_PHOTO_SYNC, params);
+export const getRefreshTocken = (params) =>
+  baseAPI.POST(API.GET_REFRESH_TOCKEN, params, undefined, { skipAuth: true });
 
 /** Hotel **/
 export const createHotelAPi = (params) => baseAPI.POST(API.HOTEL_API, params);
@@ -32,13 +35,15 @@ export const getTablebyid = (params) => baseAPI.GET(API.TABLE_API+"/"+params.hot
 export const deleteTable = (params) => baseAPI.DELETE(API.DELETE_TABLE_API +"/"+params.table_id);
 
 /** Floor **/
-export const createFloor = (params) => baseAPI.POST(API.FLOOR_API, +"/"+params.hotel_id, params);
+export const createFloor = (params) =>
+  baseAPI.POST(`${API.FLOOR_API}/${params.hotel_id}`, params);
 export const getAllFloor = (params) => baseAPI.GET(API.FLOOR_API+"/"+params.hotel_id);
 export const deleteFloor = (params) => baseAPI.DELETE(API.DELETE_FLOOR_API +"/"+params.floor_id);
 
 /** Seat **/
 export const addSeatInTable = (body, tableId) => baseAPI.POST(`${API.SEAT_API}/${tableId}/add`, body);
-export const getAllSeatInTable = (params) => baseAPI.GET(API.SEAT_API, +"/"+  params.table_id);
+export const getAllSeatInTable = (params) =>
+  baseAPI.GET(`${API.SEAT_API}/${params.table_id}`);
 export const deleteSeatInTable = (body, tableId) => baseAPI.DELETE(`${API.DELETE_SEAT_API}/${tableId}/remove`, body);
 
 /** Reservation **/
@@ -46,7 +51,8 @@ export const createReservation = (params) => baseAPI.POST(API.RESERVATION_API, p
 export const updateReservation = (reservationId, body) => baseAPI.PUT(`${API.RESERVATION_API}/${reservationId}`, body);
 export const updateDiningStatus = (reservationId, body) =>baseAPI.PATCH(`${API.RESERVATION_API}/${reservationId}/dining-status`, body);
 export const getReservationByHotel = (params) => baseAPI.GET(API.GET_RESERVATION_HOTEL+"/"+params.hotel_id);
-export const getReservationByUser = (params) => baseAPI.GET(API.GET_RESERVATION_USER);
+export const getReservationByUser = (params) =>
+  baseAPI.GET(API.GET_RESERVATION_USER, params);
 export const getDashboardSummary = (params) => baseAPI.POST(API.DASHBOARD_SUMMARY, params);
 export const deleteReservation = (params) => baseAPI.DELETE(API.RESERVATION_API+"/"+params.reservation_id+"/cancel");
 

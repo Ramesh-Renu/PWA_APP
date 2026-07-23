@@ -7,6 +7,7 @@ import {
   updateMenu,
   uploadMenuImage,
 } from "services";
+import { getApiErrorMessage } from "utils/apiError";
 
 const AddMenu = ({
   hotels = [],
@@ -112,7 +113,7 @@ const AddMenu = ({
       }
     } catch (requestError) {
       setError(
-        requestError?.response?.data?.message ||
+        getApiErrorMessage(requestError) ||
           `Unable to ${isEdit ? "update" : "create"} menu. Please check the required fields and try again.`,
       );
     } finally {

@@ -19,8 +19,7 @@ const useAuth = () => {
         return response;
       } catch (error) {
         dispatch({ type: "SET_ERROR", payload: error });
-        // ✅ RETURN BACKEND RESPONSE
-        return error.response; // ⭐⭐⭐ THIS FIXES IT
+        throw error;
       } finally {
         dispatch({ type: "SET_LOADING", payload: false });
       }
@@ -38,11 +37,12 @@ const useAuth = () => {
         dispatch({ type: "SET_ACTIVE_USER_INFO", payload: data });
       } catch (error) {
         dispatch({ type: "SET_ERROR", payload: error });
-        localStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("userInfo");
-
-        dispatch({ type: "LOGOUT" });
+        if (error?.response?.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("refreshToken");
+          localStorage.removeItem("userInfo");
+          dispatch({ type: "LOGOUT" });
+        }
       } finally {
         dispatch({ type: "SET_LOADING", payload: false });
       }

@@ -34,6 +34,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 
 import { getAllHotel } from "services";
+import { getApiErrorMessage } from "utils/apiError";
 import {
   createMenuCategory,
   deleteMenuCategory,
@@ -98,7 +99,7 @@ const MenuCategories = () => {
       setCategories(unwrapList(response));
     } catch (requestError) {
       setError(
-        requestError?.response?.data?.message ||
+        getApiErrorMessage(requestError) ||
           "Unable to load menu categories. Please try again.",
       );
     } finally {
@@ -195,7 +196,7 @@ const MenuCategories = () => {
       await loadCategories();
     } catch (requestError) {
       setError(
-        requestError?.response?.data?.message ||
+        getApiErrorMessage(requestError) ||
           "Unable to save this menu category. Please try again.",
       );
     } finally {
@@ -216,7 +217,7 @@ const MenuCategories = () => {
       await loadCategories();
     } catch (requestError) {
       setError(
-        requestError?.response?.data?.message ||
+        getApiErrorMessage(requestError) ||
           "Unable to delete this menu category. Please try again.",
       );
     } finally {

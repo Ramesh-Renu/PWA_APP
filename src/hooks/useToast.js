@@ -1,34 +1,23 @@
 import { useGlobalContext } from "store/context/GlobalProvider";
+import { getApiErrorDetails } from "utils/apiError";
 
 const useToast = () => {
   const { toastState, dispatch } = useGlobalContext();
 
-  const getToastMessage = (message) => {
-    if (typeof message === "string") {
-      return message;
-    }
-
-    if (message?.response?.data?.message) {
-      return message.response.data.message;
-    }
-
-    if (message?.message) {
-      return message.message;
-    }
-
-    if (message == null) {
-      return "";
-    }
-
-    return "Something went wrong";
-  };
-
   const showToast = (payload) => {
+    const details = getApiErrorDetails(payload?.message);
+
     dispatch({
       type: "SHOW_TOAST",
       payload: {
         ...payload,
-        message: getToastMessage(payload?.message),
+        title:
+          payload?.title ||
+          (payload?.variant === "success" ? "Success" : details.title) ||
+          "Request failed",
+        message: details.message,
+        hint: payload?.hint || details.hint,
+        variant: payload?.variant || details.variant || "danger",
       },
     });
   };

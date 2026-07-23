@@ -1,5 +1,6 @@
 import { useGlobalContext } from "store/context/GlobalProvider";
 import {getAllArea, getAllLocation, getDiningStatus,getSeatsStatusMatsers} from "services";
+import { getApiErrorMessage } from "utils/apiError";
 
 const useGlobalMaster = () => {
   const { masterState, dispatch } = useGlobalContext();
@@ -26,7 +27,7 @@ const useGlobalMaster = () => {
         type: "ERROR",
         payload: {
           key,
-          error: error.message || "Something went wrong",
+          error: getApiErrorMessage(error),
         },
       });
       throw error; 

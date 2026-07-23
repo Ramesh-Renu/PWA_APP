@@ -100,7 +100,7 @@ export default function Login() {
     navigate("/dashboard", { replace: true });
   };
 
-  const handleSendOtp = (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault();
     if (mobile.length !== 10) {
       setMobileError("Please enter a valid 10-digit mobile number");
@@ -110,21 +110,18 @@ export default function Login() {
     setShowOTPSent(true);
     setOtpTimer(60);
     try {
-      const response = getOTp({
+      const res = await getOTp({
         mobilenumber: mobile,
       });
-      response.then((res) => {
-        if (res.success) {
-          showToast({ message: res.message, variant: "success" });
-          setOtpTimer(60);
-          const timer = setInterval(() => {
-            setOtpTimer((prev) => (prev > 0 ? prev - 1 : 0));
-          }, 1000);
-          return () => clearInterval(timer);
-        } else {
-          showToast({ message: res.message, variant: "danger" });
-        }
-      });
+      if (res.success) {
+        showToast({ message: res.message, variant: "success" });
+        setOtpTimer(60);
+        const timer = setInterval(() => {
+          setOtpTimer((prev) => (prev > 0 ? prev - 1 : 0));
+        }, 1000);
+        return () => clearInterval(timer);
+      }
+      showToast({ message: res.message, variant: "danger" });
     } catch (error) {
       // Handle errors
       showToast({ message: error, variant: "danger" });
@@ -132,35 +129,38 @@ export default function Login() {
   };
 
   const handleLogin = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
+    setInProgress(true);
 
-  setInProgress(true);
+    try {
+      const response = await getAuth({
+        mobilenumber: mobile,
+        otp: getOTPnumber,
+      });
 
-  const response = await getAuth({
-    mobilenumber: mobile,
-    otp: getOTPnumber,
-  });
+      if (!response?.data?.success) {
+        showToast({
+          message: response?.data?.message || "Unable to sign in.",
+          variant: "danger",
+        });
+        return;
+      }
 
-  if (response?.data?.success) {
-    // Load profile
-    await getUserInfoData();
+      await getUserInfoData();
+      showToast({
+        title: "Welcome!",
+        message: response.data.message,
+        variant: "success",
+      });
+      navigate("/dashboard", { replace: true });
+    } catch (error) {
+      showToast({ message: error, variant: "danger" });
+    } finally {
+      setInProgress(false);
+    }
+  };
 
-    showToast({
-      title: "Welcome!",
-      message: response.data.message,
-      variant: "success",
-    });
-
-    navigate("/dashboard", { replace: true });
-  } else {
-    setInProgress(false);
-    showToast({
-      message: response.data.message,
-      variant: "danger",
-    });
-  }
-};
-  const handleSubmitForm = (e) => {
+  const handleSubmitForm = async (e) => {
     e.preventDefault();
     setIsSubmitted(true);
     setErrorMsg({
@@ -182,38 +182,36 @@ export default function Login() {
     }
 
     const updatedFormData = {
-      ...formData, // Keep the existing properties
+      ...formData,
       mobilenumber: mobile,
-      name: formData.firstName + " " + formData.lastName, // Combine firstName and lastName into name
+      name: formData.firstName + " " + formData.lastName,
     };
-    delete updatedFormData.firstName; // Remove firstName
-    delete updatedFormData.lastName; // Remove lastName
-   
-    // TRIGGER API CALL TO REGISTER AGENCY USER
+    delete updatedFormData.firstName;
+    delete updatedFormData.lastName;
+
     try {
-      const response = createUser(updatedFormData);
-      response.then((res) => {
-        if (res.success) {
-          showToast({ message: res.message, variant: "success" });
-          setFormData({
-            firstName: "",
-            lastName: "",
-            email: "",
-            mobilenumber: "",
-            location: "",
-          });
-          setIsSubmitted(false);
-          setActiveForm(true);
-          setCreateForm(false);
-        } else {
-          showToast({ message: res.data.message, variant: "danger" });
-          setIsSubmitted(false);
-          setCreateForm(true);
-        }
-      });
+      const res = await createUser(updatedFormData);
+      if (res.success) {
+        showToast({ message: res.message, variant: "success" });
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          mobilenumber: "",
+          location: "",
+        });
+        setActiveForm(true);
+        setCreateForm(false);
+      } else {
+        showToast({
+          message: res?.data?.message || res?.message,
+          variant: "danger",
+        });
+        setCreateForm(true);
+      }
     } catch (error) {
-      // Handle errors
       showToast({ message: error, variant: "danger" });
+    } finally {
       setIsSubmitted(false);
     }
   };

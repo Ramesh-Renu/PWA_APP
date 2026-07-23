@@ -16,7 +16,7 @@ const SideNav = () => {
   useEffect(() => setMobileOpen(false), [location.pathname]);
 
   const userLogout = () => {
-    console.log('logout');
+    console.log("logout");
     localStorage.removeItem("token");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("userInfo");
@@ -37,13 +37,14 @@ const SideNav = () => {
             to: "/hotellist",
             match: "hotel/create|hotel/details",
           },
+          {
+            label: "Menu Categories",
+            to: "/settings/menu-categories",
+            match: "settings|menu-categories",
+          },
         ]
       : []),
-    {
-      label: "Menu Categories",
-      to: "/settings/menu-categories",
-      match: "settings|menu-categories",
-    },
+
     {
       label: "Reservations",
       to: "/booked-table",
@@ -79,7 +80,9 @@ const SideNav = () => {
             <NavLink
               key={item.label}
               to={item.to}
-              className={() => `app-topnav__link ${manuallyActive ? "active" : ""}`}
+              className={() =>
+                `app-topnav__link ${manuallyActive ? "active" : ""}`
+              }
             >
               {item.label}
             </NavLink>
@@ -104,7 +107,11 @@ const SideNav = () => {
             {auth?.details?.name || "User"}
           </span>
         </div>
-        <button type="button" className="app-topnav__logout" onClick={userLogout}>
+        <button
+          type="button"
+          className="app-topnav__logout"
+          onClick={userLogout}
+        >
           Logout
         </button>
       </div>

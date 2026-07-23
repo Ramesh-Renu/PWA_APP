@@ -4,6 +4,7 @@ import { getDashboardSummary } from "services";
 import useAuth from "hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { getDashboardSummaryParams } from "utils/dashboard";
+import { getApiErrorDetails } from "utils/apiError";
 import ReservationStatusDonut from "./ReservationStatusDonut";
 import useGlobalMaster from "hooks/useGlobalMaster";
 import dayjs from "dayjs";
@@ -129,10 +130,8 @@ const Dashboard = () => {
         setData(response.data || []);
         setRecentReservationData(response?.data?.recent || []);
       } catch (err) {
-        setError(
-          err?.response?.data?.message ||
-            "We couldn't load the dashboard right now.",
-        );
+        const details = getApiErrorDetails(err);
+        setError(`${details.title}: ${details.message}`);
       } finally {
         if (showLoading) setLoading(false);
         setInitialLoad(false);
