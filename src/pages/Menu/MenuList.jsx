@@ -165,7 +165,6 @@ const MenuList = ({ hotelId }) => {
               Manage menu items, availability, and pricing.
             </Typography>
           </Box>
-
           <Button
             variant="contained"
             className="menu-add-button"

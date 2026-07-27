@@ -15,6 +15,7 @@ import {
   deleteSeatInTable,
   createReservation,
   updateReservation,
+  getAllMenu,
 } from "services";
 import useToast from "hooks/useToast";
 import PopupModal from "components/common/PopupModal";
@@ -23,6 +24,7 @@ import dayjs from "dayjs";
 import { useGlobalContext } from "store/context/GlobalProvider";
 import SVGImage from "./SVGImage";
 import useGlobalMaster from "hooks/useGlobalMaster";
+import MenuOrderPopup from "pages/MenuOrderPopup/MenuOrderPopup";
 
 const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
   const [{ data: auth }, { setAuth }] = useAuth();
@@ -41,6 +43,22 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
   const [seletedSeatCount, setSeletedSeatCount] = useState(null);
   const [seletedTableCount, setSeletedTableCount] = useState(null);
   const [openAdminPopupTableId, setOpenAdminPopupTableId] = useState(null);
+  const [showMenuPopup, setShowMenuPopup] = useState(false);
+  const [reservationId, setReservationId] = useState(null);
+  const [filters, setFilters] = useState({
+    search: "",
+    hotel_id: "",
+    category_id: "",
+  });
+  const [menus, setMenus] = useState([]);
+
+  // Update filters when hotelId prop changes
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      hotel_id: data.id || "",
+    }));
+  }, [data]);
 
   const fetchHotelbyId = async (hotelData) => {
     try {
@@ -69,6 +87,23 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
     fetchHotelbyId(data);
   }, []);
 
+  useEffect(() => {
+    loadMenus();
+  }, [filters]);
+
+  const loadMenus = async () => {
+    try {
+      setLoading(true);
+
+      const res = await getAllMenu(filters);
+      setMenus(res.rows);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const fetchCreateTable = async (hotelData) => {
     const body = {
       tableCount: 1,
@@ -282,6 +317,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
           variant: "success",
         });
         fetchHotelbyId(hotelData);
+        setShowMenuPopup(true);
         setLoading(false);
       }
     } catch (error) {
@@ -554,6 +590,20 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
     setSeletedSeatCount(totalBookingSeats);
     setSeletedTableCount(bookingSeatsByTable?.length);
   }, [floorToShow, floorsState, floors, selectedFloorIndex]);
+
+  const handlePlaceOrder = async (items) => {
+    console.log(items);
+
+    // Example API payload
+    const body = {
+      reservation_id: reservationId,
+      items,
+    };
+
+    // await createReservationOrder(body);
+
+    setShowMenuPopup(false)
+  };
 
   return (
     <Fragment>
@@ -1141,6 +1191,21 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
             </button>
           </div>
         </div>
+      </PopupModal>
+      <PopupModal
+        show={showMenuPopup}
+        onClose={() => setShowMenuPopup(false)}
+        width="900px"
+      >
+        <MenuOrderPopup
+          menus={menus}
+          categories={[]}
+          onPlaceOrder={(items) => {
+            console.log(items);
+            setShowMenuPopup(false)
+          }}
+          onSkip={() => setShowMenuPopup(false)}
+        />
       </PopupModal>
     </Fragment>
   );
