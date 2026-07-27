@@ -225,7 +225,7 @@ const Dashboard = () => {
         <Box>
           <Typography className="eyebrow" component="p">OVERVIEW</Typography>
           <Typography component="h1">Good day, {auth?.details?.name?.split(" ")[0] || "Guest"}</Typography>
-          <p>
+          <p className="subhead-text">
             {data?.isAdmin
               ? "Here’s what’s happening across your restaurants today."
               : "Here’s a quick look at your booking activity."}
@@ -424,7 +424,6 @@ const Dashboard = () => {
                       </TableCell>
                       <TableCell align="center">
                         <span className="status-badge">
-                          {tableList || "N/A"}
                         </span>
                       </TableCell>
                       <TableCell align="center">

@@ -15,6 +15,7 @@ const AddMenu = ({
   hotelId,
   menu = null,
   onSaved,
+  selectedMenuSidedishes =[]
 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -23,7 +24,6 @@ const AddMenu = ({
   const initialValues = useMemo(
     () => {
       if (!menu) return { hotel_id: hotelId || "" };
-
       const spiceLevel =
         menu.spice_level_id ??
         (typeof menu.spice_level === "object"
@@ -132,6 +132,7 @@ const AddMenu = ({
       loading={loading}
       isEdit={isEdit}
       onSubmit={handleSubmit}
+      selectedMenuSidedishes={selectedMenuSidedishes}
     />
     </>
   );

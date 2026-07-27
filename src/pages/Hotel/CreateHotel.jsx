@@ -14,7 +14,16 @@ import useToast from "hooks/useToast";
 import * as images from "../../assets/images/index";
 import { useNavigate } from "react-router-dom";
 import ToolTipPopup from "components/common/ToolTipPopup";
+import {
+  LocationOnOutlined,
+  MapOutlined,
+  ApartmentOutlined,
+  TableRestaurantOutlined,
+  LayersOutlined,
+  EventSeatOutlined,
+} from "@mui/icons-material";
 import { renderArea, renderLocation } from "utils/common";
+import SkeletonLoading from "components/common/SkeletonLoading";
 
 const CreateHotel = () => {
   const [listOfHotel, setListOfHotel] = useState([]);
@@ -411,7 +420,12 @@ const CreateHotel = () => {
         {listOfHotel?.length > 0 && (
           <div className="page-table-shell hotel-list-shell">
             {loadingHotelListApp ? (
-              <div className="hotel-list-state">Loading hotel...</div>
+              <SkeletonLoading
+                count={3}
+                height="120px"
+                width="100%"
+                borderRadius="8px"
+              />
             ) : (
               <div className="hotel-list-grid">
                 {listOfHotel.map((hotel) => {
@@ -422,6 +436,23 @@ const CreateHotel = () => {
                     )[0]?.name || "N/A";
                   const areaName =
                     renderArea(hotel.area_id, areaList?.data || [])[0]?.name ||
+                    "N/A";
+                  const floorCount =
+                    hotel.floorCount ?? hotel.floor_per_hotel ?? "N/A";
+                  const tablesPerFloor =
+                    hotel.tables_per_floor ?? hotel.tablesPerFloor ?? "N/A";
+                  const tableCount =
+                    hotel.tableCount ??
+                    hotel.totalTables ??
+                    hotel.total_tables ??
+                    (Number.isFinite(Number(floorCount)) &&
+                    Number.isFinite(Number(tablesPerFloor))
+                      ? Number(floorCount) * Number(tablesPerFloor)
+                      : "N/A");
+                  const seatCount =
+                    hotel.seatCount ??
+                    hotel.totalSeats ??
+                    hotel.total_seats ??
                     "N/A";
 
                   return (
@@ -442,38 +473,88 @@ const CreateHotel = () => {
                           </p>
                         </div>
                       </div>
-                      <div className="hotel-list-card__details">
+                      {/* <div className="hotel-list-card__details">
                         <div className="hotel-list-card__details--list">
-                          <span className="heading">Location</span>
+                          <span className="label">Location</span>
                           <span className="name">{locationName}</span>
                         </div>
                         <div className="hotel-list-card__details--list">
-                          <span className="heading">Area</span>
+                          <span className="label">Area</span>
                           <span className="name">{areaName}</span>
                         </div>
                         <div className="hotel-list-card__details--list">
-                          <span className="heading">Floors</span>
+                          <span className="label">Floors</span>
                           <span className="name">
-                            {hotel.floorCount ?? hotel.floor_per_hotel ?? "N/A"}
+                            {floorCount}
                           </span>
                         </div>
                         <div className="hotel-list-card__details--list">
-                          <span className="heading">Tables</span>
+                          <span className="label">Tables</span>
                           <span className="name">
-                            {hotel.tableCount ?? "N/A"}
+                            {tableCount}
                           </span>
                         </div>
                         <div className="hotel-list-card__details--list">
-                          <span className="heading">Per floor</span>
+                          <span className="label">Per floor</span>
                           <span className="name">
-                            {hotel.tables_per_floor ?? "N/A"}
+                            {tablesPerFloor}
                           </span>
                         </div>
                         <div className="hotel-list-card__details--list">
-                          <span className="heading">Seats</span>
+                          <span className="label">Seats</span>
                           <span className="name">
-                            {hotel.seatCount ?? "N/A"}
+                            {seatCount}
                           </span>
+                        </div>
+                      </div> */}
+                      
+                      <div className="hotel-list-card__details">
+                        <div className="hotel-list-card__details--list">
+                          <LocationOnOutlined
+                            className="hotel-detail-icon"
+                            sx={{ color: "#ef4444", fontSize: 18 }}
+                          />
+                          <span className="name">{locationName}</span>
+                        </div>
+
+                        <div className="hotel-list-card__details--list">
+                          <MapOutlined
+                            className="hotel-detail-icon"
+                             sx={{ color: "#3b82f6", fontSize: 18 }} 
+                          />
+                          <span className="name">{areaName}</span>
+                        </div>
+
+                        <div className="hotel-list-card__details--list">
+                          <ApartmentOutlined
+                            className="hotel-detail-icon"
+                             sx={{ color: "#10b981", fontSize: 18 }} 
+                          />
+                          <span className="count">{floorCount} <span className="title">Floor</span></span>
+                        </div>
+
+                        <div className="hotel-list-card__details--list">
+                          <TableRestaurantOutlined
+                            className="hotel-detail-icon"
+                             sx={{ color: "#f59e0b", fontSize: 18 }}
+                          />
+                          <span className="count">{tableCount} <span className="title">Tables</span></span>
+                        </div>
+
+                        <div className="hotel-list-card__details--list">
+                          <LayersOutlined
+                            className="hotel-detail-icon"
+                             sx={{ color: "#8b5cf6", fontSize: 18 }}
+                          />
+                          <span className="count">{tablesPerFloor} <span className="title">Table per floor</span></span>
+                        </div>
+
+                        <div className="hotel-list-card__details--list">
+                          <EventSeatOutlined
+                            className="hotel-detail-icon"
+                             sx={{ color: "#06b6d4", fontSize: 18 }} 
+                          />
+                          <span className="count">{seatCount} <span className="title">Seats</span></span>
                         </div>
                       </div>
                       <div className="hotel-list-card__footer">
@@ -501,12 +582,17 @@ const CreateHotel = () => {
                           </button>
                         </div>
                         <div className="hotel-list-card__footer--second-col">
-                        <button
-                          type="button"
-                          onClick={() => handleHotelView(hotel.id, hotel, true)}
-                        >
-                          Open Hotel <span aria-hidden="true">→</span>
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleHotelView(hotel.id, hotel, true)
+                            }
+                          >
+                            Book to <TableRestaurantOutlined
+                            className="hotel-detail-icon"
+                             sx={{ color: "#f59e0b", fontSize: 18 }}
+                          /> 
+                          </button>
                         </div>
                       </div>
                     </article>

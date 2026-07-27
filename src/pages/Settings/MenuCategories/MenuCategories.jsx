@@ -226,7 +226,8 @@ const MenuCategories = () => {
   };
 
   return (
-    <Box sx={{ maxWidth: 1440, mx: "auto", py: { xs: 1, md: 2 } }}>
+    <section className="menuCategoies-body">
+    <Box  sx={{ maxWidth: 1440, mx: "auto", py: { xs: 1, md: 2 } }}>
       <Stack
         direction={{ xs: "column", sm: "row" }}
         justifyContent="space-between"
@@ -266,7 +267,7 @@ const MenuCategories = () => {
       <Paper sx={{ mb: 2, border: "1px solid #e4e7ef", borderRadius: 2, boxShadow: "none" }}>
         <Stack
           direction={{ xs: "column", md: "row" }}
-          spacing={2}
+          spacing={5}
           alignItems={{ xs: "stretch", md: "center" }}
           sx={{ p: 2 }}
         >
@@ -453,6 +454,7 @@ const MenuCategories = () => {
         </DialogActions>
       </Dialog>
     </Box>
+    </section>
   );
 };
 

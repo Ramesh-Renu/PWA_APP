@@ -10,8 +10,12 @@ import {
   MenuItem,
   TextField,
   Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  ListItemText,
 } from "@mui/material";
-
+import { getAllSideDishes } from "services";
 
 const defaultForm = {
   hotel_id: "",
@@ -38,10 +42,34 @@ const MenuForm = ({
   isEdit = false,
   onHotelChange,
   onSubmit,
+  selectedMenuSidedishes = [],
 }) => {
   const [form, setForm] = useState(defaultForm);
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState("");
+  const [sideDishList, setSideDishList] = useState([]);
+  const [selectedSideDishList, setSelectedSideDishList] = useState([]);
+  const [selectedSideDishes, setSelectedSideDishes] = useState([]);
+
+  useEffect(() => {
+    loadSideDishes();
+  }, []);
+
+  const loadSideDishes = async () => {
+    const res = await getAllSideDishes();
+
+    if (res.success) {
+      setSideDishList(res.data);
+      setSelectedSideDishList(res.data);
+    }
+  };
+  useEffect(() => {
+    if (selectedMenuSidedishes?.length) {
+      setSelectedSideDishes(selectedMenuSidedishes.map((id) => Number(id)));
+    } else {
+      setSelectedSideDishes([]);
+    }
+  }, [selectedMenuSidedishes]);
 
   useEffect(() => {
     setForm({
@@ -85,6 +113,7 @@ const MenuForm = ({
       is_veg: Boolean(form.is_veg),
       is_available: Boolean(form.is_available),
       display_order: Number(form.display_order) || 0,
+      side_dishes: selectedSideDishes,
     };
 
     const optionalTextFields = ["menu_code", "description"];
@@ -101,6 +130,10 @@ const MenuForm = ({
     });
 
     onSubmit({ ...payload, imageFile: image });
+  };
+
+  const handleSideDishChange = (event) => {
+    setSelectedSideDishes(event.target.value);
   };
 
   return (
@@ -201,7 +234,42 @@ const MenuForm = ({
           </CardContent>
         </Card>
       </Grid>
+      <Grid item xs={12}>
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <FormControl fullWidth>
+              <InputLabel shrink>Side Dishes</InputLabel>
 
+              <Select
+                multiple
+                value={selectedSideDishes}
+                onChange={handleSideDishChange}
+                displayEmpty
+                renderValue={(selected) =>
+                  selected
+                    .map(
+                      (id) =>
+                        selectedSideDishList.find(
+                          (x) => Number(x.id) === Number(id),
+                        )?.side_dish_name,
+                    )
+                    .filter(Boolean)
+                    .join(", ")
+                }
+              >
+                {selectedSideDishList.map((item) => (
+                  <MenuItem key={item.id} value={Number(item.id)}>
+                    <Checkbox
+                      checked={selectedSideDishes.includes(Number(item.id))}
+                    />
+                    <ListItemText primary={item.side_dish_name} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </CardContent>
+        </Card>
+      </Grid>
       <Grid item xs={12}>
         <Card sx={{ mb: 2 }}>
           <CardContent>
@@ -301,9 +369,7 @@ const MenuForm = ({
                     spiceLevel?.spice_level_id ??
                     spiceLevel?.value;
                   const name = String(
-                    spiceLevel?.spice_level ??
-                      spiceLevel?.name ??
-                      "",
+                    spiceLevel?.spice_level ?? spiceLevel?.name ?? "",
                   );
                   const label = name
                     .toLowerCase()
@@ -371,7 +437,12 @@ const MenuForm = ({
           <CardContent className="menu-form-upload">
             <Button variant="outlined" component="label">
               Menu Image
-              <input type="file" accept="image/*" hidden onChange={handleImage} />
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handleImage}
+              />
             </Button>
 
             {preview && (

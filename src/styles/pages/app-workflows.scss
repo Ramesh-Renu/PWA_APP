@@ -13,12 +13,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 145px;
-  padding: 28px 32px;
+  min-height: 100px;
+  padding: 10px 15px;
   margin-bottom: 20px;
   border-radius: 23px;
-  color: #fff;
-  box-shadow: 0 15px 38px rgba(15, 118, 110, 0.18);
+  // box-shadow: 0 15px 38px rgba(15, 118, 110, 0.18);
 }
 .app-page-header:after {
   content: "";
@@ -37,7 +36,7 @@
   background: linear-gradient(120deg, #0891b2, #2563eb 52%, #0f766e);
 }
 .hotels-admin-header {
-  background: linear-gradient(120deg, #0f766e, #0a5f58 58%, #ffd166);
+  margin: 0;
 }
 .app-page-header > div:first-child {
   position: relative;
@@ -48,17 +47,18 @@
   font-size: 27px;
   font-weight: 780;
   letter-spacing: -0.6px;
+  color: var(--color-black);
 }
 .app-page-header p {
   margin: 0;
-  color: rgba(255, 255, 255, 0.76);
+  color: var(--color-light-gray-1);
   font-size: 11.5px;
 }
 .page-kicker {
   font-size: 8.5px;
   font-weight: 800;
   letter-spacing: 1.7px;
-  color: #dce7e2;
+  color: var(--color-black);
 }
 .page-primary-action {
   position: relative;
@@ -82,7 +82,7 @@
   display: flex;
   flex-direction: column;
   min-width: 145px;
-  padding: 14px 18px;
+  padding: 10px 10px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 15px;
   background: rgba(255, 255, 255, 0.11);
@@ -94,7 +94,6 @@
 }
 .header-stat span {
   margin-top: 5px;
-  color: rgba(255, 255, 255, 0.75);
   font-size: 8.5px;
 }
 .page-summary-strip {
@@ -448,6 +447,7 @@
   }
   .app-page-header h1 {
     font-size: 23px;
+    color: var(--color-black);
   }
   .page-primary-action,
   .header-stat {
@@ -480,7 +480,7 @@
 .app-page-header p {
   font-size: 14px;
   line-height: 1.5;
-  color: rgba(255, 255, 255, 0.84);
+  color: var(--color-light-gray-1);
 }
 .page-kicker {
   font-size: 11px;
@@ -801,7 +801,7 @@
 }
 .customer-booking-header h1 {
   margin: 0 0 8px;
-  color: #050505;
+  color: var(--color-black);
   font-size: 30px;
   font-weight: 800;
   letter-spacing: -0.4px;

@@ -29,8 +29,7 @@ export const API = {
   MENU_IMAGE_UPLOAD_API: "/api/upload",
   SPICE_LEVEL_API: "/api/spice-levels",
   MENU_CATEGORY_API: "/api/menu-categories",
-  
-
+  SIDE_DISH_API: "/api/menu-side-dishes",
   /** NOTIFICATION */
   GET_RECENT_NOTIFICATION: "/master/TicketManagement/getnotification",
 };

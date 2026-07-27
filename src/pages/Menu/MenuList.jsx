@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import {
   Avatar,
   Button,
@@ -18,8 +18,6 @@ import {
 import { Fragment } from "react";
 import PopupModal from "components/common/PopupModal";
 import AddMenu from "./AddMenu";
-
-// import { getAllCategory } from "../../api/apiService";
 
 const extractList = (response) => {
   const candidates = [
@@ -44,23 +42,25 @@ const MenuList = ({ hotelId }) => {
   const [selectedMenu, setSelectedMenu] = useState(null);
   const [deletingMenuId, setDeletingMenuId] = useState(null);
   const [showDeleteCategory, setShowDeleteCategory] = useState(false);
-
+  const [selectedMenuSidedishes, setSelectedMenuSidedishes] = useState([]);
   const [filters, setFilters] = useState({
     search: "",
-    hotel_id: "",
+    hotel_id: hotelId || "",
     category_id: "",
   });
 
   useEffect(() => {
     loadHotels();
     loadCategories();
-    loadMenus();
-    setFilters({
-      search: "",
-      hotel_id: hotelId || "",
-      category_id: "",
-    });
   }, []);
+
+  // Update filters when hotelId prop changes
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      hotel_id: hotelId || "",
+    }));
+  }, [hotelId]);
 
   useEffect(() => {
     loadMenus();
@@ -115,9 +115,14 @@ const MenuList = ({ hotelId }) => {
     setShowAddMenu(true);
   };
 
-  const handleEditMenu = (menu) => {
+  const handleEditMenu = (menu, menuId) => {
     setSelectedMenu(menu);
     setShowAddMenu(true);
+    if (menu.id === menuId) {
+      setSelectedMenuSidedishes(menu.sideDishes.map((d) => d.id));
+    } else {
+      setSelectedMenuSidedishes([]);
+    }
   };
 
   const handleDeleteMenu = async (menu) => {
@@ -130,9 +135,7 @@ const MenuList = ({ hotelId }) => {
     ) {
       return;
     }
-
     setDeletingMenuId(menuId);
-
     try {
       await deleteMenu(menuId);
       await loadMenus();
@@ -212,6 +215,7 @@ const MenuList = ({ hotelId }) => {
               <tr>
                 <th>Image</th>
                 <th>Menu Name</th>
+                <th>Side Dishes</th>
                 <th>Category</th>
                 <th>Price</th>
                 <th>Veg</th>
@@ -251,6 +255,7 @@ const MenuList = ({ hotelId }) => {
                   const imageUrl = menu.image_url ?? menu.image;
                   const categoryName =
                     menu.category_name ?? menu.category?.category_name;
+                  console.log("menu", menu);
 
                   return (
                     <tr key={menuId}>
@@ -268,6 +273,19 @@ const MenuList = ({ hotelId }) => {
                         )}
                       </td>
                       <td data-label="Menu Name">{menuName}</td>
+                      <td data-label="Side Dishes">
+                        {menu.sideDishes?.length ? (
+                          <ul className="menu-side-dishes">
+                            {menu.sideDishes.map((dish) => (
+                              <li key={dish.id} className="side-dish-item">
+                                {dish.side_dish_name}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
                       <td data-label="Category">{categoryName}</td>
                       <td data-label="Price">&#8377; {menu.price}</td>
                       <td data-label="Veg">
@@ -280,7 +298,7 @@ const MenuList = ({ hotelId }) => {
                         <Button
                           size="small"
                           className="menu-action-button"
-                          onClick={() => handleEditMenu(menu)}
+                          onClick={() => handleEditMenu(menu, menu.id)}
                         >
                           Edit
                         </Button>
@@ -321,6 +339,7 @@ const MenuList = ({ hotelId }) => {
             closeShowPopup();
             await loadMenus();
           }}
+          selectedMenuSidedishes={selectedMenuSidedishes}
         />
       </PopupModal>
       <PopupModal

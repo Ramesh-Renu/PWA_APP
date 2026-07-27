@@ -87,6 +87,18 @@ export const updateMenu = (menuId, body) =>
 export const deleteMenu = (menuId) =>
   baseAPI.DELETE(`${API.MENU_API}/${menuId}`);
 
+/** Menu Side Dishes */
+export const getAllSideDishes = (params) =>
+  baseAPI.GET(API.SIDE_DISH_API, params);
+
+export const createSideDish = (body) =>
+  baseAPI.POST(API.SIDE_DISH_API, body);
+
+export const updateSideDish = (id, body) =>
+  baseAPI.PUT(`${API.SIDE_DISH_API}/${id}`, body);
+
+export const deleteSideDish = (id) =>
+  baseAPI.DELETE(`${API.SIDE_DISH_API}/${id}`);
 /** Menu Categories master */
 export const getAllMenuCategories = (params) =>
   baseAPI.GET(API.MENU_CATEGORY_API, params);
