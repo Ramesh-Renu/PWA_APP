@@ -25,8 +25,11 @@ export const API = {
   GETALL_DINING_STATUS_API: "/api/dining-status",
   CREATE_SEATS_STATUS_MASTER: "/api/seat-status",
   GETALL_SEATS_STATUS_MASTER: "/api/seat-status",
-  
-
+  MENU_API: "/api/menu",
+  MENU_IMAGE_UPLOAD_API: "/api/upload",
+  SPICE_LEVEL_API: "/api/spice-levels",
+  MENU_CATEGORY_API: "/api/menu-categories",
+  SIDE_DISH_API: "/api/menu-side-dishes",
   /** NOTIFICATION */
   GET_RECENT_NOTIFICATION: "/master/TicketManagement/getnotification",
 };

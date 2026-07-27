@@ -15,6 +15,7 @@ import {
   deleteSeatInTable,
   createReservation,
   updateReservation,
+  getAllMenu,
 } from "services";
 import useToast from "hooks/useToast";
 import PopupModal from "components/common/PopupModal";
@@ -23,6 +24,7 @@ import dayjs from "dayjs";
 import { useGlobalContext } from "store/context/GlobalProvider";
 import SVGImage from "./SVGImage";
 import useGlobalMaster from "hooks/useGlobalMaster";
+import MenuOrderPopup from "pages/MenuOrderPopup/MenuOrderPopup";
 
 const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
   const [{ data: auth }, { setAuth }] = useAuth();
@@ -41,6 +43,22 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
   const [seletedSeatCount, setSeletedSeatCount] = useState(null);
   const [seletedTableCount, setSeletedTableCount] = useState(null);
   const [openAdminPopupTableId, setOpenAdminPopupTableId] = useState(null);
+  const [showMenuPopup, setShowMenuPopup] = useState(false);
+  const [reservationId, setReservationId] = useState(null);
+  const [filters, setFilters] = useState({
+    search: "",
+    hotel_id: "",
+    category_id: "",
+  });
+  const [menus, setMenus] = useState([]);
+
+  // Update filters when hotelId prop changes
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      hotel_id: data.id || "",
+    }));
+  }, [data]);
 
   const fetchHotelbyId = async (hotelData) => {
     try {
@@ -64,11 +82,28 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
       getSeatsStatusMatsers();
     }
   }, []);
-  
+
   useEffect(() => {
     fetchHotelbyId(data);
   }, []);
 
+  useEffect(() => {
+    loadMenus();
+  }, [filters]);
+
+  const loadMenus = async () => {
+    try {
+      setLoading(true);
+
+      const res = await getAllMenu(filters);
+      setMenus(res.rows);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const fetchCreateTable = async (hotelData) => {
     const body = {
       tableCount: 1,
@@ -282,6 +317,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
           variant: "success",
         });
         fetchHotelbyId(hotelData);
+        setShowMenuPopup(true);
         setLoading(false);
       }
     } catch (error) {
@@ -555,6 +591,20 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
     setSeletedTableCount(bookingSeatsByTable?.length);
   }, [floorToShow, floorsState, floors, selectedFloorIndex]);
 
+  const handlePlaceOrder = async (items) => {
+    console.log(items);
+
+    // Example API payload
+    const body = {
+      reservation_id: reservationId,
+      items,
+    };
+
+    // await createReservationOrder(body);
+
+    setShowMenuPopup(false)
+  };
+
   return (
     <Fragment>
       <Card className="mb-3 table-details-card">
@@ -580,64 +630,56 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
               </Col>
             </Row>
           )}
-
-          {floorToShow && (
-            <div className="mb-3">
-              <Row className="mb-12 justify-content-between align-items-center w-100">
-                <Col xs={6}>
-                  <h5 className="mb-2 floor-name">
-                    {`Floor ${floorToShow.floor_number}` ||
-                      `Floor ${selectedFloorIndex + 1}`}
-                  </h5>
-                </Col>{" "}
-                <Col xs={6} className="">
-                  {isEditable && (
+          <div className="mb-12 justify-content-between align-items-center w-100">
+            <div xs={12} className="create-new-table-button">
+              {isEditable && (
+                <button
+                  className="addNewTable"
+                  onClick={() => fetchCreateTable(data)}
+                >
+                  + Add New Table
+                </button>
+              )}
+              {isBooking && enbaleBoooking && (
+                <Row className="justify-content-between align-items-center w-100">
+                  <Col md={4} xs={12}>
                     <button
                       className="addNewTable"
-                      onClick={() => fetchCreateTable(data)}
+                      onClick={() => createBookingTableinSeats(data)}
                     >
-                      + Add New Table
+                      Book Table
                     </button>
-                  )}
-                  {isBooking && enbaleBoooking && (
-                    <Row className="justify-content-between align-items-center w-100">
-                      <Col md={4} xs={12}>
-                        <button
-                          className="addNewTable"
-                          onClick={() => createBookingTableinSeats(data)}
-                        >
-                          Book Table
-                        </button>
+                  </Col>
+                  <Col md={8} xs={12}>
+                    <Row>
+                      <Col xs={6} className="mb-2">
+                        <Card className="text-center border-0">
+                          <Card.Body>
+                            <div className="h4 mb-0">
+                              {seletedSeatCount || "-"}
+                            </div>
+                            <small className="text-muted">Seats</small>
+                          </Card.Body>
+                        </Card>
                       </Col>
-                      <Col md={8} xs={12}>
-                        <Row>
-                          <Col xs={6} className="mb-2">
-                            <Card className="text-center border-0">
-                              <Card.Body>
-                                <div className="h4 mb-0">
-                                  {seletedSeatCount || "-"}
-                                </div>
-                                <small className="text-muted">Seats</small>
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                          <Col xs={6} className="mb-2">
-                            <Card className="text-center border-0">
-                              <Card.Body>
-                                <div className="h4 mb-0">
-                                  {seletedTableCount || "-"}
-                                </div>
-                                <small className="text-muted">Tables</small>
-                              </Card.Body>
-                            </Card>
-                          </Col>
-                        </Row>
+                      <Col xs={6} className="mb-2">
+                        <Card className="text-center border-0">
+                          <Card.Body>
+                            <div className="h4 mb-0">
+                              {seletedTableCount || "-"}
+                            </div>
+                            <small className="text-muted">Tables</small>
+                          </Card.Body>
+                        </Card>
                       </Col>
                     </Row>
-                  )}
-                </Col>
-              </Row>
-
+                  </Col>
+                </Row>
+              )}
+            </div>
+          </div>
+          {floorToShow && (
+            <div className="mb-3">
               <div className="scroll-inner d-flex flex-row flex-wrap gap-2">
                 {Array.isArray(floorToShow.tables) &&
                   floorToShow.tables.map((table, tIndex) => {
@@ -671,7 +713,9 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                           auth?.details?.role === "Admin" ||
                           auth?.details?.is_admin) &&
                           (table?.seats?.length === 0 ||
-                            table?.seats.some((chair)=>chair.is_new === true)) && (
+                            table?.seats.some(
+                              (chair) => chair.is_new === true,
+                            )) && (
                             <div className="d-flex justify-content-between align-items-center mb-2">
                               <div className="d-flex justify-content-between gap-1 align-items-center w-100">
                                 <button
@@ -1147,6 +1191,21 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
             </button>
           </div>
         </div>
+      </PopupModal>
+      <PopupModal
+        show={showMenuPopup}
+        onClose={() => setShowMenuPopup(false)}
+        width="900px"
+      >
+        <MenuOrderPopup
+          menus={menus}
+          categories={[]}
+          onPlaceOrder={(items) => {
+            console.log(items);
+            setShowMenuPopup(false)
+          }}
+          onSkip={() => setShowMenuPopup(false)}
+        />
       </PopupModal>
     </Fragment>
   );

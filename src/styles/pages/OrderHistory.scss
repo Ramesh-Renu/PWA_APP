@@ -1,0 +1,166 @@
+.order-history{
+    display:grid;
+    gap:20px;
+}
+
+.order-card{
+
+    background:#fff;
+    border-radius:18px;
+    padding:20px;
+    box-shadow:0 8px 30px rgba(0,0,0,.08);
+
+}
+
+.order-card__top{
+
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:18px;
+
+}
+
+.order-card__top h4{
+
+    margin:0;
+    font-size:18px;
+
+}
+
+.order-card__top span{
+
+    display:flex;
+    align-items:center;
+    gap:6px;
+    color:#777;
+    margin-top:6px;
+    font-size:13px;
+
+}
+
+.status{
+
+    padding:8px 16px;
+    border-radius:50px;
+    font-size:12px;
+    font-weight:600;
+
+}
+
+.completed{
+
+    background:#E8F8EF;
+    color:#0F9D58;
+
+}
+
+.order-card__hotel{
+
+    display:flex;
+    gap:12px;
+    margin-bottom:20px;
+
+}
+
+.order-card__hotel svg{
+
+    font-size:20px;
+    color:#2563eb;
+
+}
+
+.order-card__hotel h5{
+
+    margin:0;
+    font-size:16px;
+
+}
+
+.order-card__grid{
+
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+    margin-bottom:20px;
+
+}
+
+.order-card__grid div{
+
+    background:#f7f8fb;
+    border-radius:12px;
+    padding:12px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+
+}
+
+.order-card__grid svg{
+
+    font-size:18px;
+    color:#2563eb;
+
+}
+
+.order-card__footer{
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+}
+
+.order-card__footer strong{
+
+    display:block;
+    font-size:20px;
+
+}
+
+.order-card__footer small{
+
+    color:#777;
+
+}
+
+.order-card__footer button{
+
+    background:#2563eb;
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:10px 20px;
+    cursor:pointer;
+
+    display:flex;
+    align-items:center;
+    gap:8px;
+
+}
+
+@media(max-width:768px){
+
+.order-card__grid{
+
+    grid-template-columns:1fr;
+
+}
+
+.order-card__footer{
+
+    flex-direction:column;
+    gap:15px;
+    align-items:stretch;
+
+}
+
+.order-card__footer button{
+
+    justify-content:center;
+
+}
+
+}

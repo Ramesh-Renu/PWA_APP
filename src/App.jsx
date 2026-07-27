@@ -23,12 +23,38 @@ const NotFound = lazy(() => import("pages/NotFound/NotFound"));
 const BookedTableDetails = lazy(
   () => import("pages/TableDetails/BookedTableDetails"),
 );
+const MenuCategories = lazy(
+  () => import("pages/Settings/MenuCategories/MenuCategories"),
+);
 const App = () => {
-  const [{ data: auth }] = useAuth();
-  useEffect(() => {
-    console.log("AUTH:", auth);
-  }, [auth]);
+  const [{ data: auth }, { getUserInfoData }] = useAuth();
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    const restoreAuth = async () => {
+      if (auth?.details) {
+        setCheckingAuth(false);
+        return;
+      }
+
+      if (token && token !== "null") {
+        await getUserInfoData();
+      }
+
+      setCheckingAuth(false);
+    };
+
+    restoreAuth();
+  }, [auth?.details, token, getUserInfoData]);
+
+  const protectedElement = checkingAuth ? (
+    <Spinner />
+  ) : auth?.details ? (
+    <UserLayout />
+  ) : (
+    <Navigate to="/" replace />
+  );
 
   return (
     <Suspense fallback={<Spinner />}>
@@ -37,9 +63,12 @@ const App = () => {
         <Route path="/" element={<Login />} />
 
         {/* Protected routes */}
-        <Route
-          element={auth?.details ? <UserLayout /> : <Navigate to="/" replace />}
-        >
+        <Route element={protectedElement}>
+          <Route path="/settings/menu-categories" element={<MenuCategories />} />
+          <Route
+            path="/menu-categories"
+            element={<Navigate to="/settings/menu-categories" replace />}
+          />
           <Route element={<Home />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/hotellist" element={<CreateHotel />} />

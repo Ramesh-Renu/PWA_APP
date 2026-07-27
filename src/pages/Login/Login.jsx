@@ -8,6 +8,7 @@ import {
   AiOutlinePhone,
   AiOutlineEnvironment,
 } from "react-icons/ai";
+import { Button, InputAdornment, TextField } from "@mui/material";
 import { MdOutlineRestaurant, MdOutlineSmartphone } from "react-icons/md";
 import { getOTp, createUser } from "services";
 import useToast from "hooks/useToast";
@@ -63,6 +64,19 @@ export default function Login() {
     location: false,
   });
 
+  const getSignupTextFieldProps = (Icon) => ({
+    fullWidth: true,
+    variant: "outlined",
+    size: "medium",
+    InputProps: {
+      startAdornment: (
+        <InputAdornment position="start">
+          <Icon className="tableflow-login__mui-icon" />
+        </InputAdornment>
+      ),
+    },
+  });
+
   const handleCheckMobilenumber = (value) => {
     const digitsOnly = value.replace(/\D/g, "").slice(0, 10);
 
@@ -86,7 +100,7 @@ export default function Login() {
     navigate("/dashboard", { replace: true });
   };
 
-  const handleSendOtp = (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault();
     if (mobile.length !== 10) {
       setMobileError("Please enter a valid 10-digit mobile number");
@@ -96,21 +110,18 @@ export default function Login() {
     setShowOTPSent(true);
     setOtpTimer(60);
     try {
-      const response = getOTp({
+      const res = await getOTp({
         mobilenumber: mobile,
       });
-      response.then((res) => {
-        if (res.success) {
-          showToast({ message: res.message, variant: "success" });
-          setOtpTimer(60);
-          const timer = setInterval(() => {
-            setOtpTimer((prev) => (prev > 0 ? prev - 1 : 0));
-          }, 1000);
-          return () => clearInterval(timer);
-        } else {
-          showToast({ message: res.message, variant: "danger" });
-        }
-      });
+      if (res.success) {
+        showToast({ message: res.message, variant: "success" });
+        setOtpTimer(60);
+        const timer = setInterval(() => {
+          setOtpTimer((prev) => (prev > 0 ? prev - 1 : 0));
+        }, 1000);
+        return () => clearInterval(timer);
+      }
+      showToast({ message: res.message, variant: "danger" });
     } catch (error) {
       // Handle errors
       showToast({ message: error, variant: "danger" });
@@ -118,68 +129,90 @@ export default function Login() {
   };
 
   const handleLogin = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
+    setInProgress(true);
 
-  setInProgress(true);
+    try {
+      const response = await getAuth({
+        mobilenumber: mobile,
+        otp: getOTPnumber,
+      });
 
-  const response = await getAuth({
-    mobilenumber: mobile,
-    otp: getOTPnumber,
-  });
+      if (!response?.data?.success) {
+        showToast({
+          message: response?.data?.message || "Unable to sign in.",
+          variant: "danger",
+        });
+        return;
+      }
 
-  if (response?.data?.success) {
-    // Load profile
-    await getUserInfoData();
+      await getUserInfoData();
+      showToast({
+        title: "Welcome!",
+        message: response.data.message,
+        variant: "success",
+      });
+      navigate("/dashboard", { replace: true });
+    } catch (error) {
+      showToast({ message: error, variant: "danger" });
+    } finally {
+      setInProgress(false);
+    }
+  };
 
-    showToast({
-      title: "Welcome!",
-      message: response.data.message,
-      variant: "success",
-    });
-
-    navigate("/dashboard", { replace: true });
-  } else {
-    setInProgress(false);
-    showToast({
-      message: response.data.message,
-      variant: "danger",
-    });
-  }
-};
-  const handleSubmitForm = (e) => {
+  const handleSubmitForm = async (e) => {
     e.preventDefault();
     setIsSubmitted(true);
+    setErrorMsg({
+      firstName: !formData.firstName.trim(),
+      lastName: false,
+      email: !/^\S+@\S+\.\S+$/.test(formData.email),
+      mobilenumber: mobile.length !== 10,
+      location: !formData.location.trim(),
+    });
+
+    if (
+      !formData.firstName.trim() ||
+      !/^\S+@\S+\.\S+$/.test(formData.email) ||
+      mobile.length !== 10 ||
+      !formData.location.trim()
+    ) {
+      setIsSubmitted(false);
+      return;
+    }
+
     const updatedFormData = {
-      ...formData, // Keep the existing properties
+      ...formData,
       mobilenumber: mobile,
-      name: formData.firstName + " " + formData.lastName, // Combine firstName and lastName into name
+      name: formData.firstName + " " + formData.lastName,
     };
-    delete updatedFormData.firstName; // Remove firstName
-    delete updatedFormData.lastName; // Remove lastName
-   
-    // TRIGGER API CALL TO REGISTER AGENCY USER
+    delete updatedFormData.firstName;
+    delete updatedFormData.lastName;
+
     try {
-      const response = createUser(updatedFormData);
-      response.then((res) => {
-        if (res.success) {
-          showToast({ message: res.message, variant: "success" });
-          setFormData({
-            firstName: "",
-            lastName: "",
-            email: "",
-            mobilenumber: "",
-            location: "",
-          });
-          setActiveForm(true);
-          setCreateForm(false);
-        } else {
-          showToast({ message: res.data.message, variant: "danger" });
-          setCreateForm(true);
-        }
-      });
+      const res = await createUser(updatedFormData);
+      if (res.success) {
+        showToast({ message: res.message, variant: "success" });
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          mobilenumber: "",
+          location: "",
+        });
+        setActiveForm(true);
+        setCreateForm(false);
+      } else {
+        showToast({
+          message: res?.data?.message || res?.message,
+          variant: "danger",
+        });
+        setCreateForm(true);
+      }
     } catch (error) {
-      // Handle errors
       showToast({ message: error, variant: "danger" });
+    } finally {
+      setIsSubmitted(false);
     }
   };
 
@@ -329,120 +362,90 @@ export default function Login() {
           )}
           {createForm && (
             <form className="modern-form" onSubmit={handleSubmitForm}>
-              <div className="form-group">
-                <label className="form-label">
-                  First Name <span className="required">*</span>
-                </label>
-                <div className="input-wrapper">
-                  <AiOutlineUser className="input-icon" />
-                  <input
-                    type="text"
-                    value={formData.firstName}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        firstName: e.target?.value,
-                      })
-                    }
-                    placeholder="First name"
-                    className="modern-input"
-                    maxLength="50"
-                    autoFocus
-                  />
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Last Name</label>
-                <div className="input-wrapper">
-                  <AiOutlineUser className="input-icon" />
-                  <input
-                    type="text"
-                    value={formData.lastName}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        lastName: e.target?.value,
-                      })
-                    }
-                    placeholder="Last name"
-                    className="modern-input"
-                    maxLength="50"
-                  />
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">
-                  Email <span className="required">*</span>
-                </label>
-                <div className="input-wrapper">
-                  <AiOutlineMail className="input-icon" />
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        email: e.target?.value,
-                      })
-                    }
-                    placeholder="your@email.com"
-                    className="modern-input"
-                  />
-                </div>
-                {errorMsg.email && (
-                  <span className="error-text">Please enter a valid email</span>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  Mobile Number <span className="required">*</span>
-                </label>
-                <div className="input-wrapper">
-                  <AiOutlinePhone className="input-icon" />
-                  <input
-                    type="tel"
-                    value={mobile}
-                    onChange={(e) => handleCheckMobilenumber(e.target.value)}
-                    placeholder="10-digit mobile number"
-                    className="modern-input"
-                    maxLength="10"
-                  />
-                </div>
-                {mobileError && (
-                  <small className="tableflow-login__error">
-                    {mobileError}
-                  </small>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  Location <span className="required">*</span>
-                </label>
-                <div className="input-wrapper">
-                  <AiOutlineEnvironment className="input-icon" />
-                  <input
-                    type="text"
-                    value={formData.location}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        location: e.target?.value,
-                      })
-                    }
-                    placeholder="Your location"
-                    className="modern-input"
-                  />
-                </div>
-              </div>
-              <button
+              <TextField
+                {...getSignupTextFieldProps(AiOutlineUser)}
+                label="First Name"
+                value={formData.firstName}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    firstName: e.target?.value,
+                  })
+                }
+                error={errorMsg.firstName}
+                helperText={errorMsg.firstName ? "First name is required" : ""}
+                inputProps={{ maxLength: 50 }}
+                required
+                autoFocus
+              />
+              <TextField
+                {...getSignupTextFieldProps(AiOutlineUser)}
+                label="Last Name"
+                value={formData.lastName}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    lastName: e.target?.value,
+                  })
+                }
+                inputProps={{ maxLength: 50 }}
+              />
+              <TextField
+                {...getSignupTextFieldProps(AiOutlineMail)}
+                label="Email"
+                type="email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    email: e.target?.value,
+                  })
+                }
+                error={errorMsg.email}
+                helperText={errorMsg.email ? "Please enter a valid email" : ""}
+                required
+              />
+              <TextField
+                {...getSignupTextFieldProps(AiOutlinePhone)}
+                label="Mobile Number"
+                type="tel"
+                value={mobile}
+                onChange={(e) => handleCheckMobilenumber(e.target.value)}
+                error={Boolean(mobileError) || errorMsg.mobilenumber}
+                helperText={
+                  mobileError ||
+                  (errorMsg.mobilenumber ? "Mobile number is required" : "")
+                }
+                inputProps={{
+                  inputMode: "numeric",
+                  pattern: "[0-9]{10}",
+                  maxLength: 10,
+                }}
+                required
+              />
+              <TextField
+                {...getSignupTextFieldProps(AiOutlineEnvironment)}
+                label="Location"
+                value={formData.location}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    location: e.target?.value,
+                  })
+                }
+                error={errorMsg.location}
+                helperText={errorMsg.location ? "Location is required" : ""}
+                required
+              />
+              <Button
                 type="submit"
                 className="tableflow-login__create-account"
+                variant="contained"
+                size="large"
                 disabled={isSubmitted}
               >
                 {isSubmitted ? "Creating Account..." : "Create Account"}
-              </button>
+              </Button>
             </form>
           )}
           {/* 
@@ -461,7 +464,11 @@ export default function Login() {
             </button>
           </div> */}
 
-          <p className="tableflow-login__signup mt-5">
+          <p
+            className={`tableflow-login__signup ${
+              createForm ? "tableflow-login__signup--create" : ""
+            }`}
+          >
             {createForm ? "Already have an account?" : "Don't have an account?"}{" "}
             <button
               onClick={() => setCreateForm(!createForm)}

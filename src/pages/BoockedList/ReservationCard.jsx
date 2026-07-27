@@ -1,0 +1,108 @@
+import React, { useEffect } from "react";
+import {
+  Calendar,
+  Building2,
+  Pencil,
+  TableProperties,
+  Users,
+} from "lucide-react";
+import useGlobalMaster from "hooks/useGlobalMaster";
+
+const ReservationCard = ({ reservation, onEdit }) => {
+  const tableCount = reservation.seat_status?.length || 0;
+  const {
+    areaList,
+    locationList,
+    getAllArea,
+    getAllLocation,
+    diningStatusList,
+    getDiningStatus,
+  } = useGlobalMaster();
+
+  const seatCount =
+    reservation.seat_status?.reduce(
+      (total, table) => total + table.seat_ids.length,
+      0,
+    ) || 0;
+  console.log("reservation", diningStatusList);
+
+  useEffect(() => {
+    if (areaList.data.length === 0) {
+      getAllArea();
+    }
+    if (locationList.data.length === 0) {
+      getAllLocation();
+    }
+    if (diningStatusList.data.length === 0) {
+      getDiningStatus();
+    }
+  }, []);
+
+  return (
+    <div className="reservation-card">
+      <div className="reservation-card__header">
+        <div>
+          <h4>#{reservation.id}</h4>
+          <span>
+            <Calendar size={14} />
+            {new Date(reservation.booking_date).toLocaleDateString()}
+          </span>
+        </div>
+
+        <span
+          className={`status status-${reservation.dining_status}`}
+          style={{
+            border: `1px solid ${diningStatusList?.data?.find((status) => status.status_id === reservation.dining_status)?.color_code}`,
+            background: "#ffffff",
+            borderRadius: "8px",
+            color: diningStatusList?.data?.find(
+              (status) => status.status_id === reservation?.dining_status,
+            )?.color_code,
+          }}
+        >
+          {diningStatusList?.data?.find(
+            (status) => status.status_id === reservation.dining_status,
+          )?.name || "Unknown"}
+        </span>
+      </div>
+
+      <div className="reservation-card__hotel">
+        <Building2 size={18} />
+        <div>
+          <h5>{reservation.hotel.hotel_name}</h5>
+          <p>Floor {reservation.floor.floor_number}</p>
+        </div>
+      </div>
+
+      <div className="reservation-card__chips">
+        <div className="chip">
+          <TableProperties size={14} />
+          {tableCount} Tables
+        </div>
+
+        <div className="chip">
+          <Users size={14} />
+          {seatCount} Seats
+        </div>
+      </div>
+
+      <div className="reservation-card__footer">
+        <div>
+          <small>Dining Time</small>
+          <h5>{reservation.start_time}</h5>
+        </div>
+
+        <button
+          type="button"
+          className="reservation-card__edit-btn"
+          onClick={() => onEdit(reservation)}
+        >
+          <Pencil size={16} />
+          Edit
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default ReservationCard;
