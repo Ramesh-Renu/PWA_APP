@@ -12,6 +12,7 @@ const SideNav = () => {
   const [{ data: auth }] = useAuth();
   const { dispatch } = useGlobalContext();
   const isAdmin = auth?.details?.role === "Admin";
+  const hideNavItems = location.pathname.startsWith("/book-table");
 
   useEffect(() => setMobileOpen(false), [location.pathname]);
 
@@ -50,11 +51,7 @@ const SideNav = () => {
       to: "/booked-table",
       match: "booked-table",
     },
-    {
-      label: "Book a table",
-      to: "/book-table",
-      match: "book-table",
-    },
+    
   ];
 
   return (
@@ -70,25 +67,27 @@ const SideNav = () => {
       </button>
 
       <NavLink to="/dashboard" className="app-topnav__brand">
-        Table Bokking
+        Table Booking
       </NavLink>
 
-      <nav className={`app-topnav__links ${mobileOpen ? "is-open" : ""}`}>
-        {navItems.map((item) => {
-          const manuallyActive = new RegExp(item.match).test(location.pathname);
-          return (
-            <NavLink
-              key={item.label}
-              to={item.to}
-              className={() =>
-                `app-topnav__link ${manuallyActive ? "active" : ""}`
-              }
-            >
-              {item.label}
-            </NavLink>
-          );
-        })}
-      </nav>
+      {isAdmin && (
+        <nav className={`app-topnav__links ${mobileOpen ? "is-open" : ""}`}>
+          {navItems.map((item) => {
+            const manuallyActive = new RegExp(item.match).test(location.pathname);
+            return (
+              <NavLink
+                key={item.label}
+                to={item.to}
+                className={() =>
+                  `app-topnav__link ${manuallyActive ? "active" : ""}`
+                }
+              >
+                {item.label}
+              </NavLink>
+            );
+          })}
+        </nav>
+      )}
 
       <div className="app-topnav__actions">
         <div className="app-topnav__user">

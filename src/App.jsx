@@ -29,19 +29,21 @@ const MenuCategories = lazy(
 const App = () => {
   const [{ data: auth }, { getUserInfoData }] = useAuth();
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [isAdmin, setisAdmin] = useState(null);
   const token = localStorage.getItem("token");
 
   useEffect(() => {
     const restoreAuth = async () => {
       if (auth?.details) {
         setCheckingAuth(false);
+        setisAdmin(auth?.details?.role === "Admin");
         return;
       }
 
       if (token && token !== "null") {
         await getUserInfoData();
       }
-
+      setisAdmin(null);
       setCheckingAuth(false);
     };
 
@@ -64,21 +66,32 @@ const App = () => {
 
         {/* Protected routes */}
         <Route element={protectedElement}>
-          <Route path="/settings/menu-categories" element={<MenuCategories />} />
+          <Route
+            path="/settings/menu-categories"
+            element={<MenuCategories />}
+          />
           <Route
             path="/menu-categories"
             element={<Navigate to="/settings/menu-categories" replace />}
           />
           <Route element={<Home />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/hotellist" element={<CreateHotel />} />
-            <Route path="/book-table" element={<BookTables />} />
-            <Route path="/book-table/details/:id" element={<HotelDetails />} />
-            <Route path="/details/:id" element={<HotelDetails />} />
-            <Route
-              path="/booked-table"
-              element={<BookedTableDetails data={auth} />}
-            />
+            
+              <>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/hotellist" element={<CreateHotel />} />
+                <Route path="/book-table" element={<BookTables />} />
+                <Route
+                  path="/book-table/details/:id"
+                  element={<HotelDetails />}
+                />
+                <Route path="/details/:id" element={<HotelDetails />} />
+              </>
+            
+              <Route
+                path="/booked-table"
+                element={<BookedTableDetails data={auth} />}
+              />
+            
           </Route>
         </Route>
 

@@ -152,7 +152,9 @@ export default function Login() {
         message: response.data.message,
         variant: "success",
       });
-      navigate("/dashboard", { replace: true });
+      console.log("response", response.data.role);
+      // navigate("/home", { replace: true });
+      navigate(response.data.role =="Admin" ? "/dashboard" : "/book-table", { replace: true });
     } catch (error) {
       showToast({ message: error, variant: "danger" });
     } finally {
@@ -220,11 +222,11 @@ export default function Login() {
     <div className="tableflow-login">
       <aside className="tableflow-login__brand">
         <Link to="/" className="tableflow-login__logo">
-          Table Bokking
+          Table Booking
         </Link>
 
         <div className="tableflow-login__brand-content">
-          <h1>Welcome Back to Table Bokking</h1>
+          <h1>Welcome Back to Table Booking</h1>
           <p>
             Manage your restaurant or make your next reservation. Choose your
             role and get started.
