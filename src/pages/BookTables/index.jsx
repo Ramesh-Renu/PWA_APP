@@ -1,5 +1,12 @@
 import React, { Fragment, useEffect, useRef, useState } from "react";
-import { getAllHotel, searchHotelbyNameLocation, deleteHotel } from "services";
+import {
+  getAllHotel,
+  searchHotelbyNameLocation,
+  deleteHotel,
+  getAllMenu,
+  getReservationByUser,
+  getAllOrders
+} from "services";
 import useGlobalMaster from "hooks/useGlobalMaster";
 import PopupModal from "components/common/PopupModal";
 import Table from "components/common/Table";
@@ -14,6 +21,8 @@ import useAuth from "hooks/useAuth";
 import BookedTableDetails from "pages/TableDetails/BookedTableDetails";
 import ReservationPage from "pages/BoockedList/ReservationPage";
 import OrderHistory from "pages/OrderHistory/OrderHistory";
+import { Avatar, Button, Paper } from "@mui/material";
+
 const BookTables = () => {
   const [activeTab, setActiveTab] = useState("availability");
   const [{ data: auth }] = useAuth();
@@ -39,6 +48,10 @@ const BookTables = () => {
   const navigate = useNavigate();
   const [selectedId, setSelectedId] = useState(null);
   const [reloadTable, setReloadTable] = useState(false);
+  const [menus, setMenus] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [loadingMenus, setLoadingMenus] = useState(false);
+  const [loadingOrders, setLoadingOrders] = useState(false);
   const searchInputRef = useRef(null);
 
   useEffect(() => {
@@ -65,6 +78,15 @@ const BookTables = () => {
     // ...existing code...
   }, []);
 
+  useEffect(() => {
+    if (activeTab === "menu") {
+      loadMenus();
+    }
+    if (activeTab === "orders") {
+      loadOrders();
+    }
+  }, [activeTab]);
+
   const fetchSearchHotel = async (value) => {
     setLoadingHotelListApp(true);
     try {
@@ -83,6 +105,37 @@ const BookTables = () => {
       setLoadingHotelListApp(false);
     }
   };
+
+  const loadMenus = async () => {
+    setLoadingMenus(true);
+    try {
+      const res = await getAllMenu({});
+      const rows = res?.rows || res?.data || [];
+      setMenus(Array.isArray(rows) ? rows : []);
+    } catch (error) {
+      console.error("Error loading menus:", error);
+    } finally {
+      setLoadingMenus(false);
+    }
+  };
+
+  const loadOrders = async () => {
+    setLoadingOrders(true);
+    try {
+      const response = await getAllOrders();
+      // Accept several common response shapes from the API
+      // e.g. { rows: [...] } or { data: [...] } or { data: { rows: [...] } }
+      const rows =
+        response?.rows || response?.data || response?.data?.rows || [];
+      console.log("loadOrders response:", response);
+
+      setOrders(Array.isArray(rows) ? rows : []);
+    } catch (error) {
+      console.error("Error loading orders:", error);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
   /** HANDLE HOTEL TABLE VIEW */
   const handleHotelView = (
     hotelId,
@@ -96,125 +149,6 @@ const BookTables = () => {
       });
     }
   };
-
-  /** COLUMNS DEFINITION */
-  const columns = [
-    columnHelper.accessor("hotel_name", {
-      header: () => <span className="customHeader">Hotel Name</span>,
-      cell: (info) => {
-        const rowData = info.row.original;
-        return (
-          <div
-            tabIndex={0}
-            className="truncate-2-lines"
-            title={info.getValue()}
-            onClick={() => handleHotelView(rowData?.id, rowData, false, true)}
-          >
-            {info.getValue()}
-          </div>
-        );
-      },
-    }),
-    columnHelper.accessor("location_id", {
-      header: () => <span className="customHeader">Location</span>,
-      cell: (info) => {
-        return (
-          renderLocation(info.getValue(), locationList?.data || [])[0]?.name ||
-          "N/A"
-        );
-      },
-    }),
-    columnHelper.accessor("area_id", {
-      header: () => <span className="customHeader">Area</span>,
-      cell: (info) => {
-        return (
-          renderArea(info.getValue(), areaList?.data || [])[0]?.name || "N/A"
-        );
-      },
-    }),
-    columnHelper.accessor("address", {
-      header: () => <span className="customHeader">Address</span>,
-      // cell: (info) => {
-      //   return renderArea(info.getValue(), areaList?.data || [])[0]?.name || "N/A";
-      // },
-    }),
-    columnHelper.accessor("floorCount", {
-      header: () => <span className="customHeader">Number of Floor</span>,
-    }),
-    // columnHelper.accessor("tableCount", {
-    //   header: () => <span className="customHeader">Table Count</span>,
-    // }),
-    columnHelper.accessor("tables_per_floor", {
-      header: () => <span className="customHeader">Table Per floor</span>,
-    }),
-    columnHelper.accessor("seatCount", {
-      header: () => <span className="customHeader">Seat Count</span>,
-    }),
-    // columnHelper.accessor("id", {
-    //   header: () => <span className="customHeader">Action</span>,
-    //   cell: (info) => {
-    //     const rowData = info.row.original;
-    //     return (
-    //       <div className="mx-auto w-100">
-    //         <ToolTipPopup
-    //           toolTipDatas={[
-    //             {
-    //               name: (
-    //                 <button className="btn btn-0 p-0 border-0 m-0 w-100 d-flex justify-content-between">
-    //                   Edit
-    //                   <img
-    //                     src={images.pencilSimpleLine}
-    //                     alt="Edit Hotel"
-    //                   />
-    //                 </button>
-    //               ),
-    //               id: 1,
-    //             },
-    //             {
-    //               name: (
-    //                 <button
-    //                   className="btn btn-0 p-0 m-0 w-100 border-0 text-danger d-flex justify-content-between"
-    //                   disabled={rowData?.isProcessOrder}
-    //                 >
-    //                   Delete
-    //                   <img src={images.trashIcon} alt="Remove Hotel" />
-    //                 </button>
-    //               ),
-    //               id: 2,
-    //             },
-    //           ]}
-    //           labelField="name"
-    //           valueField="id"
-    //           getSeletedVal={(e) =>
-    //             handleEditDeleteValue(e, info.getValue(), rowData)
-    //           }
-    //           canEdit={true}
-    //           isCustomFieldswithFilter={false}
-    //           arrow={true}
-    //         />
-    //       </div>
-    //     );
-    //   },
-    //   // cell: (info) => {
-    //   //   const getHotelId = info.getValue();
-    //   //   const getHotelData = listOfHotel.filter(
-    //   //     (hotel) => hotel.id === getHotelId
-    //   //   );
-    //   //   return (
-    //   //     <span
-    //   //       className="edit-icon"
-    //   //       onClick={() => {
-    //   //         handleUpdateHotel(getHotelData);
-    //   //         setSeletedHotelId(getHotelData);
-    //   //         setUpdateHotel(true);
-    //   //       }}
-    //   //     >
-    //   //       <img src={images.editPencilIcon} alt="Edit" />
-    //   //     </span>
-    //   //   );
-    //   // },
-    // }),
-  ];
 
   /** HANDLE TABLE SORT CHANGE */
   const handleSortChange = (columnId, order) => {
@@ -447,9 +381,88 @@ const BookTables = () => {
                 <div className="customer-booking-title-row">
                   <div>
                     <h2>Menu</h2>
-                    <p>Manage your existing reservations</p>
+                    <p>Menu items grouped by restaurant</p>
                   </div>
                 </div>
+                {loadingMenus ? (
+                  <div className="customer-booking-empty">Loading menu...</div>
+                ) : menus.length === 0 ? (
+                  <div className="customer-booking-empty">
+                    No menu items found.
+                  </div>
+                ) : (
+                  <div className="menu-group-table">
+                    <Paper className="menu-table-panel">
+                      <table className="menu-table">
+                        <thead>
+                          <tr>
+                            <th>Hotel</th>
+                            <th>Image</th>
+                            <th>Menu Name</th>
+                            <th>Side Dishes</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Veg</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                        {menus.map((menu, idx) => {
+                            const menuId = menu.id ?? menu.menu_id;
+                            const menuName = menu.menu_name ?? menu.name;
+                            const imageUrl = menu.image_url ?? menu.image;
+                            const categoryName = menu.category_name ?? menu.category?.category_name;
+                            const hotelId = menu.hotel_id ?? menu?.hotel?.id ?? "unknown";
+                            const hotelName = menu?.hotel?.hotel_name || menu?.hotel?.name || `Hotel ${hotelId}`;
+
+                            const sameHotelCount = menus.filter(
+                              (h) => (h.hotel_id ?? h?.hotel?.id ?? "unknown") === hotelId,
+                            ).length;
+
+                            const firstIndexForHotel = menus.findIndex(
+                              (h) => (h.hotel_id ?? h?.hotel?.id ?? "unknown") === hotelId,
+                            );
+
+                            const showHotelCell = idx === firstIndexForHotel;
+
+                            return (
+                              <tr key={menuId}>
+                                {showHotelCell && (
+                                  <td data-label="Hotel" rowSpan={sameHotelCount}>
+                                    {hotelName}
+                                  </td>
+                                )}
+                                <td data-label="Image">
+                                  {imageUrl ? (
+                                    <img src={imageUrl} alt={menuName} className="menu-item-image" />
+                                  ) : (
+                                    <Avatar className="menu-item-image menu-item-avatar">{menuName?.charAt(0) || "M"}</Avatar>
+                                  )}
+                                </td>
+                                <td data-label="Menu Name">{menuName}</td>
+                                <td data-label="Side Dishes">
+                                  {menu.sideDishes?.length ? (
+                                    <ul className="menu-side-dishes">
+                                      {menu.sideDishes.map((dish) => (
+                                        <li key={dish.id} className="side-dish-item">{dish.side_dish_name}</li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    "-"
+                                  )}
+                                </td>
+                                <td data-label="Category">{categoryName}</td>
+                                <td data-label="Price">&#8377; {menu.price}</td>
+                                <td data-label="Veg">{menu.is_veg ? "Veg" : "Non Veg"}</td>
+                                <td data-label="Status">{menu.is_available ? "Available" : "Unavailable"}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </Paper>
+                  </div>
+                )}
               </main>
             )}
             {activeTab === "orders" && (
@@ -457,9 +470,16 @@ const BookTables = () => {
                 <div className="customer-booking-title-row">
                   <div>
                     <h2>Orders</h2>
-                    <OrderHistory />
+                    <p>Your reservation order history</p>
                   </div>
                 </div>
+                {loadingOrders ? (
+                  <div className="customer-booking-empty">
+                    Loading orders...
+                  </div>
+                ) : (
+                  <OrderHistory orders={orders} />
+                )}
               </main>
             )}
           </div>

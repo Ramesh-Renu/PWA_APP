@@ -694,6 +694,9 @@
 .status-value-box.cleaning .status-dot-inline {
   background: #64748b;
 }
+.status-value-box.serving .status-dot-inline {
+  background: #8b5cf6;
+}
 .recent-panel {
   padding: 0;
   overflow: hidden;
@@ -830,6 +833,10 @@
 .status-badge.cleaning {
   color: #64748b;
   background: #f1f5f9;
+}
+.status-badge.serving {
+  color: #7c3aed;
+  background: #ede9fe;
 }
 .empty-reservations {
   text-align: center;

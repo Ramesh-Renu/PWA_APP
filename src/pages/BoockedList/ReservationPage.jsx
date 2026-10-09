@@ -7,10 +7,12 @@ import {
   deleteReservation,
 } from "services";
 import SkeletonLoading from "components/common/SkeletonLoading";
+import useToast from "hooks/useToast";
 
 const ReservationPage = () => {
   const [{ data: auth }] = useAuth();
   const [bookedData, setBookedData] = useState([]);
+  const { showToast } = useToast();
   const [loadingHotelListApp, setLoadingHotelListApp] = useState(true);
     const fetchHotelbyId = async (hotelData) => {
       setLoadingHotelListApp(true);

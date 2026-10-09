@@ -1,19 +1,16 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import {
-  Button,
-  Breadcrumb,
-  Row,
-  Col,
-  Badge,
-  Card,
-  Image,
-} from "react-bootstrap";
+  ArrowBackRounded,
+  ChevronRightRounded,
+  EventSeatOutlined,
+  LayersOutlined,
+  PlaceOutlined,
+  TableRestaurantOutlined,
+} from "@mui/icons-material";
 import TableDetails from "pages/TableDetails/TableDetails";
-import BreadcrumbArrow from "components/common/BreadcrumbArrow";
 import { renderLocation } from "utils/common";
 import useGlobalMaster from "hooks/useGlobalMaster";
-import { useEffect } from "react";
 import { getHotelbyid } from "services";
 import { hotelPlaceholderImage } from "assets/images";
 import MenuList from "pages/Menu/MenuList";
@@ -55,7 +52,6 @@ const HotelDetails = () => {
       }
     } catch (error) {
       console.error("Error creating hotel:", error);
-    } finally {
     }
   };
 
@@ -78,107 +74,100 @@ const HotelDetails = () => {
   };
 
   const stats = computeTotals(hotelData || {});
-  const handleShowMenu = () => {
-    setShowMenuList(!showMenuList);
-  };
+  const locationName =
+    renderLocation(hotelData?.location_id, locationList?.data)[0]?.name ||
+    hotelData?.location_name;
+  const areaName = hotelData?.area_name || hotelData?.area;
+  const modeLabel = isEditable
+    ? "Editing layout"
+    : isBooking
+      ? "Booking"
+      : "Overview";
+
+  const statItems = [
+    { key: "floors", label: "Floors", value: stats.floorCount, icon: LayersOutlined },
+    { key: "tables", label: "Tables", value: stats.totalTables, icon: TableRestaurantOutlined },
+    { key: "seats", label: "Seats", value: stats.seatCount, icon: EventSeatOutlined },
+  ];
 
   return (
     <main className="hotel-details-page">
-      <div className="hotel-breadcrumb">
-        <Breadcrumb className="mb-1 p-0">
-          <Breadcrumb.Item onClick={() => navigate("/book-table")}>
-            Hotel Table
-          </Breadcrumb.Item>
-          <span className="breadcrumb-item-divider">
-            <BreadcrumbArrow />
-          </span>
-          <Breadcrumb.Item active>{hotelData?.hotel_name}</Breadcrumb.Item>
-        </Breadcrumb>
-      </div>
+      <nav className="hd-breadcrumb" aria-label="Breadcrumb">
+        <button type="button" onClick={() => navigate("/book-table")}>
+          Hotels
+        </button>
+        <ChevronRightRounded fontSize="inherit" aria-hidden />
+        <span aria-current="page">{hotelData?.hotel_name || "Hotel"}</span>
+      </nav>
 
-      <Card className="hotel-profile-card">
-        <Card.Body>
-          <Row className="align-items-center">
-            <Col lg={2} md={3} className="text-center mb-3 mb-md-0">
-              <Image
-                src={hotelPlaceholderImage}
-                rounded
-                fluid
-                className="hotel-cover-image"
-              />
-            </Col>
-            <Col lg={6} md={5} className="hotel-profile-copy">
-              <span className="property-label">PROPERTY OVERVIEW</span>
-              <h2 className="mb-1">{hotelData?.hotel_name || `--`}</h2>
-              <div className="mb-2">
-                <Badge bg="info" className="me-2">
-                  {renderLocation(hotelData?.location_id, locationList?.data)[0]
-                    ?.name ||
-                    hotelData?.location_name ||
-                    "Location"}
-                </Badge>
-                <Badge bg="secondary">
-                  {hotelData?.area_name || hotelData?.area || "Area"}
-                </Badge>
-              </div>
-              <p className="mb-1 text-muted">
-                {hotelData?.address || "Address not available"}
-              </p>
-              {location?.state?.isEditable && (
-                <div className="d-flex gap-2 mt-2">
-                  <Button variant="primary" onClick={() => navigate(-1)}>
-                    Back
-                  </Button>
-                  <Button variant="outline-primary">Edit</Button>
-                  <Button variant="primary" onClick={() => handleShowMenu()}>
-                    {showMenuList ? "Tables" : "Menus"} 
-                  </Button>
-                </div>
-              )}
-            </Col>
-            {!showMenuList && (
-              <Col lg={4} md={4} xs={12}>
-                <Row className="hotel-stat-grid">
-                  <Col xs={6} className="mb-2">
-                    <Card className="hotel-stat-card floor-stat">
-                      <Card.Body>
-                        <div className="h4 mb-0">{stats.floorCount || "-"}</div>
-                        <small className="text-muted">Floors</small>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                  <Col xs={6} className="mb-2">
-                    <Card className="hotel-stat-card table-stat">
-                      <Card.Body>
-                        <div className="h4 mb-0">
-                          {stats.totalTables || "-"}
-                        </div>
-                        <small className="text-muted">Tables</small>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                  {/* <Col xs={6} className="mb-2">
-                  <Card className="hotel-stat-card seat-stat">
-                    <Card.Body>
-                      <div className="h4 mb-0">{stats.tables_per_floor || "-"}</div>
-                      <small className="text-muted">Table / Floor</small>
-                    </Card.Body>
-                  </Card>
-                </Col> */}
-                  <Col xs={6} className="mb-2">
-                    <Card className="text-center border-0">
-                      <Card.Body>
-                        <div className="h4 mb-0">{stats.seatCount || "-"}</div>
-                        <small className="text-muted">Total Seats</small>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                </Row>
-              </Col>
+      <header className="hd-hero">
+        <div className="hd-hero__media">
+          <img src={hotelPlaceholderImage} alt="" />
+        </div>
+
+        <div className="hd-hero__body">
+          <span className="hd-hero__eyebrow">{modeLabel}</span>
+          <h1 className="hd-hero__title">{hotelData?.hotel_name || "—"}</h1>
+
+          <div className="hd-hero__chips">
+            {locationName && (
+              <span className="hd-chip hd-chip--location">
+                <PlaceOutlined fontSize="inherit" />
+                {locationName}
+              </span>
             )}
-          </Row>
-        </Card.Body>
-      </Card>
+            {areaName && <span className="hd-chip">{areaName}</span>}
+          </div>
+
+          <p className="hd-hero__address">
+            {hotelData?.address || "Address not available"}
+          </p>
+
+          {isEditable && (
+            <div className="hd-hero__actions">
+              <button
+                type="button"
+                className="hd-btn hd-btn--ghost"
+                onClick={() => navigate(-1)}
+              >
+                <ArrowBackRounded fontSize="small" /> Back
+              </button>
+              <div className="hd-tabs" role="tablist" aria-label="Hotel section">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={!showMenuList}
+                  className={!showMenuList ? "is-active" : ""}
+                  onClick={() => setShowMenuList(false)}
+                >
+                  Floor plan
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={showMenuList}
+                  className={showMenuList ? "is-active" : ""}
+                  onClick={() => setShowMenuList(true)}
+                >
+                  Menu
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <dl className="hd-hero__stats">
+          {statItems.map(({ key, label, value, icon: Icon }) => (
+            <div key={key} className={`hd-stat hd-stat--${key}`}>
+              <dt>
+                <Icon fontSize="inherit" /> {label}
+              </dt>
+              <dd>{value || "—"}</dd>
+            </div>
+          ))}
+        </dl>
+      </header>
+
       {!showMenuList && (
         <TableDetails
           data={hotelData || { id }}

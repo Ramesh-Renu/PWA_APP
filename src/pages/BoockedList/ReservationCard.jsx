@@ -24,7 +24,6 @@ const ReservationCard = ({ reservation, onEdit }) => {
       (total, table) => total + table.seat_ids.length,
       0,
     ) || 0;
-  console.log("reservation", diningStatusList);
 
   useEffect(() => {
     if (areaList.data.length === 0) {

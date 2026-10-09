@@ -43,6 +43,7 @@ const statusMeta = {
   4: { label: "Cancelled", className: "cancelled" },
   5: { label: "Pending", className: "pending" },
   6: { label: "Cleaning", className: "cleaning" },
+  7: { label: "Serving", className: "serving" },
 };
 
 export const BOARD_FILTER_OPTIONS = [

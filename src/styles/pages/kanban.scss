@@ -1,0 +1,438 @@
+.kanban-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.kanban-page__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+
+  h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #292d46;
+  }
+
+  p {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #777b91;
+  }
+}
+
+.kanban-page__refresh {
+  padding: 8px 16px;
+  border: 1px solid #0f766e;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f766e;
+  font-size: 13px;
+  font-weight: 600;
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+.kanban-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 16px 8px 6px;
+}
+
+.kanban-search__field,
+.kanban-search__input {
+  height: 38px;
+  border: 1px solid #e4e3ef;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  color: #292d46;
+
+  &:focus {
+    outline: none;
+    border-color: #0f766e;
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+  }
+}
+
+.kanban-search__field {
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.kanban-search__input {
+  flex: 0 1 320px;
+  min-width: 0;
+  padding: 0 12px;
+}
+
+.kanban-search__summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #777b91;
+
+  button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #0f766e;
+    font-weight: 600;
+    text-decoration: underline;
+  }
+}
+
+@media (max-width: 767px) {
+  .kanban-search__input {
+    flex-basis: 100%;
+  }
+}
+
+// Scrolling still works (wheel, touch, trackpad); only the bar is hidden.
+@mixin hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.kanban-board-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.kanban-board {
+  @include hide-scrollbar;
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  align-items: flex-start;
+}
+
+// Floats at the bottom of the viewport while the board is on screen, so the
+// scroller is reachable without scrolling the page to the end of the board.
+.kanban-minimap-dock {
+  position: sticky;
+  bottom: 16px;
+  z-index: 20;
+  align-self: flex-end;
+  padding: 9px 12px;
+  border: 1px solid #e4e3ef;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12);
+}
+
+.kanban-minimap {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  height: 26px;
+  padding: 0;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+
+.kanban-minimap__block {
+  flex: 0 0 16px;
+  border-radius: 3px;
+  background: #e8e8f0;
+}
+
+.kanban-minimap__thumb {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  border: 1.5px solid #94a3b8;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+  pointer-events: none;
+  transition: left 0.08s linear;
+}
+
+.kanban-column {
+  --kanban-column-color: #64748b;
+  flex: 0 0 280px;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 120px);
+  max-height: calc(100vh - 120px);
+  border: 1px solid #e4e3ef;
+  border-top: 3px solid var(--kanban-column-color);
+  border-radius: 14px;
+  background: #f6f6fb;
+  transition: background-color 0.15s, box-shadow 0.15s;
+
+  &.is-over {
+    background: #eef4ff;
+    box-shadow: inset 0 0 0 2px var(--kanban-column-color);
+  }
+
+  // A locked card is over this column: the drop will be refused.
+  &.is-blocked {
+    background: #fff1f2;
+    box-shadow: inset 0 0 0 2px #f43f5e;
+  }
+}
+
+.kanban-column__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #292d46;
+}
+
+.kanban-column__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--kanban-column-color);
+}
+
+.kanban-column__title {
+  flex: 1;
+}
+
+.kanban-column__count {
+  min-width: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #e4e3ef;
+  text-align: center;
+  font-size: 11px;
+  color: #555a72;
+}
+
+.kanban-column__body {
+  @include hide-scrollbar;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 80px;
+  padding: 0 10px 12px;
+  overflow-y: auto;
+}
+
+.kanban-column__empty {
+  margin: 0;
+  padding: 20px 8px;
+  border: 1px dashed #d6d5e3;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 12px;
+  color: #9a9db0;
+}
+
+.kanban-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e4e3ef;
+  border-left: 3px solid var(--kanban-column-color);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(15, 75, 67, 0.05);
+
+  &.is-movable {
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  &.is-dragging {
+    opacity: 0.35;
+    border-style: dashed;
+  }
+}
+
+// Floating copy of the card that follows the pointer while dragging.
+.kanban-card--ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2000;
+  pointer-events: none;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.22);
+  will-change: transform;
+}
+
+.kanban-card.is-locked {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.kanban-card--ghost.is-locked {
+  border-color: #fda4af;
+  box-shadow: 0 16px 32px rgba(244, 63, 94, 0.25);
+}
+
+body.kanban-is-dragging,
+body.kanban-is-dragging-locked {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body.kanban-is-dragging * {
+  cursor: grabbing !important;
+}
+
+body.kanban-is-dragging-locked * {
+  cursor: not-allowed !important;
+}
+
+.kanban-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kanban-card__title {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 700;
+  color: #292d46;
+  overflow-wrap: anywhere;
+}
+
+button.kanban-card__title:hover {
+  color: #0f766e;
+  text-decoration: underline;
+}
+
+.kanban-card__ref {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: #777b91;
+}
+
+// Hotel name on reservation cards: small, regular weight, links to the hotel.
+.kanban-card__ref--link {
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 60%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &:hover {
+    color: #0f766e;
+    text-decoration: underline;
+  }
+}
+
+.kanban-card__meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  font-size: 12px;
+  color: #4f5368;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  span:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.kanban-card__items {
+  margin: 0;
+  padding: 8px 10px;
+  list-style: none;
+  border-radius: 8px;
+  background: #f8f8fc;
+  font-size: 12px;
+  color: #4f5368;
+
+  li + li {
+    margin-top: 4px;
+  }
+}
+
+.kanban-card__more {
+  color: #777b91;
+  font-style: italic;
+}
+
+.kanban-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #292d46;
+}
+
+.kanban-card__badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #fef3c7;
+  color: #92400e;
+
+  &--payment-1 {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  &--payment-2 {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+}
+
+.kanban-card__move {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid #e4e3ef;
+  border-radius: 6px;
+  background: #fafafe;
+  font-size: 12px;
+  color: #555a72;
+  cursor: pointer;
+}
+
+@media (max-width: 767px) {
+  .kanban-column {
+    flex-basis: 85vw;
+    max-height: none;
+  }
+}

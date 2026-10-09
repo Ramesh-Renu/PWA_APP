@@ -3046,10 +3046,11 @@
 
 .app-topnav__links {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 26px;
+  gap: clamp(14px, 1.9vw, 26px);
 }
 
 .app-topnav__link {
@@ -3078,11 +3079,105 @@
   gap: 12px;
 }
 
+.app-topnav__account {
+  position: relative;
+  min-width: 0;
+}
+
 .app-topnav__user {
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
+  padding: 3px 8px 3px 3px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.app-topnav__user:hover,
+.app-topnav__user[aria-expanded="true"] {
+  border-color: #e5e7eb;
+  background: #f6f8f7;
+}
+
+.app-topnav__user:focus-visible {
+  outline: 3px solid rgba(15, 118, 110, 0.3);
+  outline-offset: 2px;
+}
+
+.app-topnav__caret {
+  flex: 0 0 auto;
+  color: #6b7280;
+  font-size: 14px;
+  transition: transform 0.15s;
+}
+
+.app-topnav__user[aria-expanded="true"] .app-topnav__caret {
+  transform: rotate(180deg);
+}
+
+.app-topnav__dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 130;
+  min-width: 220px;
+  padding: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 18px 36px rgba(23, 23, 23, 0.12);
+}
+
+.app-topnav__dropdown-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #f0f0f0;
+
+  strong {
+    color: #171717;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
+
+  span {
+    color: #6b7280;
+    font-size: 12px;
+  }
+}
+
+.app-topnav__dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: #1f1f1f;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.app-topnav__dropdown-item:hover {
+  background: #f3f7f5;
+}
+
+.app-topnav__dropdown-item.is-danger {
+  color: #dc2626;
+}
+
+.app-topnav__dropdown-item.is-danger:hover {
+  background: #fef2f2;
 }
 
 .app-topnav__avatar {
@@ -3148,6 +3243,31 @@
   color: #171717;
   font-size: 22px;
   cursor: pointer;
+}
+
+/* Wide screens: name + inline Logout are shown, so the caret is not needed. */
+@media (min-width: 1101px) {
+  .app-topnav__caret {
+    display: none;
+  }
+}
+
+/* Medium screens: name and Logout move into the avatar menu so the links fit
+   on one row without a horizontal page scroll. */
+@media (max-width: 1100px) {
+  .app-topnav {
+    gap: 16px;
+    padding-inline: 20px;
+  }
+
+  .app-topnav__user-copy,
+  .app-topnav__logout {
+    display: none;
+  }
+
+  .app-topnav__user {
+    padding-right: 6px;
+  }
 }
 
 @media (max-width: 860px) {

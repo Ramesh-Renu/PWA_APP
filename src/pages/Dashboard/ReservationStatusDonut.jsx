@@ -1,23 +1,28 @@
-import React from "react";
+import React, { useMemo } from "react";
 import DonutChart from "./DonutChart";
 
+const STATUSES = [
+  { statusId: "created", statusName: "Created" },
+  { statusId: "cancelled", statusName: "Cancelled" },
+  { statusId: "completed", statusName: "Completed" },
+  { statusId: "seated", statusName: "Seated" },
+  { statusId: "serving", statusName: "Serving" },
+  { statusId: "pending", statusName: "Pending" },
+];
+
 const ReservationStatusDonut = ({ data, loading }) => {
-  const created = data?.todayStatus?.created || 0;
-  const cancelled = data?.todayStatus?.cancelled || 0;
-  const completed = data?.todayStatus?.completed || 0;
-  const seated = data?.todayStatus?.seated || 0;
-  const pending = data?.todayStatus?.pending || 0;  
-  const total = created + cancelled + completed + seated + pending;
-  const donutPayload = {
-    all: [
-      { statusId: "created", statusName: "Created", statusCount: created },
-      { statusId: "cancelled", statusName: "Cancelled", statusCount: cancelled },
-      { statusId: "completed", statusName: "Completed", statusCount: completed },
-      { statusId: "seated", statusName: "Seated", statusCount: seated },
-      { statusId: "pending", statusName: "Pending", statusCount: pending },
-    ],
-    overallStatusCount: total,
-  };
+  const todayStatus = data?.todayStatus;
+
+  const donutPayload = useMemo(() => {
+    const all = STATUSES.map((status) => ({
+      ...status,
+      statusCount: Number(todayStatus?.[status.statusId]) || 0,
+    }));
+    return {
+      all,
+      overallStatusCount: all.reduce((sum, row) => sum + row.statusCount, 0),
+    };
+  }, [todayStatus]);
 
   return (
     <DonutChart

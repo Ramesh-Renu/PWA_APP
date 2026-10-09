@@ -23,6 +23,8 @@ const NotFound = lazy(() => import("pages/NotFound/NotFound"));
 const BookedTableDetails = lazy(
   () => import("pages/TableDetails/BookedTableDetails"),
 );
+const ReservationBoard = lazy(() => import("pages/Reservations/ReservationBoard"));
+const OrderBoard = lazy(() => import("pages/Orders/OrderBoard"));
 const MenuCategories = lazy(
   () => import("pages/Settings/MenuCategories/MenuCategories"),
 );
@@ -31,6 +33,7 @@ const App = () => {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [isAdmin, setisAdmin] = useState(null);
   const token = localStorage.getItem("token");
+  const isAdminUser = auth?.details?.role === "Admin";
 
   useEffect(() => {
     const restoreAuth = async () => {
@@ -89,7 +92,23 @@ const App = () => {
             
               <Route
                 path="/booked-table"
-                element={<BookedTableDetails data={auth} />}
+                element={
+                  isAdminUser ? (
+                    <ReservationBoard />
+                  ) : (
+                    <BookedTableDetails data={auth} />
+                  )
+                }
+              />
+              <Route
+                path="/orders"
+                element={
+                  isAdminUser ? (
+                    <OrderBoard />
+                  ) : (
+                    <Navigate to="/booked-table" replace />
+                  )
+                }
               />
             
           </Route>

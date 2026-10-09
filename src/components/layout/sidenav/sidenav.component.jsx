@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import LogoAvatarShowLetter from "components/common/LogoAvatarShowLetter";
 import useAuth from "hooks/useAuth";
 import { useGlobalContext } from "store/context/GlobalProvider";
 import { AiOutlineClose, AiOutlineMenu } from "react-icons/ai";
+import { FiChevronDown, FiLogOut } from "react-icons/fi";
 
 const SideNav = () => {
   const navigate = useNavigate();
@@ -14,7 +15,35 @@ const SideNav = () => {
   const isAdmin = auth?.details?.role === "Admin";
   const hideNavItems = location.pathname.startsWith("/book-table");
 
-  useEffect(() => setMobileOpen(false), [location.pathname]);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
+
+  useEffect(() => {
+    setMobileOpen(false);
+    setUserMenuOpen(false);
+  }, [location.pathname]);
+
+  // Close the account menu on an outside click or Escape.
+  useEffect(() => {
+    if (!userMenuOpen) return undefined;
+    const handlePointerDown = (event) => {
+      if (!userMenuRef.current?.contains(event.target)) setUserMenuOpen(false);
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setUserMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [userMenuOpen]);
+
+  const userName = auth?.details?.name || "User";
+  const userSubtitle = [auth?.details?.role, auth?.details?.mobilenumber]
+    .filter(Boolean)
+    .join(" · ");
 
   const userLogout = () => {
     console.log("logout");
@@ -51,7 +80,16 @@ const SideNav = () => {
       to: "/booked-table",
       match: "booked-table",
     },
-    
+    ...(isAdmin
+      ? [
+          {
+            label: "Orders",
+            to: "/orders",
+            match: "^/orders",
+          },
+        ]
+      : []),
+
   ];
 
   return (
@@ -90,21 +128,47 @@ const SideNav = () => {
       )}
 
       <div className="app-topnav__actions">
-        <div className="app-topnav__user">
-          {auth?.details?.name ? (
-            <LogoAvatarShowLetter
-              genaralData={auth.details}
-              profilePhotoName="photo"
-              profileName="name"
-              outerClassName="app-topnav__avatar"
-              innerClassName="user-icon-photo"
-            />
-          ) : (
-            <span className="app-topnav__avatar fallback">U</span>
+        <div className="app-topnav__account" ref={userMenuRef}>
+          <button
+            type="button"
+            className="app-topnav__user"
+            onClick={() => setUserMenuOpen((open) => !open)}
+            aria-haspopup="menu"
+            aria-expanded={userMenuOpen}
+            aria-label={`Account menu for ${userName}`}
+            title={userName}
+          >
+            {auth?.details?.name ? (
+              <LogoAvatarShowLetter
+                genaralData={auth.details}
+                profilePhotoName="photo"
+                profileName="name"
+                outerClassName="app-topnav__avatar"
+                innerClassName="user-icon-photo"
+              />
+            ) : (
+              <span className="app-topnav__avatar fallback">U</span>
+            )}
+            <span className="app-topnav__user-copy">{userName}</span>
+            <FiChevronDown className="app-topnav__caret" aria-hidden />
+          </button>
+
+          {userMenuOpen && (
+            <div className="app-topnav__dropdown" role="menu">
+              <div className="app-topnav__dropdown-head">
+                <strong>{userName}</strong>
+                {userSubtitle && <span>{userSubtitle}</span>}
+              </div>
+              <button
+                type="button"
+                role="menuitem"
+                className="app-topnav__dropdown-item is-danger"
+                onClick={userLogout}
+              >
+                <FiLogOut aria-hidden /> Logout
+              </button>
+            </div>
           )}
-          <span className="app-topnav__user-copy">
-            {auth?.details?.name || "User"}
-          </span>
         </div>
         <button
           type="button"

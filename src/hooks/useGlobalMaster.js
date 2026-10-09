@@ -1,5 +1,5 @@
 import { useGlobalContext } from "store/context/GlobalProvider";
-import {getAllArea, getAllLocation, getDiningStatus,getSeatsStatusMatsers} from "services";
+import {getAllArea, getAllLocation, getDiningStatus,getSeatsStatusMatsers, getOrderStatuses} from "services";
 import { getApiErrorMessage } from "utils/apiError";
 
 const useGlobalMaster = () => {
@@ -40,6 +40,7 @@ const useGlobalMaster = () => {
     getAllLocation: () => fetchMasterData("locationList", () => getAllLocation()),
     getDiningStatus: () => fetchMasterData("diningStatusList", () => getDiningStatus()),
     getSeatsStatusMatsers: () => fetchMasterData("seatsStatusList", () => getSeatsStatusMatsers()),
+    getOrderStatus: () => fetchMasterData("orderStatusList", () => getOrderStatuses()),
   };
 };
 

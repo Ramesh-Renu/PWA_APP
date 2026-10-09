@@ -3,6 +3,7 @@ export const masterDataState = {
   floorList: { data: [], loading: false, error: null },
   locationList: { data: [], loading: false, error: null },
   diningStatusList: { data: [], loading: false, error: null },
+  orderStatusList: { data: [], loading: false, error: null },
 };
 
 export const masterDataReducer = (state, action) => {
