@@ -98,9 +98,14 @@ const OrderBoard = () => {
   }, []);
 
   const columns = useMemo(() => {
-    const statuses = orderStatusList.data?.length
-      ? orderStatusList.data
-      : DEFAULT_ORDER_STATUSES;
+    // DB rows win; any status missing from the master table still gets a column.
+    const fromDb = orderStatusList.data || [];
+    const statuses = [
+      ...fromDb,
+      ...DEFAULT_ORDER_STATUSES.filter(
+        (fallback) => !fromDb.some((row) => row.status_id === fallback.status_id),
+      ),
+    ];
     return statuses
       .filter(
         (status) => status.status_id !== NOT_ORDERED && status.status_id !== COMPLETED,
