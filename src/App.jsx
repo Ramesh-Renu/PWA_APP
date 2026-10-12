@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import AppErrorBoundary from "components/common/AppErrorBoundary";
 import Spinner from "components/spinner/spinner.component";
 import "styles/index.scss";
 import useAuth from "hooks/useAuth";
@@ -25,11 +26,16 @@ const BookedTableDetails = lazy(
 );
 const ReservationBoard = lazy(() => import("pages/Reservations/ReservationBoard"));
 const OrderBoard = lazy(() => import("pages/Orders/OrderBoard"));
+const Cooks = lazy(() => import("pages/Settings/Cooks/Cooks"));
+const Servers = lazy(() => import("pages/Settings/Servers/Servers"));
+const Cleaners = lazy(() => import("pages/Settings/Cleaners/Cleaners"));
+const SettingsHome = lazy(() => import("pages/Settings/SettingsHome"));
 const MenuCategories = lazy(
   () => import("pages/Settings/MenuCategories/MenuCategories"),
 );
 const App = () => {
   const [{ data: auth }, { getUserInfoData }] = useAuth();
+  const location = useLocation();
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [isAdmin, setisAdmin] = useState(null);
   const token = localStorage.getItem("token");
@@ -62,6 +68,7 @@ const App = () => {
   );
 
   return (
+    <AppErrorBoundary resetKey={location.pathname}>
     <Suspense fallback={<Spinner />}>
       <Routes>
         {/* Public route */}
@@ -72,6 +79,31 @@ const App = () => {
           <Route
             path="/settings/menu-categories"
             element={<MenuCategories />}
+          />
+          {/* Settings (admin): landing page + master data */}
+          <Route
+            path="/settings"
+            element={
+              isAdminUser ? <SettingsHome /> : <Navigate to="/book-table" replace />
+            }
+          />
+          <Route
+            path="/settings/cooks"
+            element={
+              isAdminUser ? <Cooks /> : <Navigate to="/book-table" replace />
+            }
+          />
+          <Route
+            path="/settings/servers"
+            element={
+              isAdminUser ? <Servers /> : <Navigate to="/book-table" replace />
+            }
+          />
+          <Route
+            path="/settings/cleaners"
+            element={
+              isAdminUser ? <Cleaners /> : <Navigate to="/book-table" replace />
+            }
           />
           <Route
             path="/menu-categories"
@@ -117,6 +149,7 @@ const App = () => {
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
+    </AppErrorBoundary>
   );
 };
 

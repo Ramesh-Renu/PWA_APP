@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert } from "@mui/material";
 import MenuForm from "./component/MenuForm";
 import {
   createMenu,
@@ -15,6 +14,7 @@ const AddMenu = ({
   hotelId,
   menu = null,
   onSaved,
+  onCancel,
   selectedMenuSidedishes =[]
 }) => {
   const [loading, setLoading] = useState(false);
@@ -121,10 +121,11 @@ const AddMenu = ({
     }
   };
   return (
-    <>
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
     <MenuForm
       initialValues={initialValues}
+      error={error}
+      onClearError={() => setError("")}
+      onCancel={onCancel}
       hotels={hotels}
       categories={categories}
       spiceLevels={spiceLevels}
@@ -134,7 +135,6 @@ const AddMenu = ({
       onSubmit={handleSubmit}
       selectedMenuSidedishes={selectedMenuSidedishes}
     />
-    </>
   );
 };
 

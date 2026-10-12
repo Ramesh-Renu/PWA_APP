@@ -1,37 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControl,
-  IconButton,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-  Tooltip,
-  Typography,
-} from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import PopupModal from "components/common/PopupModal";
+import ConfirmDialog from "components/common/ConfirmDialog";
 
 import { getAllHotel } from "services";
 import { getApiErrorMessage } from "utils/apiError";
@@ -42,8 +15,27 @@ import {
   updateMenuCategory,
 } from "services";
 
+// Offered in the "Category names" picker alongside names other hotels use.
+const DEFAULT_CATEGORY_NAMES = [
+  "Starters",
+  "Soups",
+  "Salads",
+  "Main Course",
+  "Rice",
+  "Biryani",
+  "Breads",
+  "Curries",
+  "South Indian",
+  "North Indian",
+  "Chinese",
+  "Tandoor",
+  "Snacks",
+  "Desserts",
+  "Beverages",
+];
+
 const emptyForm = {
-  hotel_id: 0,
+  hotel_id: "",
   category_name: "",
   description: "",
   display_order: 0,
@@ -95,7 +87,8 @@ const MenuCategories = () => {
     setError("");
 
     try {
-      const response = await getAllMenuCategories();
+      // The API pages at 10 rows by default.
+      const response = await getAllMenuCategories({ limit: 500 });
       setCategories(unwrapList(response));
     } catch (requestError) {
       setError(
@@ -114,6 +107,54 @@ const MenuCategories = () => {
       .then((response) => setHotels(unwrapList(response)))
       .catch(() => setHotels([]));
   }, [loadCategories]);
+
+  // Other categories of the hotel picked in the form (excluding the one being
+  // edited). A hotel can't have two categories with the same name.
+  const hotelCategories = useMemo(
+    () =>
+      categories.filter(
+        (category) =>
+          form.hotel_id !== "" &&
+          String(category?.hotel_id) === String(form.hotel_id) &&
+          categoryId(category) !== categoryId(editingCategory),
+      ),
+    [categories, form.hotel_id, editingCategory],
+  );
+
+  const duplicateName = useMemo(() => {
+    const name = form.category_name.trim().toLowerCase();
+    if (!name) return false;
+    return hotelCategories.some(
+      (category) =>
+        String(category?.category_name || "").trim().toLowerCase() === name,
+    );
+  }, [hotelCategories, form.category_name]);
+
+  // Names to pick from: common ones plus every name used by any hotel,
+  // de-duplicated case-insensitively. Names this hotel already has are
+  // shown but disabled.
+  const nameSuggestions = useMemo(() => {
+    const taken = new Set(
+      hotelCategories.map((category) =>
+        String(category?.category_name || "").trim().toLowerCase(),
+      ),
+    );
+    const seen = new Map();
+    [
+      ...DEFAULT_CATEGORY_NAMES,
+      ...categories.map((category) => category?.category_name),
+    ].forEach((name) => {
+      const label = String(name || "").trim();
+      const key = label.toLowerCase();
+      if (label && !seen.has(key)) seen.set(key, label);
+    });
+
+    const query = form.category_name.trim().toLowerCase();
+    return [...seen.entries()]
+      .filter(([key]) => !query || key.includes(query))
+      .map(([key, label]) => ({ label, taken: taken.has(key) }))
+      .sort((a, b) => Number(a.taken) - Number(b.taken));
+  }, [categories, hotelCategories, form.category_name]);
 
   const filteredCategories = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -145,7 +186,7 @@ const MenuCategories = () => {
   const openEditDialog = (category) => {
     setEditingCategory(category);
     setForm({
-      hotel_id: category?.hotel_id ?? 0,
+      hotel_id: category?.hotel_id ?? "",
       category_name: category?.category_name ?? "",
       description: category?.description ?? "",
       display_order: category?.display_order ?? 0,
@@ -171,14 +212,14 @@ const MenuCategories = () => {
     event.preventDefault();
 
     const body = {
-      hotel_id: Number(form.hotel_id) || 0,
+      hotel_id: Number(form.hotel_id),
       category_name: form.category_name.trim(),
       description: form.description.trim(),
       display_order: Number(form.display_order) || 0,
       is_active: Boolean(form.is_active),
     };
 
-    if (!body.category_name) return;
+    if (!body.category_name || !body.hotel_id || duplicateName) return;
 
     setSaving(true);
     setError("");
@@ -226,234 +267,337 @@ const MenuCategories = () => {
   };
 
   return (
-    <section className="menuCategoies-body">
-    <Box  sx={{ maxWidth: 1440, mx: "auto", py: { xs: 1, md: 2 } }}>
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "stretch", sm: "center" }}
-        spacing={2}
-        sx={{ mb: 2.5 }}
-      >
-        <Box>
-          <Typography variant="h5" sx={{ color: "#252941", fontWeight: 800 }}>
-            Menu Categories
-          </Typography>
-          <Typography variant="body2" sx={{ color: "#6f7389", mt: 0.5 }}>
-            Create and organize the categories used by your menu.
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddRoundedIcon />}
-          onClick={openCreateDialog}
-          sx={{ alignSelf: { xs: "stretch", sm: "auto" }, textTransform: "none", fontWeight: 700 }}
-        >
-          Add category
-        </Button>
-      </Stack>
+    <section className="ui-page">
+      <header className="ui-header">
+        <div>
+          <span className="ui-kicker">Settings</span>
+          <h1>Menu categories</h1>
+          <p>Create and organize the categories used by each hotel's menu.</p>
+        </div>
+        <div className="ui-header__actions">
+          <button
+            type="button"
+            className="ui-btn ui-btn--primary"
+            onClick={openCreateDialog}
+          >
+            <AddRoundedIcon fontSize="small" /> Add category
+          </button>
+        </div>
+      </header>
 
       {error && !dialogOpen && (
-        <Alert severity="error" onClose={() => setError("")} sx={{ mb: 2 }}>
-          {error}
-        </Alert>
+        <div className="ui-alert ui-alert--danger" role="alert">
+          <span>{error}</span>
+          <button type="button" aria-label="Dismiss" onClick={() => setError("")}>
+            ×
+          </button>
+        </div>
       )}
       {notice && (
-        <Alert severity="success" onClose={() => setNotice("")} sx={{ mb: 2 }}>
-          {notice}
-        </Alert>
+        <div className="ui-alert ui-alert--success" role="status">
+          <span>{notice}</span>
+          <button type="button" aria-label="Dismiss" onClick={() => setNotice("")}>
+            ×
+          </button>
+        </div>
       )}
 
-      <Paper sx={{ mb: 2, border: "1px solid #e4e7ef", borderRadius: 2, boxShadow: "none" }}>
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          spacing={5}
-          alignItems={{ xs: "stretch", md: "center" }}
-          sx={{ p: 2 }}
-        >
-          <TextField
-            fullWidth
-            size="small"
+      <div className="ui-toolbar">
+        <label className="ui-search">
+          <SearchRoundedIcon fontSize="small" aria-hidden />
+          <input
+            type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search categories"
-            InputProps={{ startAdornment: <SearchRoundedIcon sx={{ mr: 1, color: "text.secondary" }} /> }}
+            aria-label="Search categories"
           />
-          <ToggleButtonGroup
-            exclusive
-            value={statusFilter}
-            onChange={(_, value) => value && setStatusFilter(value)}
-            size="small"
-            sx={{ flexShrink: 0 }}
-          >
-            <ToggleButton value="all" sx={{ textTransform: "none", px: 2 }}>All</ToggleButton>
-            <ToggleButton value="active" sx={{ textTransform: "none", px: 2 }}>Active</ToggleButton>
-            <ToggleButton value="inactive" sx={{ textTransform: "none", px: 2 }}>Inactive</ToggleButton>
-          </ToggleButtonGroup>
-        </Stack>
-      </Paper>
+        </label>
+        <div className="ui-segment" role="radiogroup" aria-label="Status">
+          {[
+            { value: "all", label: "All" },
+            { value: "active", label: "Active" },
+            { value: "inactive", label: "Inactive" },
+          ].map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={statusFilter === option.value}
+              className={statusFilter === option.value ? "is-active" : ""}
+              onClick={() => setStatusFilter(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      <TableContainer component={Paper} sx={{ border: "1px solid #e4e7ef", borderRadius: 2, boxShadow: "none" }}>
-        <Table sx={{ minWidth: 700 }}>
-          <TableHead>
-            <TableRow sx={{ bgcolor: "#f7fbfa" }}>
-              <TableCell sx={{ fontWeight: 800, color: "#646a80" }}>Category name</TableCell>
-              <TableCell sx={{ fontWeight: 800, color: "#646a80" }}>Description</TableCell>
-              <TableCell sx={{ fontWeight: 800, color: "#646a80" }}>Hotel</TableCell>
-              <TableCell align="center" sx={{ fontWeight: 800, color: "#646a80" }}>Order</TableCell>
-              <TableCell sx={{ fontWeight: 800, color: "#646a80" }}>Status</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 800, color: "#646a80" }}>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
+      <div className="ui-panel ui-table-wrap">
+        <table className="ui-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Hotel</th>
+              <th className="is-center">Order</th>
+              <th>Status</th>
+              <th className="is-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 7 }}>
-                  <CircularProgress size={28} />
-                  <Typography variant="body2" sx={{ mt: 1, color: "text.secondary" }}>Loading categories…</Typography>
-                </TableCell>
-              </TableRow>
+              <tr className="ui-table__state">
+                <td colSpan={6}>Loading categories…</td>
+              </tr>
             ) : filteredCategories.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 7 }}>
-                  <Typography sx={{ fontWeight: 700 }}>No menu categories found</Typography>
-                  <Typography variant="body2" sx={{ mt: 0.5, color: "text.secondary" }}>
-                    Add a category or adjust your search filters.
-                  </Typography>
-                </TableCell>
-              </TableRow>
+              <tr className="ui-table__state">
+                <td colSpan={6}>
+                  No menu categories found. Add one or adjust your search.
+                </td>
+              </tr>
             ) : (
               filteredCategories.map((category) => {
                 const active = isActive(category?.is_active);
 
                 return (
-                  <TableRow key={categoryId(category)} hover>
-                    <TableCell sx={{ fontWeight: 700 }}>{category?.category_name || "—"}</TableCell>
-                    <TableCell sx={{ maxWidth: 360, color: "text.secondary" }}>{category?.description || "—"}</TableCell>
-                    <TableCell>{hotelName(category, hotels)}</TableCell>
-                    <TableCell align="center">{category?.display_order ?? 0}</TableCell>
-                    <TableCell>
-                      <Chip
-                        size="small"
-                        label={active ? "Active" : "Inactive"}
-                        color={active ? "success" : "default"}
-                        variant={active ? "filled" : "outlined"}
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <Tooltip title="Edit">
-                        <IconButton aria-label={`Edit ${category?.category_name}`} onClick={() => openEditDialog(category)} size="small">
-                          <EditOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete">
-                        <IconButton aria-label={`Delete ${category?.category_name}`} onClick={() => setDeleteTarget(category)} size="small" color="error">
-                          <DeleteOutlineRoundedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
+                  <tr key={categoryId(category)}>
+                    <td className="is-strong">{category?.category_name || "—"}</td>
+                    <td className="is-muted">{category?.description || "—"}</td>
+                    <td>{hotelName(category, hotels)}</td>
+                    <td className="is-center">{category?.display_order ?? 0}</td>
+                    <td>
+                      <span className={`ui-chip ${active ? "ui-chip--success" : ""}`}>
+                        {active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td className="is-right">
+                      <button
+                        type="button"
+                        className="ui-icon-btn"
+                        title="Edit"
+                        aria-label={`Edit ${category?.category_name}`}
+                        onClick={() => openEditDialog(category)}
+                      >
+                        <EditOutlinedIcon fontSize="small" />
+                      </button>
+                      <button
+                        type="button"
+                        className="ui-icon-btn ui-icon-btn--danger"
+                        title="Delete"
+                        aria-label={`Delete ${category?.category_name}`}
+                        onClick={() => setDeleteTarget(category)}
+                      >
+                        <DeleteOutlineRoundedIcon fontSize="small" />
+                      </button>
+                    </td>
+                  </tr>
                 );
               })
             )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          </tbody>
+        </table>
+      </div>
 
-      <Dialog open={dialogOpen} onClose={closeDialog} fullWidth maxWidth="sm">
-        <Box component="form" onSubmit={handleSubmit}>
-          <DialogTitle sx={{ fontWeight: 800 }}>
-            {editingCategory ? "Edit menu category" : "Add menu category"}
-          </DialogTitle>
-          <DialogContent dividers>
+      <PopupModal
+        show={dialogOpen}
+        onClose={closeDialog}
+        header
+        title={editingCategory ? "Edit menu category" : "Add menu category"}
+        className="hotel-form__body"
+        customClassName="hotel-form-dialog menu-editor-dialog category-dialog"
+      >
+        <form className="menu-editor" onSubmit={handleSubmit}>
+          <div className="hotel-form">
             {error && dialogOpen && (
-              <Alert severity="error" onClose={() => setError("")} sx={{ mb: 2 }}>
+              <p className="menu-editor__alert" role="alert">
                 {error}
-              </Alert>
+              </p>
             )}
-            <Stack spacing={2.25} sx={{ pt: 0.5 }}>
-              <TextField
-                autoFocus
-                required
-                fullWidth
-                name="category_name"
-                label="Category name"
-                value={form.category_name}
-                onChange={handleChange}
-              />
-              <TextField
-                fullWidth
-                multiline
-                minRows={3}
-                name="description"
-                label="Description"
-                value={form.description}
-                onChange={handleChange}
-              />
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                <FormControl fullWidth>
-                  <InputLabel id="menu-category-hotel-label">Hotel</InputLabel>
-                  <Select
-                    labelId="menu-category-hotel-label"
+
+            <section className="hotel-form__section">
+              <h3 className="hotel-form__section-title">Category</h3>
+              <div className="hotel-form__grid">
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor="category-hotel">
+                    Hotel <sup>*</sup>
+                  </label>
+                  <select
+                    id="category-hotel"
                     name="hotel_id"
-                    label="Hotel"
+                    className="hotel-form__input"
                     value={String(form.hotel_id)}
                     onChange={handleChange}
+                    required
                   >
-                    <MenuItem value="0">All hotels</MenuItem>
+                    <option value="">Select hotel</option>
                     {hotels.map((hotel) => {
                       const id = hotel?.id ?? hotel?.hotel_id;
-                      return <MenuItem key={id} value={String(id)}>{hotel?.hotel_name ?? hotel?.name}</MenuItem>;
+                      return (
+                        <option key={id} value={String(id)}>
+                          {hotel?.hotel_name ?? hotel?.name}
+                        </option>
+                      );
                     })}
-                  </Select>
-                </FormControl>
-                <TextField
-                  fullWidth
-                  type="number"
-                  name="display_order"
-                  label="Display order"
-                  value={form.display_order}
-                  onChange={handleChange}
-                  inputProps={{ min: 0 }}
-                />
-              </Stack>
-              <TextField
-                select
-                fullWidth
-                name="is_active"
-                label="Status"
-                value={String(form.is_active)}
-                onChange={handleChange}
-              >
-                <MenuItem value="true">Active</MenuItem>
-                <MenuItem value="false">Inactive</MenuItem>
-              </TextField>
-            </Stack>
-          </DialogContent>
-          <DialogActions sx={{ p: 2 }}>
-            <Button onClick={closeDialog} disabled={saving} sx={{ textTransform: "none" }}>Cancel</Button>
-            <Button type="submit" variant="contained" disabled={saving || !form.category_name.trim()} sx={{ textTransform: "none", fontWeight: 700 }}>
-              {saving ? "Saving…" : editingCategory ? "Save changes" : "Create category"}
-            </Button>
-          </DialogActions>
-        </Box>
-      </Dialog>
+                  </select>
+                </div>
 
-      <Dialog open={Boolean(deleteTarget)} onClose={() => !deleting && setDeleteTarget(null)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: 800 }}>Delete menu category?</DialogTitle>
-        <DialogContent>
-          <Typography color="text.secondary">
-            This will remove “{deleteTarget?.category_name}” from the menu categories.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setDeleteTarget(null)} disabled={deleting} sx={{ textTransform: "none" }}>Cancel</Button>
-          <Button onClick={handleDelete} color="error" variant="contained" disabled={deleting} sx={{ textTransform: "none", fontWeight: 700 }}>
-            {deleting ? "Deleting…" : "Delete"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor="category-name">
+                    Category name <sup>*</sup>
+                  </label>
+                  <input
+                    id="category-name"
+                    name="category_name"
+                    className={`hotel-form__input${duplicateName ? " is-invalid" : ""}`}
+                    value={form.category_name}
+                    onChange={handleChange}
+                    placeholder="e.g. Starters"
+                    autoComplete="off"
+                    aria-invalid={duplicateName}
+                    aria-describedby="category-name-help"
+                    autoFocus
+                    required
+                  />
+                  {duplicateName ? (
+                    <span id="category-name-help" className="hotel-form__error">
+                      This hotel already has a “{form.category_name.trim()}” category.
+                    </span>
+                  ) : (
+                    <span id="category-name-help" className="hotel-form__hint">
+                      Pick a name below or type a new one.
+                    </span>
+                  )}
+                </div>
+
+                <div className="hotel-form__field hotel-form__field--full">
+                  <span className="hotel-form__label">
+                    {form.hotel_id
+                      ? "Category names"
+                      : "Category names (select a hotel to see which are taken)"}
+                  </span>
+                  {nameSuggestions.length === 0 ? (
+                    <p className="category-names__empty">
+                      “{form.category_name.trim()}” is a new name for this hotel.
+                    </p>
+                  ) : (
+                    <div className="category-names" role="listbox" aria-label="Category names">
+                      {nameSuggestions.map(({ label, taken }) => {
+                        const selected =
+                          form.category_name.trim().toLowerCase() === label.toLowerCase();
+                        return (
+                          <button
+                            key={label}
+                            type="button"
+                            role="option"
+                            aria-selected={selected}
+                            aria-disabled={taken}
+                            disabled={taken}
+                            className={`category-name${selected ? " is-selected" : ""}${taken ? " is-taken" : ""}`}
+                            title={taken ? "Already added to this hotel" : `Use “${label}”`}
+                            onClick={() =>
+                              setForm((current) => ({ ...current, category_name: label }))
+                            }
+                          >
+                            {label}
+                            {taken && <small>Added</small>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="hotel-form__field hotel-form__field--full">
+                  <label className="hotel-form__label" htmlFor="category-description">
+                    Description
+                  </label>
+                  <textarea
+                    id="category-description"
+                    name="description"
+                    className="hotel-form__input menu-editor__textarea"
+                    value={form.description}
+                    onChange={handleChange}
+                    rows={3}
+                    placeholder="Shown to staff only"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section className="hotel-form__section">
+              <h3 className="hotel-form__section-title">Display</h3>
+              <div className="hotel-form__grid category-dialog__display">
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor="category-order">
+                    Display order
+                  </label>
+                  <input
+                    id="category-order"
+                    type="number"
+                    min="0"
+                    name="display_order"
+                    className="hotel-form__input"
+                    value={form.display_order}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <label className="menu-switch">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(form.is_active)}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        is_active: event.target.checked,
+                      }))
+                    }
+                  />
+                  <span className="menu-switch__track" aria-hidden />
+                  <span>
+                    <strong>{form.is_active ? "Active" : "Inactive"}</strong>
+                    <small>Inactive categories are hidden from menus</small>
+                  </span>
+                </label>
+              </div>
+            </section>
+          </div>
+
+          <div className="hotel-form__actions">
+            <button
+              type="button"
+              className="hotel-form__btn hotel-form__btn--ghost"
+              onClick={closeDialog}
+              disabled={saving}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="hotel-form__btn hotel-form__btn--primary"
+              disabled={
+                saving ||
+                !form.category_name.trim() ||
+                !form.hotel_id ||
+                duplicateName
+              }
+            >
+              {saving ? "Saving…" : editingCategory ? "Save changes" : "Create category"}
+            </button>
+          </div>
+        </form>
+      </PopupModal>
+
+      <ConfirmDialog
+        show={Boolean(deleteTarget)}
+        title={`Delete “${deleteTarget?.category_name || "this category"}”?`}
+        message="It will be removed from the menu categories."
+        confirmLabel="Delete category"
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </section>
   );
 };

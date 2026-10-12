@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import {
-  ArrowBackRounded,
+  ApartmentOutlined,
   ChevronRightRounded,
   EventSeatOutlined,
   LayersOutlined,
@@ -9,10 +9,12 @@ import {
   TableRestaurantOutlined,
 } from "@mui/icons-material";
 import TableDetails from "pages/TableDetails/TableDetails";
+import SlotPicker, { defaultMeal, SHOW_GUESTS } from "pages/TableDetails/SlotPicker";
+import dayjs from "dayjs";
 import { renderLocation } from "utils/common";
 import useGlobalMaster from "hooks/useGlobalMaster";
+import useAuth from "hooks/useAuth";
 import { getHotelbyid } from "services";
-import { hotelPlaceholderImage } from "assets/images";
 import MenuList from "pages/Menu/MenuList";
 
 const HotelDetails = () => {
@@ -22,8 +24,25 @@ const HotelDetails = () => {
   const [hotelData, setHotelData] = useState(location.state?.hotelData || null);
   const [isEditable, setIsEditable] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
+  // Booking slot (Zomato-style picker): date, guests, meal, time.
+  const [slot, setSlot] = useState(() => {
+    // "View booking" opens on that booking's slot (if it isn't in the past).
+    const given = location.state?.slot;
+    if (given?.date && !dayjs(given.date).isBefore(dayjs(), "day")) return given;
+    const date = dayjs().format("YYYY-MM-DD");
+    return { date, guests: SHOW_GUESTS ? 2 : null, meal: defaultMeal(date), time: "" };
+  });
 
   const [showMenuList, setShowMenuList] = useState(false);
+  const [{ data: auth }] = useAuth();
+  const isAdmin = auth?.details?.role === "Admin";
+  // Breadcrumb points back to the page this hotel was opened from (callers
+  // pass state.from); direct links fall back to the role's hotel list.
+  const backTo = location.state?.from?.path
+    ? location.state.from
+    : isAdmin
+      ? { label: "Hotels", path: "/hotellist" }
+      : { label: "Find a table", path: "/book-table" };
   const { areaList, locationList, getAllArea, getAllLocation } =
     useGlobalMaster();
   useEffect(() => {
@@ -84,6 +103,13 @@ const HotelDetails = () => {
       ? "Booking"
       : "Overview";
 
+  const initials = (hotelData?.hotel_name || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0].toUpperCase())
+    .join("");
+
   const statItems = [
     { key: "floors", label: "Floors", value: stats.floorCount, icon: LayersOutlined },
     { key: "tables", label: "Tables", value: stats.totalTables, icon: TableRestaurantOutlined },
@@ -93,16 +119,16 @@ const HotelDetails = () => {
   return (
     <main className="hotel-details-page">
       <nav className="hd-breadcrumb" aria-label="Breadcrumb">
-        <button type="button" onClick={() => navigate("/book-table")}>
-          Hotels
+        <button type="button" onClick={() => navigate(backTo.path)}>
+          {backTo.label}
         </button>
         <ChevronRightRounded fontSize="inherit" aria-hidden />
         <span aria-current="page">{hotelData?.hotel_name || "Hotel"}</span>
       </nav>
 
       <header className="hd-hero">
-        <div className="hd-hero__media">
-          <img src={hotelPlaceholderImage} alt="" />
+        <div className="hd-hero__media" aria-hidden>
+          {initials || <ApartmentOutlined />}
         </div>
 
         <div className="hd-hero__body">
@@ -125,13 +151,6 @@ const HotelDetails = () => {
 
           {isEditable && (
             <div className="hd-hero__actions">
-              <button
-                type="button"
-                className="hd-btn hd-btn--ghost"
-                onClick={() => navigate(-1)}
-              >
-                <ArrowBackRounded fontSize="small" /> Back
-              </button>
               <div className="hd-tabs" role="tablist" aria-label="Hotel section">
                 <button
                   type="button"
@@ -169,11 +188,21 @@ const HotelDetails = () => {
       </header>
 
       {!showMenuList && (
-        <TableDetails
-          data={hotelData || { id }}
-          isEditable={isEditable}
-          isBooking={isBooking}
-        />
+        <>
+          {isBooking && !isEditable && <SlotPicker value={slot} onChange={setSlot} />}
+          {isBooking && !isEditable && !slot.time ? (
+            <p className="slot-picker__prompt">
+              Pick a time slot above to see the tables available then.
+            </p>
+          ) : (
+            <TableDetails
+              data={hotelData || { id }}
+              isEditable={isEditable}
+              isBooking={isBooking}
+              slot={isBooking && !isEditable ? slot : null}
+            />
+          )}
+        </>
       )}
       {showMenuList && (
         <div className="menu-list-header">

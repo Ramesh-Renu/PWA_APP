@@ -2,12 +2,14 @@ import React, { useState, useEffect, Fragment, useMemo } from "react";
 import {
   AddRounded,
   CheckRounded,
+  DeleteOutlineRounded,
   EventSeatOutlined,
   RemoveRounded,
   TableRestaurantOutlined,
 } from "@mui/icons-material";
 import {
   createTable,
+  deleteTable,
   getTablebyid,
   addSeatInTable,
   deleteSeatInTable,
@@ -18,6 +20,7 @@ import {
 } from "services";
 import useToast from "hooks/useToast";
 import PopupModal from "components/common/PopupModal";
+import ConfirmDialog from "components/common/ConfirmDialog";
 import useAuth from "hooks/useAuth";
 import dayjs from "dayjs";
 import { useGlobalContext } from "store/context/GlobalProvider";
@@ -35,7 +38,14 @@ const SEAT_FALLBACK = {
   unknown: { name: "Unavailable", color: "#94a3b8" },
 };
 
-const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
+// "SACT0001" when the table has a code, otherwise the legacy "Table 1".
+const tableLabel = (table) =>
+  table?.table_code || `Table ${table?.table_number}`;
+
+// slot (booking mode): { date: "YYYY-MM-DD", time: "HH:mm", guests } from
+// SlotPicker; seats are shown and booked for that slot.
+const TableDetails = ({ data, onChange, isEditable, isBooking, slot }) => {
+  const slotActive = Boolean(isBooking && slot?.date && slot?.time);
   const [{ data: auth }, { setAuth }] = useAuth();
   const { reservationData, dispatch } = useGlobalContext();
   const { seatsStatusList, getSeatsStatusMatsers } = useGlobalMaster();
@@ -44,6 +54,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
   const [getloading, setLoading] = useState(false);
   const { showToast } = useToast();
   const [showDeleteSeats, setshowDeleteSeats] = useState(false);
+  const [tableToDelete, setTableToDelete] = useState(null);
   const [showCancelBookingSeats, setShowCancelBookingSeats] = useState(false);
   const [cancelBookingSeats, setCancelBookingSeats] = useState(null);
   const [seletedSeatId, setSeletedSeatId] = useState(null);
@@ -71,7 +82,10 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
 
   const fetchHotelbyId = async (hotelData) => {
     try {
-      const response = await getTablebyid({ hotel_id: hotelData.id });
+      const response = await getTablebyid({
+        hotel_id: hotelData.id,
+        ...(slotActive ? { date: slot.date, time: slot.time } : {}),
+      });
       // Optionally, refresh the hotel list or provide user feedback here
       if (response) {
         setFloorsState(response.data[0].floors);
@@ -92,22 +106,50 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
     }
   }, []);
 
+  // Reload when the booking slot changes (availability differs per slot).
   useEffect(() => {
     fetchHotelbyId(data);
-  }, []);
+  }, [slot?.date, slot?.time]);
 
   useEffect(() => {
     loadMenus();
   }, [filters]);
 
   const loadMenus = async () => {
+    // Wait for the hotel id: without it the API returns every hotel's menu,
+    // and that reply could land after the hotel's own and replace it.
+    if (!filters.hotel_id) return;
     try {
       setLoading(true);
 
-      const res = await getAllMenu(filters);
+      const res = await getAllMenu({ ...filters, limit: 500 }); // API default is 10
       setMenus(res.rows);
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Only empty tables can be removed from the layout (see the head button).
+  const fetchDeleteTable = async (table) => {
+    setTableToDelete(null);
+    setLoading(true);
+    try {
+      const response = await deleteTable({ table_id: table.table_id });
+      showToast({
+        message: response?.message || `${tableLabel(table)} removed`,
+        variant: "success",
+      });
+      fetchHotelbyId(data);
+    } catch (error) {
+      showToast({
+        message:
+          error?.response?.data?.message ||
+          error?.message ||
+          "Failed to remove table",
+        variant: "danger",
+      });
     } finally {
       setLoading(false);
     }
@@ -305,7 +347,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
           : null;
       })
       .filter(Boolean);
-    const getCurretnTime = new Date();
+    const now = dayjs();
 
     const param = {
       hotel_id: hotelData.id,
@@ -313,25 +355,26 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
       seat_status: bookingSeatsByTable,
       customer_name: auth?.details?.name,
       customer_mobile: auth?.details.mobilenumber,
-      booking_date: getCurretnTime,
-      dining_date: getCurretnTime,
-      reservation_time: dayjs(getCurretnTime).format("HH:mm"),
+      // The chosen slot, or "now" when booking without the slot picker.
+      dining_date: slotActive ? slot.date : now.format("YYYY-MM-DD"),
+      reservation_time: slotActive ? slot.time : now.format("HH:mm"),
+      guest_count: slot?.guests || null,
     };
     setLoading(true);
     try {
       const response = await createReservation(param);
       if (response.success) {
-        showToast({
-          message: response.message || "Table created successfully",
-          variant: "success",
-        });
-        fetchHotelbyId(hotelData);
-        // set reservationId from response if available
         const rid =
           response?.data?.id ||
           response?.data?.reservation_id ||
           response?.id ||
           response?.reservation_id;
+        showToast({
+          title: rid ? `Booking #${rid} confirmed` : "Booking confirmed",
+          message: `${dayjs(`${param.dining_date}T${param.reservation_time}`).format("ddd, D MMM [at] h:mm A")} · ${seletedSeatCount || ""} ${seletedSeatCount === 1 ? "seat" : "seats"}`,
+          variant: "success",
+        });
+        fetchHotelbyId(hotelData);
         if (rid) setReservationId(rid);
         setShowMenuPopup(true);
         setLoading(false);
@@ -474,22 +517,22 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
     // Minimal handlers - replace with real implementations as needed
     if (action === "seated") {
       showToast({
-        message: `Marked Table ${table.table_number} as Seated`,
+        message: `Marked ${tableLabel(table)} as Seated`,
         variant: "success",
       });
     } else if (action === "cleaning") {
       showToast({
-        message: `Marked Table ${table.table_number} for Cleaning`,
+        message: `Marked ${tableLabel(table)} for Cleaning`,
         variant: "info",
       });
     } else if (action === "completed") {
       showToast({
-        message: `Marked Table ${table.table_number} as Completed`,
+        message: `Marked ${tableLabel(table)} as Completed`,
         variant: "success",
       });
     } else if (action === "cancel") {
       showToast({
-        message: `Cancel Order requested for Table ${table.table_number}`,
+        message: `Cancel Order requested for ${tableLabel(table)}`,
         variant: "warning",
       });
     }
@@ -593,6 +636,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
           ? {
               table_id: table.table_id,
               table_number: table.table_number,
+              table_code: table.table_code,
               seat_ids: seatIds,
             }
           : null;
@@ -696,6 +740,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
       (floorToShow?.tables || [])
         .map((table) => ({
           table_number: table.table_number,
+          table_code: table.table_code,
           count: (table.seats || []).filter((seat) => seat.is_booking).length,
         }))
         .filter((table) => table.count > 0),
@@ -809,6 +854,10 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
     { key: "cleaning", label: seatMeta(3).name, color: seatMeta(3).color, variant: "taken" },
   ];
 
+  // In slot mode each guest needs a seat.
+  const fewSeats =
+    slotActive && Number(slot.guests) > 0 && Number(seletedSeatCount || 0) < Number(slot.guests);
+
   const modeHint = isEditable
     ? "Edit mode — add seats to a table, or click a saved seat to remove it."
     : isBooking
@@ -818,52 +867,55 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
   return (
     <Fragment>
       <section className="fp-card" aria-label="Floor plan">
-        <div className="fp-toolbar">
-          <div className="fp-floors" role="tablist" aria-label="Floors">
-            {floors.map((floor, index) => (
+        {/* Floors + legend stay pinned under the top nav while scrolling. */}
+        <div className="fp-sticky">
+          <div className="fp-toolbar">
+            <div className="fp-floors" role="tablist" aria-label="Floors">
+              {floors.map((floor, index) => (
+                <button
+                  key={floor.floor_id || index}
+                  type="button"
+                  role="tab"
+                  aria-selected={index === selectedFloorIndex}
+                  className={`fp-floor${index === selectedFloorIndex ? " is-active" : ""}`}
+                  onClick={() => setSelectedFloorIndex(index)}
+                >
+                  <span className="fp-floor__name">
+                    Floor {floor.floor_number ?? index + 1}
+                  </span>
+                  <span className="fp-floor__meta">
+                    {floorStats[index]?.free ?? 0}/{floorStats[index]?.total ?? 0} free
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {isEditable && (
               <button
-                key={floor.floor_id || index}
                 type="button"
-                role="tab"
-                aria-selected={index === selectedFloorIndex}
-                className={`fp-floor${index === selectedFloorIndex ? " is-active" : ""}`}
-                onClick={() => setSelectedFloorIndex(index)}
+                className="fp-btn fp-btn--primary"
+                onClick={() => fetchCreateTable(data)}
+                disabled={getloading || !floorToShow}
               >
-                <span className="fp-floor__name">
-                  Floor {floor.floor_number ?? index + 1}
-                </span>
-                <span className="fp-floor__meta">
-                  {floorStats[index]?.free ?? 0}/{floorStats[index]?.total ?? 0} free
-                </span>
+                <AddRounded fontSize="small" /> Add table
               </button>
-            ))}
+            )}
           </div>
 
-          {isEditable && (
-            <button
-              type="button"
-              className="fp-btn fp-btn--primary"
-              onClick={() => fetchCreateTable(data)}
-              disabled={getloading || !floorToShow}
-            >
-              <AddRounded fontSize="small" /> Add table
-            </button>
-          )}
-        </div>
-
-        <div className="fp-subbar">
-          <ul className="fp-legend" aria-label="Seat colours">
-            {legendItems.map((item) => (
-              <li key={item.key}>
-                <span
-                  className={`fp-seat fp-legend__swatch fp-seat--${item.variant}`}
-                  style={item.color ? { "--seat-color": item.color } : undefined}
-                />
-                {item.label}
-              </li>
-            ))}
-          </ul>
-          <p className="fp-hint">{modeHint}</p>
+          <div className="fp-subbar">
+            <ul className="fp-legend" aria-label="Seat colours">
+              {legendItems.map((item) => (
+                <li key={item.key}>
+                  <span
+                    className={`fp-seat fp-legend__swatch fp-seat--${item.variant}`}
+                    style={item.color ? { "--seat-color": item.color } : undefined}
+                  />
+                  {item.label}
+                </li>
+              ))}
+            </ul>
+            <p className="fp-hint">{modeHint}</p>
+          </div>
         </div>
 
         {floorToShow && (floorToShow.tables || []).length === 0 && (
@@ -912,7 +964,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                 >
                   <header className="fp-table__head">
                     <div className="fp-table__title">
-                      <h3>Table {table.table_number}</h3>
+                      <h3>{tableLabel(table)}</h3>
                       <span className={`fp-chip fp-chip--${tone}`}>{chipText}</span>
                     </div>
 
@@ -964,23 +1016,36 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
                         )}
                       </div>
                     )}
+
+                    {isEditable && chairs.length === 0 && (
+                      <button
+                        type="button"
+                        className="fp-icon-btn fp-icon-btn--danger"
+                        title="Remove this empty table"
+                        aria-label={`Remove ${tableLabel(table)}`}
+                        onClick={() => setTableToDelete(table)}
+                        disabled={getloading}
+                      >
+                        <DeleteOutlineRounded fontSize="small" />
+                      </button>
+                    )}
                   </header>
 
                   <div className="fp-table__plan">
                     {chairs.length === 0 ? (
                       <p className="fp-table__no-seats">No seats yet</p>
                     ) : (
-                      <Fragment>
-                        <div className="fp-seat-row">
+                      <div className="fp-table__layout">
+                        <div className="fp-seat-row fp-seat-row--top">
                           {topRow.map((chair) => renderSeat(table, chair))}
                         </div>
-                        <div className="fp-table__surface" aria-hidden>
-                          T{table.table_number}
-                        </div>
-                        <div className="fp-seat-row">
+                        {/* The table code is already in the card heading. */}
+                        <div className="fp-table__surface" aria-hidden />
+
+                        <div className="fp-seat-row fp-seat-row--bottom">
                           {bottomRow.map((chair) => renderSeat(table, chair))}
                         </div>
-                      </Fragment>
+                      </div>
                     )}
                   </div>
 
@@ -1041,12 +1106,15 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
             <strong>
               {seletedSeatCount} {seletedSeatCount === 1 ? "seat" : "seats"} on{" "}
               {seletedTableCount} {seletedTableCount === 1 ? "table" : "tables"}
+              {slotActive &&
+                ` · ${dayjs(slot.date).format("ddd, D MMM")} at ${dayjs(`2000-01-01T${slot.time}`).format("h:mm A")}`}
             </strong>
             <span>
-              Floor {floorToShow?.floor_number} ·{" "}
-              {selectedTables
-                .map((table) => `Table ${table.table_number} (${table.count})`)
-                .join(", ")}
+              {fewSeats
+                ? `Select ${slot.guests - seletedSeatCount} more ${slot.guests - seletedSeatCount === 1 ? "seat" : "seats"} for ${slot.guests} guests`
+                : `Floor ${floorToShow?.floor_number} · ${selectedTables
+                    .map((table) => `${tableLabel(table)} (${table.count})`)
+                    .join(", ")}`}
             </span>
           </div>
           <div className="fp-bookbar__actions">
@@ -1057,7 +1125,8 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
               type="button"
               className="fp-btn fp-btn--primary"
               onClick={() => createBookingTableinSeats(data)}
-              disabled={getloading}
+              disabled={getloading || fewSeats}
+              title={fewSeats ? `Select a seat for each of the ${slot.guests} guests` : undefined}
             >
               Book now
             </button>
@@ -1065,66 +1134,44 @@ const TableDetails = ({ data, onChange, isEditable, isBooking }) => {
         </div>
       )}
 
-      <PopupModal
-        show={showDeleteSeats}
-        onClose={() => setshowDeleteSeats(false)}
-        className={"popupModal bg-white rounded-4"}
-        width={"40vh"}
-      >
-        <div>
-          <h5 className="text-center">Do you want to Delete this Seat ?</h5>
-          <div className="d-flex flex-row justify-content-center gap-3 mt-4 modalActions">
-            <button
-              className="btn btn-0 modalDelete_btn px-3"
-              onClick={() =>
-                fetchDeleteSeatsInTable(seletedTableId, seletedSeatId)
-              }
-            >
-              Yes
-            </button>
-            <button
-              className="btn btn-0 modalCancel_btn px-3"
-              onClick={() => {
-                setshowDeleteSeats(false);
-                setSeletedSeatId(null);
-              }}
-            >
-              No
-            </button>
-          </div>
-        </div>
-      </PopupModal>
+      <ConfirmDialog
+        show={Boolean(tableToDelete)}
+        title={`Remove ${tableToDelete ? tableLabel(tableToDelete) : "table"}?`}
+        message="This empty table will be removed from the floor plan."
+        confirmLabel="Remove table"
+        onConfirm={() => fetchDeleteTable(tableToDelete)}
+        onCancel={() => setTableToDelete(null)}
+      />
 
-      <PopupModal
+      <ConfirmDialog
+        show={showDeleteSeats}
+        title="Remove this seat?"
+        message="The seat will be removed from the table."
+        confirmLabel="Remove seat"
+        onConfirm={() => fetchDeleteSeatsInTable(seletedTableId, seletedSeatId)}
+        onCancel={() => {
+          setshowDeleteSeats(false);
+          setSeletedSeatId(null);
+        }}
+      />
+
+      <ConfirmDialog
         show={showCancelBookingSeats}
-        onClose={() => setShowCancelBookingSeats(false)}
-        className={"popupModal bg-white rounded-4"}
-        width={"40vh"}
-      >
-        <div>
-          <h5 className="text-center">Do you want to Cancel Booked Seat ?</h5>
-          <div className="d-flex flex-row justify-content-center gap-3 mt-4 modalActions">
-            <button
-              className="btn btn-0 modalDelete_btn px-3"
-              onClick={() => updateBookingTableinSeats(data)}
-            >
-              Yes
-            </button>
-            <button
-              className="btn btn-0 modalCancel_btn px-3"
-              onClick={() => {
-                setShowCancelBookingSeats(false);
-              }}
-            >
-              No
-            </button>
-          </div>
-        </div>
-      </PopupModal>
+        tone="warning"
+        title="Cancel your booking?"
+        message="The booked seats will be released for others."
+        confirmLabel="Cancel booking"
+        cancelLabel="Keep booking"
+        onConfirm={() => updateBookingTableinSeats(data)}
+        onCancel={() => setShowCancelBookingSeats(false)}
+      />
       <PopupModal
         show={showMenuPopup}
         onClose={() => setShowMenuPopup(false)}
-        width="900px"
+        header
+        title="Order menu"
+        className="hotel-form__body"
+        customClassName="hotel-form-dialog menu-editor-dialog order-dialog"
       >
         <MenuOrderPopup
           menus={menus}

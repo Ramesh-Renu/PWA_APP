@@ -1,117 +1,188 @@
-import {
-  FiCalendar,
-  FiClock,
-  FiHome,
-  FiGrid,
-  FiUsers,
-  FiEye,
-} from "react-icons/fi";
+import React, { useEffect, useState } from "react";
+import dayjs from "dayjs";
+import useGlobalMaster from "hooks/useGlobalMaster";
+import useToast from "hooks/useToast";
+import ConfirmDialog from "components/common/ConfirmDialog";
+import OrderTracker from "./OrderTracker";
+import { cancelOrder } from "services";
+import { getApiErrorMessage } from "utils/apiError";
 
-const OrderHistoryCard = ({ order }) => {
+const ORDERED = 1; // customers can cancel until the kitchen accepts
 
-  // Support both reservation-based and order-based payloads
-  const tableCount = order.seat_status?.length ?? 0;
+// Same fallbacks as the admin Orders board (pages/Orders/OrderBoard.jsx),
+// used until order_status_master has loaded.
+const STATUS_NAMES = {
+  1: "Ordered",
+  2: "Accepted",
+  3: "Preparing",
+  4: "Ready",
+  5: "Served",
+  6: "Completed",
+  7: "Cancelled",
+  8: "Delivered",
+};
+const STATUS_COLORS = {
+  1: "#6366f1",
+  2: "#0ea5e9",
+  3: "#f59e0b",
+  4: "#14b8a6",
+  5: "#8b5cf6",
+  6: "#22c55e",
+  7: "#ef4444",
+  8: "#0ea5e9",
+};
+const PAYMENT_LABELS = { 0: "Payment pending", 1: "Paid", 2: "Refunded" };
+const VISIBLE_ITEMS = 4;
 
-  const seatCount =
-    order.seat_status?.reduce((count, table) => count + (table.seat_ids?.length || 0), 0) || 0;
+const titleCase = (value = "") =>
+  String(value)
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
-  const orderDate = order.ordered_at || order.booking_date || order.createdAt;
-  const dateDisplay = orderDate ? new Date(orderDate).toLocaleDateString() : "-";
-  const timeDisplay = orderDate ? new Date(orderDate).toLocaleTimeString() : "-";
+const OrderHistoryCard = ({ order, onChanged }) => {
+  const { orderStatusList, getOrderStatus } = useGlobalMaster();
+  const { showToast } = useToast();
+  const [confirming, setConfirming] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
-  const hotelName = order.hotel?.hotel_name || "-";
-  const floorNumber = order.floor?.floor_number ?? "-";
+  const cancel = async () => {
+    setCancelling(true);
+    try {
+      const response = await cancelOrder(order.id);
+      if (response?.success === false) throw new Error(response.message);
+      showToast({ message: "Order cancelled", variant: "success" });
+      setConfirming(false);
+      onChanged?.();
+    } catch (error) {
+      showToast({
+        message: getApiErrorMessage(error) || error?.message || "Unable to cancel the order.",
+        variant: "danger",
+      });
+      setConfirming(false);
+    } finally {
+      setCancelling(false);
+    }
+  };
 
-  const totalAmount =
-    order.total_amount || order.totalAmount || order.subtotal || order.total || "0";
+  useEffect(() => {
+    if (!orderStatusList?.data?.length && !orderStatusList?.loading) {
+      getOrderStatus();
+    }
+  }, []);
 
-  const amountDisplay =
-    typeof totalAmount === "string" ? totalAmount : String(totalAmount);
+  const master = orderStatusList?.data?.find(
+    (status) => status.status_id === order.order_status,
+  );
+  const statusName = master?.name
+    ? titleCase(master.name)
+    : STATUS_NAMES[order.order_status] || "—";
+  // Colour of any status: the master table's colour, else the default.
+  const colorOf = (statusId) => {
+    const row = orderStatusList?.data?.find((item) => item.status_id === statusId);
+    return (
+      (row?.color_code && row.color_code !== "#000000"
+        ? row.color_code
+        : STATUS_COLORS[statusId]) || "#64748b"
+    );
+  };
+  const statusColor = colorOf(order.order_status);
+  // Completed / cancelled orders show just their status and when it ended.
+  // Served / Delivered finish an order (6 = old "Completed", 7 = Cancelled).
+  const finished = [5, 6, 7, 8].includes(order.order_status);
+  const finishedAt =
+    order.served_at || order.delivered_at || order.completed_at || order.updatedAt;
 
-  const statusText =
-    order.order_status === 1 ? "Placed" : order.order_status === 2 ? "Preparing" : order.order_status === 3 ? "Completed" : "-";
-
-  const itemsCount = order.items?.length ?? 0;
+  const orderedAt = order.ordered_at || order.createdAt || order.booking_date;
+  const items = order.items || [];
+  const total = Number(
+    order.total_amount ?? order.totalAmount ?? order.subtotal ?? order.total ?? 0,
+  );
 
   return (
-    <div className="order-card">
-
-      <div className="order-card__top">
-
+    <article className="cx-card cx-order">
+      <div className="cx-order__head">
         <div>
-          <h4>{order.order_number ? `Order ${order.order_number}` : `Order #${order.id}`}</h4>
+          <h3>{order.order_number || `Order #${order.id}`}</h3>
+          <p>
+            {orderedAt && dayjs(orderedAt).format("D MMM, h:mm A")}
+            {!order.reservation_id && " · No table"}
+          </p>
+        </div>
+        <span className="cx-order__hotel" title={order.hotel?.hotel_name}>
+          {order.hotel?.hotel_name || "Restaurant"}
+        </span>
+      </div>
 
-          <span>
-            <FiCalendar />
-            {dateDisplay}
+      {finished ? (
+        <div className="cx-order__final">
+          <span
+            className="ui-chip booking-status"
+            style={{ "--status-color": statusColor }}
+          >
+            {statusName}
           </span>
+          {finishedAt && <span>{dayjs(finishedAt).format("D MMM YYYY, h:mm A")}</span>}
         </div>
-
-        <div className={`status ${statusText.toLowerCase()}`}>
-          {statusText}
-        </div>
-
-      </div>
-
-      <div className="order-card__hotel">
-
-        <FiHome />
-
-        <div>
-          <h5>{hotelName}</h5>
-          <small>Floor {floorNumber}</small>
-        </div>
-
-      </div>
-
-      <div className="order-card__grid">
-
-        <div>
-          <FiGrid />
-          <span>{tableCount} Tables</span>
-        </div>
-
-        <div>
-          <FiUsers />
-          <span>{seatCount} Seats</span>
-        </div>
-
-        <div>
-          <FiClock />
-          <span>{timeDisplay}</span>
-        </div>
-
-      </div>
-
-      {order.items && order.items.length > 0 && (
-        <div className="order-card__items">
-          <ul>
-            {order.items.map((it, i) => (
-              <li key={it.id || i} className="order-item">
-                <div className="order-item__name">{it.menu_name || it.name || "Item"}</div>
-                <div className="order-item__qty">{it.quantity ?? it.qty ?? 1}</div>
-                <div className="order-item__price">₹{it.total_price ?? it.totalPrice ?? it.unit_price ?? it.price ?? "0"}</div>
-              </li>
-            ))}
-          </ul>
-        </div>
+      ) : (
+        <OrderTracker
+          status={order.order_status}
+          cookName={order.cook?.cook_name}
+          serverName={order.server?.server_name}
+          delivery={!order.reservation_id}
+          colorOf={colorOf}
+        />
       )}
 
-      <div className="order-card__footer">
-        <div></div>
-        <div className="order-card__total">
-          <strong>₹{amountDisplay}</strong>
-          <small>Total Amount</small>
-        </div>
-{/* 
-        <button>
-          <FiEye />
-          View ({itemsCount} items)
-        </button> */}
+      {items.length > 0 && (
+        <ul className="cx-order__items">
+          {items.slice(0, VISIBLE_ITEMS).map((item, index) => (
+            <li key={item.id || index}>
+              <span className="cx-order__qty">{item.quantity ?? item.qty ?? 1}×</span>
+              <span className="cx-order__name">
+                {item.menu_name || item.name || "Item"}
+              </span>
+              <span className="cx-order__price">
+                ₹{Number(item.total_price ?? item.totalPrice ?? item.unit_price ?? item.price ?? 0)}
+              </span>
+            </li>
+          ))}
+          {items.length > VISIBLE_ITEMS && (
+            <li className="cx-order__more">
+              +{items.length - VISIBLE_ITEMS} more{" "}
+              {items.length - VISIBLE_ITEMS === 1 ? "item" : "items"}
+            </li>
+          )}
+        </ul>
+      )}
 
+      <div className="cx-order__foot">
+        <span>{PAYMENT_LABELS[order.payment_status] || ""}</span>
+        <strong>₹{total.toFixed(2)}</strong>
       </div>
 
-    </div>
+      {order.order_status === ORDERED && (
+        <button
+          type="button"
+          className="ui-btn ui-btn--ghost ui-btn--sm cx-order__cancel"
+          onClick={() => setConfirming(true)}
+        >
+          Cancel order
+        </button>
+      )}
+
+      <ConfirmDialog
+        show={confirming}
+        tone="warning"
+        title={`Cancel ${order.order_number ? `order ${order.order_number}` : "this order"}?`}
+        message="The kitchen hasn't started it yet."
+        confirmLabel="Cancel order"
+        cancelLabel="Keep order"
+        loading={cancelling}
+        onConfirm={cancel}
+        onCancel={() => setConfirming(false)}
+      />
+    </article>
   );
 };
 

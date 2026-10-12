@@ -1,7 +1,11 @@
 .kanban-page {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+
+  // Boards use the full width; spacing comes from the ui-header / ui-toolbar.
+  &.ui-page {
+    max-width: none;
+  }
 }
 
 .kanban-page__header {

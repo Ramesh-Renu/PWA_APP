@@ -1,6 +1,5 @@
-import React, { Fragment, useEffect, useState } from "react";
+import React, { Fragment, useEffect, useMemo, useState } from "react";
 import SelectDropDown from "components/common/SelectDropDown";
-import { Col, Row } from "react-bootstrap";
 import {
   getAllHotel,
   updateHotelbyid,
@@ -9,14 +8,18 @@ import {
 } from "services";
 import useGlobalMaster from "hooks/useGlobalMaster";
 import PopupModal from "components/common/PopupModal";
+import ConfirmDialog from "components/common/ConfirmDialog";
 import { createHotelAPi } from "services";
 import useToast from "hooks/useToast";
-import * as images from "../../assets/images/index";
 import { useNavigate } from "react-router-dom";
 import ToolTipPopup from "components/common/ToolTipPopup";
 import {
   LocationOnOutlined,
-  MapOutlined,
+  AddRounded,
+  SearchRounded,
+  EditOutlined,
+  DeleteOutlineRounded,
+  GridViewOutlined,
   ApartmentOutlined,
   TableRestaurantOutlined,
   LayersOutlined,
@@ -24,6 +27,43 @@ import {
 } from "@mui/icons-material";
 import { renderArea, renderLocation } from "utils/common";
 import SkeletonLoading from "components/common/SkeletonLoading";
+
+const TABLE_PREFIX_PATTERN = /^[A-Z0-9]{2,8}$/;
+
+const normalizeTablePrefix = (value = "") =>
+  String(value)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 8);
+
+// Same rule as the API (utils/tableCode.js).
+const suggestTablePrefix = (hotelName, locationName, areaName) => {
+  const prefix =
+    normalizeTablePrefix(hotelName).slice(0, 2) +
+    normalizeTablePrefix(locationName).slice(0, 1) +
+    normalizeTablePrefix(areaName).slice(0, 1);
+  return prefix.length >= 2 ? prefix : "";
+};
+
+const apiErrorMessage = (error, fallback) =>
+  error?.response?.data?.message || error?.message || fallback;
+
+const getHotelCounts = (hotel) => {
+  const floorCount = hotel.floorCount ?? hotel.floor_per_hotel ?? "N/A";
+  const tablesPerFloor =
+    hotel.tables_per_floor ?? hotel.tablesPerFloor ?? "N/A";
+  const tableCount =
+    hotel.tableCount ??
+    hotel.totalTables ??
+    hotel.total_tables ??
+    (Number.isFinite(Number(floorCount)) &&
+    Number.isFinite(Number(tablesPerFloor))
+      ? Number(floorCount) * Number(tablesPerFloor)
+      : "N/A");
+  const seatCount =
+    hotel.seatCount ?? hotel.totalSeats ?? hotel.total_seats ?? "N/A";
+  return { floorCount, tablesPerFloor, tableCount, seatCount };
+};
 
 const CreateHotel = () => {
   const [listOfHotel, setListOfHotel] = useState([]);
@@ -41,6 +81,12 @@ const CreateHotel = () => {
   const [hotelTableCount, setHotelTableCount] = useState("");
   const [hotelChairsPerTable, setHotelChairsPerTable] = useState("");
   const [seletedHotelId, setSeletedHotelId] = useState(null);
+  const [tableCodePrefix, setTableCodePrefix] = useState("");
+  // The hotel as it was when the edit form opened; null when creating.
+  const [originalHotel, setOriginalHotel] = useState(null);
+  // Once the admin types a prefix (or edits an existing hotel) stop
+  // overwriting it with the suggestion.
+  const [prefixEdited, setPrefixEdited] = useState(false);
   const [errorMessage, setErrorMessage] = useState({
     name: false,
     location: false,
@@ -49,6 +95,7 @@ const CreateHotel = () => {
     floor: false,
     tablePerFloor: false,
     chairsPerTable: false,
+    prefix: false,
   });
   const [selectedId, setSelectedId] = useState(null);
   const [showDeleteHotel, setShowDeleteHotel] = useState(false);
@@ -93,51 +140,53 @@ const CreateHotel = () => {
     );
   }, [selectedLocation, areaList?.data]);
 
+  // Suggested table code prefix: 2 letters of the hotel + first letter of the
+  // location + first letter of the area (Sangeetha, Chennai, T Nagar -> SACT).
+  useEffect(() => {
+    if (prefixEdited) return;
+    setTableCodePrefix(
+      suggestTablePrefix(
+        hotelName,
+        selectedLocation[0]?.name,
+        selectedArea[0]?.name,
+      ),
+    );
+  }, [hotelName, selectedLocation, selectedArea, prefixEdited]);
+
   const fetchCreateHotel = async (hotelData) => {
-    setLoadingHotelListApp(true);
     try {
       const response = await createHotelAPi(hotelData);
-      // Optionally, refresh the hotel list or provide user feedback here
       showToast({
-        message: response.data.message || "Hotel created successfully",
+        message:
+          response?.message || response?.data?.message || "Hotel created successfully",
         variant: "success",
       });
-      if (response) {
-        const hotels = await getAllHotel();
-        setListOfHotel(hotels?.data);
-        setLoadingHotelListApp(false);
-      }
+      setShowCreateHotelForm(false);
+      fetchHotels();
     } catch (error) {
+      // Keep the form open so the admin can fix e.g. a duplicate prefix.
       console.error("Error creating hotel:", error);
       showToast({
-        message: error,
+        message: apiErrorMessage(error, "Failed to create hotel"),
         variant: "danger",
       });
-    } finally {
-      setShowCreateHotelForm(false);
     }
   };
   const fetchUpdateHotel = async (hotelData, hotelId) => {
-    setLoadingHotelListApp(true);
     try {
       const response = await updateHotelbyid(hotelData, hotelId);
       showToast({
         message: response?.message || "Hotel updated successfully",
         variant: "success",
       });
-      if (response?.success) {
-        const hotels = await getAllHotel();
-        setListOfHotel(hotels?.data);
-        setLoadingHotelListApp(false);
-      }
+      setShowCreateHotelForm(false);
+      fetchHotels();
     } catch (error) {
       console.error("Error updating hotel:", error);
       showToast({
-        message: error,
+        message: apiErrorMessage(error, "Failed to update hotel"),
         variant: "danger",
       });
-    } finally {
-      setShowCreateHotelForm(false);
     }
   };
 
@@ -178,6 +227,9 @@ const CreateHotel = () => {
     setHotelFloorCount(hotelData[0].floorCount);
     setHotelTableCount(hotelData[0].tables_per_floor);
     setHotelChairsPerTable(hotelData[0].chairs_per_table);
+    setTableCodePrefix(hotelData[0].table_code_prefix || "");
+    setPrefixEdited(Boolean(hotelData[0].table_code_prefix));
+    setOriginalHotel(hotelData[0]);
   };
 
   /** HANDLE HOTEL TABLE VIEW */
@@ -189,7 +241,12 @@ const CreateHotel = () => {
   ) => {
     if (hotelId) {
       navigate(`/details/${hotelId}`, {
-        state: { hotelData, isEditable, isBooking },
+        state: {
+          hotelData,
+          isEditable,
+          isBooking,
+          from: { label: "Hotels", path: "/hotellist" },
+        },
       });
     }
   };
@@ -257,18 +314,26 @@ const CreateHotel = () => {
     setHotelFloorCount("");
     setHotelTableCount("");
     setHotelChairsPerTable("");
+    setTableCodePrefix("");
+    setPrefixEdited(false);
+    setUpdateHotel(false);
+    setOriginalHotel(null);
+  };
+
+  const handleTableCodePrefix = (e) => {
+    setTableCodePrefix(normalizeTablePrefix(e.target.value));
+    setPrefixEdited(true);
+    setErrorMessage({ ...errorMessage, prefix: false });
   };
 
   const handleCreateHotel = (e) => {
-    // Logic to create hotel
-    const hotelName = e.target.value.trim();
-    setHotelName(hotelName);
+    // Trim on submit, not per keystroke, so spaces can be typed.
+    setHotelName(e.target.value);
     setErrorMessage({ ...errorMessage, name: false });
   };
   const handleCreateHotelAddress = (e) => {
     // Logic to create hotel
-    const hotelAddress = e.target.value.trim();
-    setHotelAddress(hotelAddress);
+    setHotelAddress(e.target.value);
     setErrorMessage({ ...errorMessage, address: false });
   };
   const handleCreateHotelFloorCount = (e) => {
@@ -290,34 +355,44 @@ const CreateHotel = () => {
     setErrorMessage({ ...errorMessage, chairsPerTable: false });
   };
 
+  // Edit mode only: true once any field differs from the hotel as loaded.
+  const norm = (value) => String(value ?? "").trim();
+  const hasChanges =
+    !originalHotel ||
+    [
+      [hotelName, originalHotel.hotel_name],
+      [selectedLocation[0]?.id, originalHotel.location_id],
+      [selectedArea[0]?.id, originalHotel.area_id],
+      [hotelAddress, originalHotel.address],
+      [hotelFloorCount, originalHotel.floorCount],
+      [hotelTableCount, originalHotel.tables_per_floor],
+      [hotelChairsPerTable, originalHotel.chairs_per_table],
+      [tableCodePrefix, originalHotel.table_code_prefix],
+    ].some(([current, original]) => norm(current) !== norm(original));
+
   const handleCreateHotelSubmit = (action) => {
     // Logic to create hotel
+    const prefixValid = TABLE_PREFIX_PATTERN.test(tableCodePrefix);
     if (
-      hotelName !== "" &&
-      hotelAddress !== "" &&
+      hotelName.trim() !== "" &&
+      hotelAddress.trim() !== "" &&
       hotelFloorCount !== "" &&
       hotelTableCount !== "" &&
-      hotelChairsPerTable !== ""
+      hotelChairsPerTable !== "" &&
+      prefixValid
     ) {
       const hotelData = {
-        hotel_name: hotelName,
+        hotel_name: hotelName.trim(),
         location_id: selectedLocation[0]?.id, // Assuming single selection
         area_id: selectedArea[0]?.id, // Assuming single selection
-        address: hotelAddress,
+        address: hotelAddress.trim(),
         floor_per_hotel: parseInt(hotelFloorCount, 10),
         tables_per_floor: parseInt(hotelTableCount, 10),
         chairs_per_table: parseInt(hotelChairsPerTable, 10),
+        table_code_prefix: tableCodePrefix,
       };
       if (action === "Update") {
-        const oldData = listOfHotel?.find(
-          (hotel) => hotel.id === seletedHotelId[0].id,
-        );
-        const compareHotelData = (hotelData, oldData) =>
-          Object.keys(hotelData).some((key) => hotelData[key] !== oldData[key])
-            ? true
-            : false;
-        const checkUpdated = compareHotelData(hotelData, oldData);
-        if (checkUpdated) {
+        if (hasChanges) {
           fetchUpdateHotel(hotelData, seletedHotelId[0].id);
         } else {
           showToast({
@@ -331,13 +406,14 @@ const CreateHotel = () => {
       }
     } else {
       setErrorMessage({
-        name: hotelName === "" ? true : false,
+        name: hotelName.trim() === "" ? true : false,
         location: selectedLocation.length === 0 ? true : false,
         area: selectedArea.length === 0 ? true : false,
-        address: hotelAddress === "" ? true : false,
+        address: hotelAddress.trim() === "" ? true : false,
         floor: hotelFloorCount === "" ? true : false,
         tablePerFloor: hotelTableCount === "" ? true : false,
         chairsPerTable: hotelChairsPerTable === "" ? true : false,
+        prefix: !prefixValid,
       });
     }
   };
@@ -374,6 +450,16 @@ const CreateHotel = () => {
     }
   };
 
+  // The form body scrolls, so bring a freshly opened dropdown list into view
+  // instead of leaving it below the fold.
+  const revealOpenDropdown = () => {
+    requestAnimationFrame(() => {
+      document
+        .querySelector(".hotel-form .react-dropdown-select-dropdown")
+        ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+  };
+
   const handleSearchHotel = (e) => {
     // Logic to Search hotel
     const getValue = e.target.value;
@@ -384,222 +470,204 @@ const CreateHotel = () => {
     }
   };
 
+  const hotelTotals = useMemo(() => {
+    const sum = (key) =>
+      (listOfHotel || []).reduce((total, hotel) => {
+        const value = Number(getHotelCounts(hotel)[key]);
+        return Number.isFinite(value) ? total + value : total;
+      }, 0);
+    return {
+      hotels: listOfHotel?.length || 0,
+      floors: sum("floorCount"),
+      tables: sum("tableCount"),
+      seats: sum("seatCount"),
+    };
+  }, [listOfHotel]);
+
   return (
     <Fragment>
-      <section className="app-page hotels-admin-page">
-        <header className="app-page-header hotels-admin-header">
-          <div>
-            <span className="page-kicker">HOTEL SETUP</span>
-            <h1>Hotels & table layouts</h1>
-            <p>
-              Create Hotel and configure floors, tables and seating capacity.
-            </p>
+      <section className="ui-page">
+        <header className="ui-header">
+          <div className="ui-header__copy">
+            <span className="ui-kicker">Hotel setup</span>
+            <h1>Hotels &amp; table layouts</h1>
+            <p>Create hotels and configure floors, tables and seating capacity.</p>
           </div>
-          <div className="header-stat">
-            <strong>{listOfHotel?.length || 0}</strong>
-            <span>hotel managed</span>
-          </div>
+          <button
+            type="button"
+            className="ui-btn ui-btn--primary"
+            onClick={handleCreateHotelShow}
+          >
+            <AddRounded fontSize="small" /> Add hotel
+          </button>
         </header>
-        <div className="create-hotel-page">
-          <div className="create-hotel-page-flex">
-            <div className="create-hotel-page-flex-column-one">
-              <input
-                className="search-hotel"
-                onChange={handleSearchHotel}
-                placeholder="Search Hotel name/location"
-              />
-            </div>
-            <div className="create-hotel-page-flex-column-two">
-              {" "}
-              <button className="createHotel" onClick={handleCreateHotelShow}>
-                Create
-              </button>
-            </div>
-          </div>
-        </div>
-        {listOfHotel?.length > 0 && (
-          <div className="page-table-shell hotel-list-shell">
-            {loadingHotelListApp ? (
-              <SkeletonLoading
-                count={3}
-                height="120px"
-                width="100%"
-                borderRadius="8px"
-              />
-            ) : (
-              <div className="hotel-list-grid">
-                {listOfHotel.map((hotel) => {
-                  const locationName =
-                    renderLocation(
-                      hotel.location_id,
-                      locationList?.data || [],
-                    )[0]?.name || "N/A";
-                  const areaName =
-                    renderArea(hotel.area_id, areaList?.data || [])[0]?.name ||
-                    "N/A";
-                  const floorCount =
-                    hotel.floorCount ?? hotel.floor_per_hotel ?? "N/A";
-                  const tablesPerFloor =
-                    hotel.tables_per_floor ?? hotel.tablesPerFloor ?? "N/A";
-                  const tableCount =
-                    hotel.tableCount ??
-                    hotel.totalTables ??
-                    hotel.total_tables ??
-                    (Number.isFinite(Number(floorCount)) &&
-                    Number.isFinite(Number(tablesPerFloor))
-                      ? Number(floorCount) * Number(tablesPerFloor)
-                      : "N/A");
-                  const seatCount =
-                    hotel.seatCount ??
-                    hotel.totalSeats ??
-                    hotel.total_seats ??
-                    "N/A";
 
-                  return (
-                    <article className="hotel-list-card" key={hotel.id}>
-                      <div className="hotel-list-card__header">
-                        <div className="hotel-list-card__identity">
-                          <button
-                            type="button"
-                            className="hotel-list-card__name"
-                            onClick={() =>
-                              handleHotelView(hotel.id, hotel, true)
-                            }
-                          >
-                            {hotel.hotel_name || "Unnamed Hotel"}
-                          </button>
-                          <p className="hotel-list-card__address">
-                            {hotel.address || "Address not provided"}
-                          </p>
-                        </div>
-                      </div>
-                      {/* <div className="hotel-list-card__details">
-                        <div className="hotel-list-card__details--list">
-                          <span className="label">Location</span>
-                          <span className="name">{locationName}</span>
-                        </div>
-                        <div className="hotel-list-card__details--list">
-                          <span className="label">Area</span>
-                          <span className="name">{areaName}</span>
-                        </div>
-                        <div className="hotel-list-card__details--list">
-                          <span className="label">Floors</span>
-                          <span className="name">
-                            {floorCount}
-                          </span>
-                        </div>
-                        <div className="hotel-list-card__details--list">
-                          <span className="label">Tables</span>
-                          <span className="name">
-                            {tableCount}
-                          </span>
-                        </div>
-                        <div className="hotel-list-card__details--list">
-                          <span className="label">Per floor</span>
-                          <span className="name">
-                            {tablesPerFloor}
-                          </span>
-                        </div>
-                        <div className="hotel-list-card__details--list">
-                          <span className="label">Seats</span>
-                          <span className="name">
-                            {seatCount}
-                          </span>
-                        </div>
-                      </div> */}
-                      
-                      <div className="hotel-list-card__details">
-                        <div className="hotel-list-card__details--list">
-                          <LocationOnOutlined
-                            className="hotel-detail-icon"
-                            sx={{ color: "#ef4444", fontSize: 18 }}
-                          />
-                          <span className="name">{locationName}</span>
-                        </div>
-
-                        <div className="hotel-list-card__details--list">
-                          <MapOutlined
-                            className="hotel-detail-icon"
-                             sx={{ color: "#3b82f6", fontSize: 18 }} 
-                          />
-                          <span className="name">{areaName}</span>
-                        </div>
-
-                        <div className="hotel-list-card__details--list">
-                          <ApartmentOutlined
-                            className="hotel-detail-icon"
-                             sx={{ color: "#10b981", fontSize: 18 }} 
-                          />
-                          <span className="count">{floorCount} <span className="title">Floor</span></span>
-                        </div>
-
-                        <div className="hotel-list-card__details--list">
-                          <TableRestaurantOutlined
-                            className="hotel-detail-icon"
-                             sx={{ color: "#f59e0b", fontSize: 18 }}
-                          />
-                          <span className="count">{tableCount} <span className="title">Tables</span></span>
-                        </div>
-
-                        <div className="hotel-list-card__details--list">
-                          <LayersOutlined
-                            className="hotel-detail-icon"
-                             sx={{ color: "#8b5cf6", fontSize: 18 }}
-                          />
-                          <span className="count">{tablesPerFloor} <span className="title">Table per floor</span></span>
-                        </div>
-
-                        <div className="hotel-list-card__details--list">
-                          <EventSeatOutlined
-                            className="hotel-detail-icon"
-                             sx={{ color: "#06b6d4", fontSize: 18 }} 
-                          />
-                          <span className="count">{seatCount} <span className="title">Seats</span></span>
-                        </div>
-                      </div>
-                      <div className="hotel-list-card__footer">
-                        <div className="hotel-list-card__footer--first-col">
-                          <button
-                            className="btn btn-0 p-0 border-0 m-0 w-100 d-flex justify-content-between"
-                            onClick={() =>
-                              handleEditDeleteValue("Edit", hotel.id, hotel)
-                            }
-                          >
-                            <img
-                              src={images.pencilSimpleLine}
-                              alt="Edit Hotel"
-                            />
-                          </button>
-
-                          <button
-                            className="btn btn-0 p-0 m-0 w-100 border-0 text-danger d-flex justify-content-between"
-                            disabled={hotel?.isProcessOrder}
-                            onClick={() =>
-                              handleEditDeleteValue("Delete", hotel.id, hotel)
-                            }
-                          >
-                            <img src={images.trashIcon} alt="Remove Hotel" />
-                          </button>
-                        </div>
-                        <div className="hotel-list-card__footer--second-col">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleHotelView(hotel.id, hotel, true)
-                            }
-                          >
-                            Book to <TableRestaurantOutlined
-                            className="hotel-detail-icon"
-                             sx={{ color: "#f59e0b", fontSize: 18 }}
-                          /> 
-                          </button>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
+        <div className="ui-stats">
+          {[
+            { label: "Hotels", value: hotelTotals.hotels, icon: <ApartmentOutlined /> },
+            { label: "Floors", value: hotelTotals.floors, icon: <LayersOutlined /> },
+            { label: "Tables", value: hotelTotals.tables, icon: <TableRestaurantOutlined /> },
+            { label: "Seats", value: hotelTotals.seats, icon: <EventSeatOutlined /> },
+          ].map((stat) => (
+            <div className="ui-stat" key={stat.label}>
+              <span className="ui-stat__icon" aria-hidden>
+                {stat.icon}
+              </span>
+              <div>
+                <strong>{stat.value}</strong>
+                <span>{stat.label}</span>
               </div>
-            )}
+            </div>
+          ))}
+        </div>
+
+        <div className="ui-toolbar">
+          <label className="ui-search">
+            <SearchRounded aria-hidden />
+            <input
+              type="search"
+              onChange={handleSearchHotel}
+              placeholder="Search by hotel name or location"
+              aria-label="Search hotels"
+            />
+          </label>
+          <span className="ui-toolbar__count">
+            {listOfHotel?.length || 0} hotel
+            {listOfHotel?.length === 1 ? "" : "s"}
+          </span>
+        </div>
+
+        {loadingHotelListApp ? (
+          <SkeletonLoading
+            count={3}
+            flexDirection="row"
+            flexWrap="wrap"
+            height="230px"
+            width="min(100%, 360px)"
+            borderRadius="18px"
+          />
+        ) : listOfHotel?.length > 0 ? (
+          <div className="hl-grid">
+            {listOfHotel.map((hotel) => {
+              const locationName =
+                renderLocation(hotel.location_id, locationList?.data || [])[0]
+                  ?.name || "N/A";
+              const areaName =
+                renderArea(hotel.area_id, areaList?.data || [])[0]?.name ||
+                "N/A";
+              const { floorCount, tablesPerFloor, tableCount, seatCount } =
+                getHotelCounts(hotel);
+              const hotelName = hotel.hotel_name || "Unnamed Hotel";
+              const initials = hotelName
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((word) => word[0].toUpperCase())
+                .join("");
+
+              return (
+                <article className="hl-card" key={hotel.id}>
+                  <div className="hl-card__head">
+                    <span className="hl-card__avatar" aria-hidden>
+                      {initials}
+                    </span>
+                    <div className="hl-card__identity">
+                      <button
+                        type="button"
+                        className="hl-card__name"
+                        onClick={() => handleHotelView(hotel.id, hotel, true)}
+                        title="Edit table layout"
+                      >
+                        {hotelName}
+                      </button>
+                      <p className="hl-card__address">
+                        {hotel.address || "Address not provided"}
+                      </p>
+                    </div>
+                    <div className="hl-card__icons">
+                      <button
+                        type="button"
+                        className="ui-icon-btn"
+                        aria-label={`Edit ${hotelName}`}
+                        title="Edit hotel"
+                        onClick={() =>
+                          handleEditDeleteValue("Edit", hotel.id, hotel)
+                        }
+                      >
+                        <EditOutlined fontSize="small" />
+                      </button>
+                      <button
+                        type="button"
+                        className="ui-icon-btn ui-icon-btn--danger"
+                        aria-label={`Delete ${hotelName}`}
+                        title="Delete hotel"
+                        disabled={hotel?.isProcessOrder}
+                        onClick={() =>
+                          handleEditDeleteValue("Delete", hotel.id, hotel)
+                        }
+                      >
+                        <DeleteOutlineRounded fontSize="small" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <p className="hl-card__place">
+                    <LocationOnOutlined aria-hidden />
+                    {areaName} · {locationName}
+                  </p>
+
+                  <dl className="hl-card__metrics">
+                    <div>
+                      <dt>Floors</dt>
+                      <dd>{floorCount}</dd>
+                    </div>
+                    <div>
+                      <dt>Tables</dt>
+                      <dd>
+                        {tableCount}
+                        <small>{tablesPerFloor} / floor</small>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Seats</dt>
+                      <dd>{seatCount}</dd>
+                    </div>
+                  </dl>
+
+                  <div className="hl-card__actions">
+                    <button
+                      type="button"
+                      className="ui-btn ui-btn--ghost"
+                      onClick={() => handleHotelView(hotel.id, hotel, true)}
+                    >
+                      <GridViewOutlined fontSize="small" /> Edit layout
+                    </button>
+                    <button
+                      type="button"
+                      className="ui-btn ui-btn--primary"
+                      onClick={() =>
+                        handleHotelView(hotel.id, hotel, false, true)
+                      }
+                    >
+                      <TableRestaurantOutlined fontSize="small" /> Book table
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="ui-empty">
+            <ApartmentOutlined />
+            <h2>No hotels found</h2>
+            <p>Add a hotel to start configuring floors and tables.</p>
+            <button
+              type="button"
+              className="ui-btn ui-btn--primary"
+              onClick={handleCreateHotelShow}
+            >
+              <AddRounded fontSize="small" /> Add hotel
+            </button>
           </div>
         )}
       </section>
@@ -607,219 +675,275 @@ const CreateHotel = () => {
         <PopupModal
           show={showCreateHotelForm}
           onClose={closeShowPopup}
-          className={"create-hotel-page-popup-content bg-white rounded-4"}
-          size="lg"
-          customClassName="hotel-modal-dialog"
+          className="hotel-form__body"
+          customClassName="hotel-form-dialog"
           header={true}
           title={
-            <span className="move-to-aarow">
-              {updateHotel ? "Edit hotel" : "Create new Hotel"}
+            <span className="hotel-form__title">
+              <span className="hotel-form__title-icon" aria-hidden>
+                <ApartmentOutlined fontSize="small" />
+              </span>
+              <span>
+                <strong>{updateHotel ? "Edit hotel" : "Create new hotel"}</strong>
+                <small>
+                  {updateHotel
+                    ? "Update the hotel details and table capacity."
+                    : "Set up the hotel and its initial table capacity."}
+                </small>
+              </span>
             </span>
           }
         >
-          <Fragment>
-            <div className="hotel-form-intro">
-              <span>✦</span>
-              <div>
-                <strong>Hotel information</strong>
-                <p>Set up the hotel and its initial table capacity.</p>
+          <div className="hotel-form">
+            <section className="hotel-form__section">
+              <h3 className="hotel-form__section-title">Hotel information</h3>
+              <div className="hotel-form__grid">
+                <div className="hotel-form__field hotel-form__field--full">
+                  <label className="hotel-form__label" htmlFor="hotel-form-name">
+                    Name <sup>*</sup>
+                  </label>
+                  <input
+                    id="hotel-form-name"
+                    type="text"
+                    className="hotel-form__input"
+                    onChange={handleCreateHotel}
+                    placeholder="Enter hotel name"
+                    value={hotelName}
+                  />
+                  {errorMessage.name && (
+                    <span className="hotel-form__error">Hotel name is required</span>
+                  )}
+                </div>
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label">
+                    Location <sup>*</sup>
+                  </label>
+                  {locationList?.data && (
+                    <SelectDropDown
+                      multi={false}
+                      options={locationList?.data || []}
+                      labelField={"name"}
+                      valueField={"id"}
+                      values={selectedLocation || []}
+                      searchable={true}
+                      placeholder={"Select location"}
+                      className="single-select-dropdownRenderer hotel-form__select"
+                      disabled={
+                        hotelName === "" || locationList?.data?.length === 0
+                          ? true
+                          : false
+                      }
+                      onChange={selectedHotelLocated}
+                      dropdownPosition="bottom"
+                      dropdownHeight="220px"
+                      onDropdownOpen={revealOpenDropdown}
+                      optionType="radio"
+                    />
+                  )}
+                  {errorMessage.location && (
+                    <span className="hotel-form__error">Location is required</span>
+                  )}
+                </div>
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label">
+                    Area <sup>*</sup>
+                  </label>
+                  {areaList?.data && (
+                    <SelectDropDown
+                      multi={false}
+                      options={getLocationBasedArea || []}
+                      labelField={"name"}
+                      valueField={"id"}
+                      values={selectedArea || []}
+                      searchable={true}
+                      placeholder={"Select area"}
+                      className="single-select-dropdownRenderer hotel-form__select"
+                      disabled={
+                        hotelName === "" || locationList?.data?.length === 0
+                          ? true
+                          : false
+                      }
+                      onChange={selectedHotelArea}
+                      dropdownPosition="bottom"
+                      dropdownHeight="220px"
+                      onDropdownOpen={revealOpenDropdown}
+                      optionType="radio"
+                    />
+                  )}
+                  {errorMessage.area && (
+                    <span className="hotel-form__error">Area is required</span>
+                  )}
+                </div>
+                <div className="hotel-form__field hotel-form__field--full">
+                  <label className="hotel-form__label" htmlFor="hotel-form-address">
+                    Address <sup>*</sup>
+                  </label>
+                  <input
+                    id="hotel-form-address"
+                    type="text"
+                    className="hotel-form__input"
+                    onChange={handleCreateHotelAddress}
+                    placeholder="Street, landmark"
+                    value={hotelAddress}
+                  />
+                  {errorMessage.address && (
+                    <span className="hotel-form__error">Address is required</span>
+                  )}
+                </div>
               </div>
-            </div>
-            <Row className="p-2 top-content">
-              <Col lg={6} md={6} xs={12} className="my-2">
-                <label className="create-hotel-label">
-                  Name <sup>*</sup>
-                </label>
-                <input
-                  type="text"
-                  className="craete-hotel-name"
-                  onChange={handleCreateHotel}
-                  placeholder="Enter Hotel Name"
-                  value={hotelName}
-                />
-                {errorMessage.name && (
-                  <label className="error-label">
-                    <sup>*</sup> Hotel Name required
+            </section>
+
+            <section className="hotel-form__section">
+              <h3 className="hotel-form__section-title">Seating capacity</h3>
+              <div className="hotel-form__grid hotel-form__grid--three">
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor="hotel-form-floors">
+                    Floors <sup>*</sup>
                   </label>
-                )}
-              </Col>
-              <Col lg={6} md={6} xs={12} className="my-2">
-                <label className="create-hotel-label">
-                  Location <sup>*</sup>
-                </label>
-                {locationList?.data && (
-                  <SelectDropDown
-                    multi={false}
-                    options={locationList?.data || []}
-                    labelField={"name"}
-                    valueField={"id"}
-                    values={selectedLocation || []}
-                    searchable={true}
-                    placeholder={"Select Location"}
-                    className="single-select-dropdownRenderer"
-                    disabled={
-                      hotelName === "" || locationList?.data?.length === 0
-                        ? true
-                        : false
-                    }
-                    onChange={selectedHotelLocated}
-                    dropdownPosition="auto"
-                    optionType="radio"
+                  <input
+                    id="hotel-form-floors"
+                    type="number"
+                    min="1"
+                    className="hotel-form__input"
+                    onChange={handleCreateHotelFloorCount}
+                    placeholder="e.g. 2"
+                    value={hotelFloorCount}
                   />
-                )}
-                {errorMessage.location && (
-                  <label className="error-label">
-                    <sup>*</sup> Hotel Location required
+                  {errorMessage.floor && (
+                    <span className="hotel-form__error">Floor count is required</span>
+                  )}
+                </div>
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor="hotel-form-tables">
+                    Tables per floor <sup>*</sup>
                   </label>
-                )}
-              </Col>
-              <Col lg={6} md={6} xs={12} className="my-2">
-                <label className="create-hotel-label">
-                  Area <sup>*</sup>
-                </label>
-                {areaList?.data && (
-                  <SelectDropDown
-                    multi={false}
-                    options={getLocationBasedArea || []}
-                    labelField={"name"}
-                    valueField={"id"}
-                    values={selectedArea || []}
-                    searchable={true}
-                    placeholder={"Select Area"}
-                    className="single-select-dropdownRenderer"
-                    disabled={
-                      hotelName === "" || locationList?.data?.length === 0
-                        ? true
-                        : false
-                    }
-                    onChange={selectedHotelArea}
-                    dropdownPosition="top"
-                    optionType="radio"
+                  <input
+                    id="hotel-form-tables"
+                    type="number"
+                    min="1"
+                    className="hotel-form__input"
+                    onChange={handleCreateHotelTablePerFloor}
+                    placeholder="e.g. 10"
+                    value={hotelTableCount}
                   />
-                )}
-                {errorMessage.area && (
-                  <label className="error-label">
-                    <sup>*</sup> Hotel Area required
+                  {errorMessage.tablePerFloor && (
+                    <span className="hotel-form__error">Table count is required</span>
+                  )}
+                </div>
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor="hotel-form-chairs">
+                    Chairs per table <sup>*</sup>
                   </label>
-                )}
-              </Col>
-              <Col lg={6} md={6} xs={12} className="my-2">
-                <label className="create-hotel-label">
-                  Address <sup>*</sup>
-                </label>
-                <input
-                  type="text"
-                  className="craete-hotel-name"
-                  onChange={handleCreateHotelAddress}
-                  placeholder="Enter Address"
-                  value={hotelAddress}
-                />
-                {errorMessage.address && (
-                  <label className="error-label">
-                    <sup>*</sup> Hotel Address required
+                  <input
+                    id="hotel-form-chairs"
+                    type="number"
+                    min="1"
+                    className="hotel-form__input"
+                    onChange={handleCreateHotelChairsPerTable}
+                    placeholder="e.g. 4"
+                    value={hotelChairsPerTable}
+                  />
+                  {errorMessage.chairsPerTable && (
+                    <span className="hotel-form__error">Chair count is required</span>
+                  )}
+                </div>
+              </div>
+              <div className="hotel-form__grid hotel-form__grid--prefix">
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor="hotel-form-prefix">
+                    Table code prefix <sup>*</sup>
                   </label>
-                )}
-              </Col>
-              <Col lg={6} md={6} xs={12} className="my-2">
-                <label className="create-hotel-label">
-                  Floor Count <sup>*</sup>
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  className="craete-hotel-name"
-                  onChange={handleCreateHotelFloorCount}
-                  placeholder="Enter floor count"
-                  value={hotelFloorCount}
-                />
-                {errorMessage.floor && (
-                  <label className="error-label">
-                    <sup>*</sup> Hotel Floor required
-                  </label>
-                )}
-              </Col>
-              <Col lg={6} md={6} xs={12} className="my-2">
-                <label className="create-hotel-label">
-                  Table Per Floor <sup>*</sup>
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  className="craete-hotel-name"
-                  onChange={handleCreateHotelTablePerFloor}
-                  placeholder="Enter table count"
-                  value={hotelTableCount}
-                />
-                {errorMessage.tablePerFloor && (
-                  <label className="error-label">
-                    <sup>*</sup> Hotel Table Per Floor required
-                  </label>
-                )}
-              </Col>
-              <Col lg={6} md={6} xs={12} className="my-2">
-                <label className="create-hotel-label">
-                  Chairs Per Table <sup>*</sup>
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  className="craete-hotel-name"
-                  onChange={handleCreateHotelChairsPerTable}
-                  placeholder="Enter char count"
-                  value={hotelChairsPerTable}
-                />
-                {errorMessage.chairsPerTable && (
-                  <label className="error-label">
-                    <sup>*</sup> Hotel Chairs Per Table required
-                  </label>
-                )}
-              </Col>
-            </Row>
-            <Row className="p-2 top-content">
-              <Col lg={12} md={12} xs={12} className="my-2">
-                <button
-                  className="btn btn-primary"
-                  onClick={() =>
-                    handleCreateHotelSubmit(updateHotel ? "Update" : "Create")
-                  }
-                >
-                  {updateHotel ? "Save changes" : "Create Hotel"}
-                </button>{" "}
-                <button className="btn btn-cancel" onClick={handleCancel}>
-                  Cancel
-                </button>
-              </Col>
-            </Row>
-          </Fragment>
-        </PopupModal>
-      )}
-      <PopupModal
-        show={showDeleteHotel}
-        onClose={() => setShowDeleteHotel(false)}
-        className={"popupModal bg-white rounded-4"}
-        width={"40vh"}
-      >
-        <div>
-          <h5 className="text-center">Do you want to Delete this Hotel ?</h5>
-          <div className="d-flex flex-row justify-content-center gap-3 mt-4 modalActions">
+                  <input
+                    id="hotel-form-prefix"
+                    type="text"
+                    className="hotel-form__input hotel-form__input--code"
+                    onChange={handleTableCodePrefix}
+                    placeholder="e.g. SACT"
+                    value={tableCodePrefix}
+                    maxLength={8}
+                    autoComplete="off"
+                  />
+                  {errorMessage.prefix ? (
+                    <span className="hotel-form__error">
+                      Use 2–8 letters or digits
+                    </span>
+                  ) : (
+                    <span className="hotel-form__hint">
+                      {prefixEdited
+                        ? "Custom prefix"
+                        : "Suggested from hotel, location and area — you can change it"}
+                    </span>
+                  )}
+                </div>
+                <div className="hotel-form__field">
+                  <span className="hotel-form__label">Table codes</span>
+                  <p className="hotel-form__codes">
+                    {tableCodePrefix
+                      ? (() => {
+                          const total =
+                            Number(hotelFloorCount) * Number(hotelTableCount) || 0;
+                          const code = (n) =>
+                            `${tableCodePrefix}${String(n).padStart(4, "0")}`;
+                          if (total <= 0) return `${code(1)}, ${code(2)} …`;
+                          return total === 1
+                            ? code(1)
+                            : `${code(1)} → ${code(total)}`;
+                        })()
+                      : "Enter a prefix"}
+                  </p>
+                </div>
+              </div>
+              <p className="hotel-form__summary">
+                <TableRestaurantOutlined fontSize="small" />
+                {Number(hotelFloorCount) * Number(hotelTableCount) || 0} tables
+                <span aria-hidden>·</span>
+                <EventSeatOutlined fontSize="small" />
+                {Number(hotelFloorCount) *
+                  Number(hotelTableCount) *
+                  Number(hotelChairsPerTable) || 0}{" "}
+                seats in total
+              </p>
+            </section>
+          </div>
+
+          <div className="hotel-form__actions">
             <button
-              className="btn btn-0 modalDelete_btn px-3"
-              onClick={() => handleDeleteOrder(selectedId)}
+              type="button"
+              className="hotel-form__btn hotel-form__btn--ghost"
+              onClick={handleCancel}
             >
-              Yes
+              Cancel
             </button>
             <button
-              className="btn btn-0 modalCancel_btn px-3"
-              onClick={() => {
-                setShowDeleteHotel(false);
-                setSeletedHotelId(null);
-              }}
+              type="button"
+              className="hotel-form__btn hotel-form__btn--primary"
+              onClick={() =>
+                handleCreateHotelSubmit(updateHotel ? "Update" : "Create")
+              }
+              disabled={updateHotel && !hasChanges}
+              title={
+                updateHotel && !hasChanges ? "Change something to save" : undefined
+              }
             >
-              No
+              {updateHotel ? "Save changes" : "Create hotel"}
             </button>
           </div>
-        </div>
-      </PopupModal>
+        </PopupModal>
+      )}
+      <ConfirmDialog
+        show={showDeleteHotel}
+        title={`Delete ${
+          listOfHotel?.find((hotel) => hotel.id === selectedId)?.hotel_name ||
+          "this hotel"
+        }?`}
+        message="Its floors, tables and seats will be removed too. This can't be undone."
+        confirmLabel="Delete hotel"
+        onConfirm={() => handleDeleteOrder(selectedId)}
+        onCancel={() => {
+          setShowDeleteHotel(false);
+          setSeletedHotelId(null);
+        }}
+      />
     </Fragment>
   );
 };

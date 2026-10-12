@@ -1,0 +1,105 @@
+// Shared confirm popup (components/common/ConfirmDialog.jsx). Buttons reuse
+// .hotel-form__btn from pages/hotelform.scss.
+
+.modal-dialog.confirm-dialog {
+  width: calc(100% - 32px);
+  max-width: 400px;
+  margin-inline: auto;
+
+  .modal-content {
+    border: 0;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 28px 80px rgba(28, 24, 65, 0.25);
+    font-family: "Montserrat", sans-serif;
+  }
+
+  .modal-body {
+    padding: 28px 24px 22px;
+    text-align: center;
+  }
+}
+
+.confirm-dialog__icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 14px;
+  border-radius: 16px;
+
+  svg {
+    font-size: 28px;
+  }
+
+  &--danger {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+
+  &--warning {
+    background: #fff7ed;
+    color: #ea580c;
+  }
+
+  &--default {
+    background: #e7f4f1;
+    color: #0f766e;
+  }
+}
+
+.confirm-dialog__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 750;
+  line-height: 1.35;
+  color: #1f2337;
+  overflow-wrap: anywhere;
+}
+
+.confirm-dialog__message {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #5b6078;
+}
+
+.confirm-dialog__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 22px;
+
+  .hotel-form__btn {
+    min-width: 0;
+  }
+}
+
+.confirm-dialog__confirm {
+  border: 0;
+  color: #fff;
+
+  &--danger {
+    background: #dc2626;
+
+    &:hover:not(:disabled) {
+      background: #b91c1c;
+    }
+  }
+
+  &--warning {
+    background: #ea580c;
+
+    &:hover:not(:disabled) {
+      background: #c2410c;
+    }
+  }
+
+  &--default {
+    background: linear-gradient(135deg, #0f766e, #0b5f58);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+  }
+}

@@ -1,63 +1,67 @@
-
 import React from "react";
-import {
-  Card, CardContent, CardMedia, Typography,
-  Chip, Box, IconButton
-} from "@mui/material";
-import { Add, Remove } from "@mui/icons-material";
+import { AddRounded, RemoveRounded, RestaurantMenuRounded } from "@mui/icons-material";
 
-const MenuCard = ({ menu, quantity=0, onIncrease, onDecrease }) => {
+const MenuCard = ({ menu, quantity = 0, onIncrease, onDecrease }) => {
+  const spice = menu.spiceLevel?.spice_level;
+
   return (
-    <Card className="menu-card">
-      <CardMedia
-        component="img"
-        height="170"
-        image={menu.image || "/placeholder.png"}
-        alt={menu.menu_name}
-      />
-      <CardContent>
-        <Typography variant="h6" fontWeight={700}>
-          {menu.menu_name}
-        </Typography>
+    <article className={`dish-card${quantity > 0 ? " is-picked" : ""}`}>
+      <div className="dish-card__media">
+        {menu.image ? (
+          <img src={menu.image} alt="" loading="lazy" />
+        ) : (
+          <RestaurantMenuRounded aria-hidden />
+        )}
+      </div>
 
-        <Typography variant="body2" color="text.secondary" sx={{mb:1}}>
-          {menu.description}
-        </Typography>
-
-        <Box display="flex" gap={1} mb={1} flexWrap="wrap">
-          <Chip
-            size="small"
-            color={menu.is_veg ? "success" : "error"}
-            label={menu.is_veg ? "Veg" : "Non Veg"}
+      <div className="dish-card__body">
+        <div className="dish-card__title">
+          <span
+            className={`dish-card__diet ${menu.is_veg ? "is-veg" : "is-nonveg"}`}
+            title={menu.is_veg ? "Veg" : "Non-veg"}
+            aria-label={menu.is_veg ? "Veg" : "Non-veg"}
           />
-          {menu.spiceLevel?.spice_level && (
-            <Chip
-              size="small"
-              color="warning"
-              label={menu.spiceLevel.spice_level}
-            />
+          <h3>{menu.menu_name}</h3>
+        </div>
+
+        {menu.description && (
+          <p className="dish-card__desc">{menu.description}</p>
+        )}
+        {spice && (
+          <span className="dish-card__spice">
+            {String(spice).toLowerCase().replace(/_/g, " ")}
+          </span>
+        )}
+
+        <div className="dish-card__foot">
+          <strong className="dish-card__price">₹{Number(menu.price)}</strong>
+
+          {quantity === 0 ? (
+            <button type="button" className="dish-card__add" onClick={onIncrease}>
+              Add
+            </button>
+          ) : (
+            <div className="dish-card__qty">
+              <button
+                type="button"
+                onClick={onDecrease}
+                aria-label={`Remove one ${menu.menu_name}`}
+              >
+                <RemoveRounded fontSize="small" />
+              </button>
+              <span aria-live="polite">{quantity}</span>
+              <button
+                type="button"
+                onClick={onIncrease}
+                aria-label={`Add one ${menu.menu_name}`}
+              >
+                <AddRounded fontSize="small" />
+              </button>
+            </div>
           )}
-        </Box>
-
-        <Typography variant="h6">
-          ₹{menu.price}
-        </Typography>
-
-        <Box className="qty-box">
-          <IconButton onClick={onDecrease}>
-            <Remove/>
-          </IconButton>
-
-          <Typography fontWeight={700}>
-            {quantity}
-          </Typography>
-
-          <IconButton onClick={onIncrease}>
-            <Add/>
-          </IconButton>
-        </Box>
-      </CardContent>
-    </Card>
+        </div>
+      </div>
+    </article>
   );
 };
 

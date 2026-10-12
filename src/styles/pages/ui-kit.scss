@@ -1,0 +1,650 @@
+// Shared page kit (ui-*): page shell, header, buttons, search/toolbar, stat
+// tiles, panels, tables, chips and empty states. Same tokens as the hotel and
+// floor-plan pages so every screen reads as one app.
+
+$ink: #1f2337;
+$ink-soft: #5b6078;
+$ink-faint: #8a8fa6;
+$line: #e6e4f0;
+$surface: #ffffff;
+$field: #f8faf9;
+$brand: #0f766e;
+$brand-strong: #0b5f58;
+$brand-soft: #e7f4f1;
+$danger: #dc2626;
+$danger-soft: #fdecec;
+$radius-lg: 18px;
+$radius-md: 12px;
+$shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+$shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
+
+/* ---------------- Page shell & header ---------------- */
+.ui-page {
+  // Full width beside the sidebar (no centred column, so no empty gutter).
+  margin: 0;
+  padding: 24px 28px 48px;
+  font-family: "Montserrat", sans-serif;
+  color: $ink;
+
+  // Pages embedded in another page (e.g. the hotel's Menu tab).
+  &--embedded {
+    max-width: none;
+    padding: 0;
+  }
+}
+
+.ui-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+
+  h1,
+  h2 {
+    margin: 4px 0 6px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+    color: $ink;
+  }
+
+  h1 {
+    font-size: 28px;
+  }
+
+  h2 {
+    font-size: 22px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    color: $ink-soft;
+  }
+}
+
+.ui-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.ui-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: $brand;
+}
+
+/* ---------------- Buttons ---------------- */
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: $radius-md;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &--primary {
+    border: 0;
+    color: #fff;
+    background: linear-gradient(135deg, $brand, $brand-strong);
+    box-shadow: 0 8px 20px rgba(15, 118, 110, 0.2);
+
+    &:hover:not(:disabled) {
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(15, 118, 110, 0.3);
+    }
+  }
+
+  &--ghost {
+    border: 1px solid $line;
+    color: $ink-soft;
+    background: $surface;
+
+    &:hover:not(:disabled) {
+      border-color: $brand;
+      color: $brand;
+    }
+  }
+
+  &--sm {
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 10px;
+    font-size: 12px;
+  }
+}
+
+.ui-icon-btn {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: $ink-soft;
+  background: transparent;
+  transition:
+    background 0.15s,
+    color 0.15s;
+
+  &:hover:not(:disabled) {
+    color: $brand;
+    background: $brand-soft;
+  }
+
+  &--danger:hover:not(:disabled) {
+    color: $danger;
+    background: $danger-soft;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+/* ---------------- Stat tiles ---------------- */
+.ui-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.ui-stat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid $line;
+  border-radius: $radius-lg;
+  background: $surface;
+  box-shadow: $shadow-sm;
+
+  strong {
+    display: block;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: $ink;
+  }
+
+  span {
+    font-size: 12px;
+    color: $ink-faint;
+  }
+}
+
+.ui-stat__icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: $brand;
+  background: $brand-soft;
+}
+
+/* ---------------- Toolbar & search ---------------- */
+.ui-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.ui-toolbar__group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ui-toolbar__count {
+  font-size: 13px;
+  font-weight: 600;
+  color: $ink-faint;
+
+  button {
+    margin-left: 8px;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-weight: 700;
+    color: $brand;
+  }
+}
+
+.ui-search {
+  flex: 0 1 440px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 14px;
+  border: 1px solid $line;
+  border-radius: $radius-md;
+  background: $surface;
+  color: $ink-faint;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+
+  &:focus-within {
+    border-color: $brand;
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0 !important;
+    outline: none;
+    box-shadow: none !important;
+    background: transparent !important;
+    appearance: none;
+    font-size: 14px;
+    color: $ink;
+
+    &::placeholder {
+      color: #a2a4b5;
+    }
+  }
+
+  // Optional "search in" picker on the left of the box.
+  select {
+    flex-shrink: 0;
+    max-width: 140px;
+    margin-left: -6px;
+    padding: 6px 4px;
+    border: 0;
+    border-right: 1px solid $line;
+    border-radius: 0;
+    outline: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: $ink-soft;
+    cursor: pointer;
+  }
+}
+
+.ui-select {
+  min-height: 44px;
+  padding: 0 36px 0 14px;
+  border: 1px solid $line;
+  border-radius: $radius-md;
+  background: $surface
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235b6078' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")
+    no-repeat right 14px center;
+  appearance: none;
+  outline: none;
+  font-size: 14px;
+  color: $ink;
+  cursor: pointer;
+
+  &:focus {
+    border-color: $brand;
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+  }
+}
+
+// Segmented filter, e.g. All / Active / Inactive.
+.ui-segment {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid $line;
+  border-radius: $radius-md;
+  background: $surface;
+
+  button {
+    padding: 7px 14px;
+    border: 0;
+    border-radius: 9px;
+    background: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: $ink-soft;
+
+    &:hover {
+      color: $ink;
+    }
+
+    &.is-active {
+      background: $brand;
+      color: #fff;
+    }
+  }
+}
+
+/* ---------------- Panels & tables ---------------- */
+.ui-panel {
+  border: 1px solid $line;
+  border-radius: $radius-lg;
+  background: $surface;
+  box-shadow: $shadow-sm;
+}
+
+.ui-table-wrap {
+  overflow-x: auto;
+}
+
+.ui-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+  color: $ink;
+
+  th {
+    padding: 12px 16px;
+    border-bottom: 1px solid $line;
+    background: #fafafd;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-align: left;
+    text-transform: uppercase;
+    color: $ink-faint;
+    white-space: nowrap;
+
+    &:first-child {
+      border-top-left-radius: $radius-lg;
+    }
+
+    &:last-child {
+      border-top-right-radius: $radius-lg;
+    }
+  }
+
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0eff6;
+    vertical-align: middle;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  tbody tr:hover td {
+    background: #fbfbfe;
+  }
+
+  .is-center {
+    text-align: center;
+  }
+
+  .is-right {
+    text-align: right;
+  }
+
+  .is-strong {
+    font-weight: 700;
+  }
+
+  .is-muted {
+    color: $ink-faint;
+  }
+}
+
+.ui-table__state td {
+  padding: 48px 16px;
+  text-align: center;
+  color: $ink-faint;
+}
+
+/* ---------------- Chips ---------------- */
+.ui-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #f1f2f7;
+  font-size: 12px;
+  font-weight: 700;
+  color: $ink-soft;
+  white-space: nowrap;
+
+  &--success {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  &--warning {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  &--danger {
+    background: #ffe4e6;
+    color: #be123c;
+  }
+
+  &--brand {
+    background: $brand-soft;
+    color: $brand-strong;
+  }
+}
+
+// Indian veg / non-veg mark.
+.ui-diet {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid currentColor;
+  border-radius: 3px;
+  vertical-align: -2px;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  &--veg {
+    color: #16a34a;
+  }
+
+  &--nonveg {
+    color: #b91c1c;
+  }
+}
+
+/* ---------------- Alerts & empty ---------------- */
+.ui-alert {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid;
+  border-radius: $radius-md;
+  font-size: 14px;
+
+  button {
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 18px;
+    line-height: 1;
+    color: inherit;
+    opacity: 0.7;
+  }
+
+  &--success {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+    color: #166534;
+  }
+
+  &--danger {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #b91c1c;
+  }
+}
+
+.ui-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 56px 20px;
+  border: 1px dashed $line;
+  border-radius: $radius-lg;
+  background: $surface;
+  text-align: center;
+
+  > svg {
+    font-size: 40px;
+    color: $brand;
+  }
+
+  h2,
+  h3 {
+    margin: 6px 0 0;
+    font-size: 18px;
+    font-weight: 750;
+    color: $ink;
+  }
+
+  p {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: $ink-faint;
+  }
+}
+
+/* ---------------- Booking cards (My bookings) ---------------- */
+// Status chip tinted with the dining status colour from the API.
+.booking-status {
+  flex-shrink: 0;
+  background: #f1f2f7;
+  background: color-mix(in srgb, var(--status-color) 14%, #fff);
+  color: var(--status-color);
+}
+
+.booking-card__booked {
+  margin: -4px 0 0;
+  font-size: 12px;
+  color: $ink-faint;
+}
+
+/* ---------------- Menu items table (hotel → Menu tab) ---------------- */
+.menu-row__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 200px;
+}
+
+.menu-row__thumb {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+
+  &--empty {
+    display: grid;
+    place-items: center;
+    background: $brand-soft;
+    font-weight: 800;
+    color: $brand;
+  }
+}
+
+.menu-row__name {
+  min-width: 0;
+
+  strong {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+  }
+
+  small {
+    font-size: 12px;
+    color: $ink-faint;
+  }
+}
+
+.menu-row__dishes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 280px;
+}
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 900px) {
+  .ui-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .ui-page {
+    padding: 16px 16px 32px;
+
+    &--embedded {
+      padding: 0;
+    }
+  }
+
+  .ui-header {
+    flex-direction: column;
+    align-items: stretch;
+
+    h1 {
+      font-size: 23px;
+    }
+  }
+
+  .ui-toolbar,
+  .ui-toolbar__group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ui-search {
+    flex-basis: auto;
+  }
+}

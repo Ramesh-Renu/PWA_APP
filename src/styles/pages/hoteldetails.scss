@@ -54,8 +54,8 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
 /* ---------------- Hero ---------------- */
 .hd-hero {
   display: grid;
-  grid-template-columns: 168px minmax(0, 1fr) auto;
-  gap: 24px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 20px;
   align-items: center;
   margin-bottom: 20px;
   padding: 20px;
@@ -66,16 +66,21 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
 }
 
 .hd-hero__media {
-  position: relative;
-  aspect-ratio: 4 / 3.4;
-  overflow: hidden;
-  border-radius: 16px;
-  box-shadow: 0 8px 22px rgba(31, 35, 55, 0.18);
+  align-self: start;
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: linear-gradient(135deg, $brand, $brand-strong);
+  box-shadow: 0 8px 20px rgba(15, 118, 110, 0.22);
 
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  svg {
+    font-size: 32px;
   }
 }
 
@@ -236,6 +241,18 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
   box-shadow: $shadow-md;
 }
 
+// Floors + legend pinned under the sticky top nav (height published by
+// sidenav.component.jsx). Bleeds to the card edges so tables scroll under it.
+.fp-sticky {
+  position: sticky;
+  top: var(--app-topnav-height, 64px);
+  z-index: 20;
+  margin: -18px -20px 0;
+  padding: 14px 20px 0;
+  border-radius: $radius-lg $radius-lg 0 0;
+  background: inherit;
+}
+
 .fp-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -334,8 +351,13 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
   height: 14px;
   min-width: 0;
   padding: 0;
+  border-radius: 4px;
   font-size: 0;
   pointer-events: none;
+
+  &::before {
+    display: none;
+  }
 }
 
 .fp-hint {
@@ -501,19 +523,39 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
   padding: 16px 12px 14px;
 }
 
+// Shrink-wraps the seat rows so the table top is never wider than its chairs.
+.fp-table__layout {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  max-width: 100%;
+}
+
 .fp-seat-row {
   display: flex;
-  justify-content: center;
+  justify-content: space-evenly;
   flex-wrap: wrap;
-  gap: 10px;
-  min-height: 34px;
+  gap: 8px;
+  min-height: 40px;
+
+  // Room for the backrest, which sits on the side away from the table.
+  &--top {
+    align-items: flex-end;
+    padding-top: 6px;
+  }
+
+  &--bottom {
+    align-items: flex-start;
+    padding-bottom: 6px;
+  }
 }
 
 .fp-table__surface {
   display: grid;
   place-items: center;
   width: 100%;
-  max-width: 190px;
+  min-width: 56px;
   height: 46px;
   border-radius: 12px;
   background: linear-gradient(145deg, #13857b, $brand-strong);
@@ -537,17 +579,38 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
   color: $ink-faint;
 }
 
-/* Seat button */
+/* Seat button, drawn as a chair seen from above: a cushion plus a backrest
+   on the side facing away from the table. */
 .fp-seat {
   --seat-color: #16a34a;
+  position: relative;
   display: inline-grid;
   place-items: center;
   width: 34px;
-  height: 34px;
+  height: 30px;
   padding: 0;
   border: 2px solid var(--seat-color);
-  border-radius: 50%;
+  border-radius: 7px;
   background: #fff;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--seat-color);
+    pointer-events: none;
+  }
+
+  .fp-seat-row--top &::before {
+    top: -8px;
+  }
+
+  .fp-seat-row--bottom &::before {
+    bottom: -8px;
+  }
   color: var(--seat-color);
   font-size: 12px;
   font-weight: 700;
@@ -583,18 +646,22 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
     background: $brand;
     color: #fff;
     box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.22);
+
+    &::before {
+      background: $brand;
+    }
   }
 
   &--new {
     border-style: dashed;
     border-color: #64748b;
     color: #64748b;
+
+    &::before {
+      background: #94a3b8;
+    }
   }
 
-  // The current user's own booking: outer ring so they can spot it.
-  &.is-mine {
-    box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--seat-color);
-  }
 }
 
 .fp-table__foot {
@@ -641,6 +708,17 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
   &:hover {
     border-color: $brand;
     color: $brand;
+  }
+
+  &--danger:hover:not(:disabled) {
+    border-color: #fca5a5;
+    background: #fef2f2;
+    color: #dc2626;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 
@@ -718,13 +796,14 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
 /* ---------------- Sticky booking bar ---------------- */
 .fp-bookbar {
   position: fixed;
-  left: 50%;
+  // Centred in the content area, i.e. beside the desktop sidebar.
+  left: calc(50% + var(--app-sidebar-offset, 0px) / 2);
   bottom: 20px;
   z-index: 1000;
   display: flex;
   align-items: center;
   gap: 18px;
-  width: min(720px, calc(100% - 32px));
+  width: min(720px, calc(100% - 32px - var(--app-sidebar-offset, 0px)));
   padding: 12px 12px 12px 20px;
   transform: translateX(-50%);
   border-radius: 16px;
@@ -788,7 +867,7 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
 /* ---------------- Responsive ---------------- */
 @media (max-width: 1100px) {
   .hd-hero {
-    grid-template-columns: 140px minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
   .hd-hero__stats {
@@ -808,7 +887,10 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
   }
 
   .hd-hero__media {
-    aspect-ratio: 16 / 7;
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    font-size: 19px;
   }
 
   .hd-hero__stats {
@@ -821,6 +903,11 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
 
   .fp-card {
     padding: 14px;
+  }
+
+  .fp-sticky {
+    margin: -14px -14px 0;
+    padding: 12px 14px 0;
   }
 
   .fp-grid {
@@ -845,5 +932,322 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
   .fp-bookbar {
     transition: none;
     animation: none;
+  }
+}
+
+/* ---------------- Booking slot picker (SlotPicker.jsx) ---------------- */
+.slot-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 20px;
+  border: 1px solid $line;
+  border-radius: $radius-lg;
+  background: $surface;
+  box-shadow: $shadow-sm;
+}
+
+.slot-picker__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  h3 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 800;
+    color: $ink;
+  }
+}
+
+.slot-picker__guests {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 0;
+
+  > svg {
+    position: absolute;
+    left: 10px;
+    font-size: 18px;
+    color: $ink-soft;
+    pointer-events: none;
+  }
+
+  select {
+    min-height: 38px;
+    padding: 0 12px 0 34px;
+    border: 1px solid $line;
+    border-radius: 999px;
+    background: $surface;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: $ink;
+  }
+}
+
+/* Day strip */
+.slot-days {
+  display: flex;
+  gap: 8px;
+  padding: 2px 2px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.slot-day {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 72px;
+  padding: 8px 10px;
+  border: 1px solid $line;
+  border-radius: 14px;
+  background: $surface;
+  color: $ink;
+  line-height: 1.15;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    box-shadow 0.15s;
+
+  strong {
+    font-size: 22px;
+    font-weight: 800;
+  }
+
+  &:hover {
+    border-color: $brand;
+  }
+
+  &.is-selected {
+    border-color: $brand;
+    background: $brand;
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(15, 118, 110, 0.28);
+
+    .slot-day__tag,
+    .slot-day__month {
+      color: rgba(255, 255, 255, 0.85);
+    }
+  }
+}
+
+.slot-day__tag,
+.slot-day__month {
+  font-size: 11px;
+  font-weight: 700;
+  color: $ink-faint;
+}
+
+.slot-day__tag {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Meal tabs */
+.slot-meals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 5px;
+  border-radius: 16px;
+  background: $canvas;
+}
+
+.slot-meal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  text-align: left;
+  color: $ink-soft;
+
+  > svg {
+    flex-shrink: 0;
+    font-size: 22px;
+  }
+
+  > span {
+    min-width: 0;
+  }
+
+  strong,
+  small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  strong {
+    font-size: 14px;
+    color: $ink;
+  }
+
+  small {
+    font-size: 11px;
+    color: $ink-faint;
+  }
+
+  &:hover:not(.is-selected) {
+    background: rgba(255, 255, 255, 0.7);
+  }
+
+  &.is-selected {
+    background: $surface;
+    color: $brand;
+    box-shadow: 0 2px 8px rgba(31, 35, 55, 0.08);
+  }
+
+  &.is-closed {
+    opacity: 0.55;
+  }
+}
+
+/* Times grouped by hour */
+.slot-hours {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.slot-hour {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.slot-hour__label {
+  flex-shrink: 0;
+  width: 52px;
+  padding-top: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: $ink-faint;
+  text-align: right;
+}
+
+.slot-hour__times {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.slot-time {
+  min-width: 92px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid $line;
+  border-radius: 999px;
+  background: $surface;
+  font-size: 13px;
+  font-weight: 700;
+  color: $ink;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+
+  &:hover {
+    border-color: $brand;
+    color: $brand;
+  }
+
+  &.is-selected {
+    border-color: $brand;
+    background: $brand;
+    color: #fff;
+  }
+}
+
+.slot-picker__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: $radius-md;
+  background: $canvas;
+  font-size: 13px;
+  color: $ink-faint;
+
+  &.is-set {
+    background: $brand-soft;
+    font-weight: 700;
+    color: $brand-strong;
+
+    span {
+      font-weight: 500;
+    }
+  }
+
+  svg {
+    font-size: 18px;
+  }
+}
+
+.slot-picker__empty,
+.slot-picker__prompt {
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed $line;
+  border-radius: $radius-md;
+  background: $canvas;
+  text-align: center;
+  font-size: 14px;
+  color: $ink-soft;
+}
+
+.slot-picker__prompt {
+  background: $surface;
+}
+
+@media (max-width: 640px) {
+  .slot-picker {
+    padding: 14px;
+  }
+
+  .slot-meal {
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 4px;
+    text-align: center;
+
+    small {
+      display: none;
+    }
+  }
+
+  .slot-hour {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .slot-hour__label {
+    width: auto;
+    padding-top: 0;
+    text-align: left;
+  }
+
+  .slot-time {
+    min-width: 0;
+    flex: 1 0 calc(25% - 8px);
+    padding: 0 8px;
   }
 }

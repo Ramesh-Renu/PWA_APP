@@ -102,6 +102,8 @@ const AUTO_SCROLL_STEP_PX = 14;
 // Buttons/links inside a card stay draggable (a drag never fires their click);
 // only form controls keep their own pointer behaviour.
 const NON_DRAG_TARGETS = "select, input, textarea, [data-no-drag]";
+// Clicks on these inside a card do not open it (see onCardClick).
+const CARD_CONTROLS = "button, a, select, input, textarea, [data-no-drag]";
 
 // Swallows the click the browser fires right after a drag ends, so dropping a
 // card grabbed by its title does not also trigger the title button.
@@ -127,6 +129,9 @@ const KanbanBoard = ({
   onBlocked,
   loading = false,
   emptyLabel = "No items",
+  // Optional: open a card (click / Enter). Clicks on buttons, links and form
+  // controls inside the card, and the click that ends a drag, are ignored.
+  onCardClick,
 }) => {
   const [dragging, setDragging] = useState(null); // { item, width, height }
   const [overColumnId, setOverColumnId] = useState(null);
@@ -378,6 +383,22 @@ const KanbanBoard = ({
                         onPointerDown={(event) =>
                           handlePointerDown(event, item, !movable)
                         }
+                        {...(onCardClick && {
+                          tabIndex: 0,
+                          "data-clickable": "",
+                          onClick: (event) => {
+                            if (event.target.closest(CARD_CONTROLS)) return;
+                            onCardClick(item);
+                          },
+                          onKeyDown: (event) => {
+                            if (
+                              event.key === "Enter" &&
+                              event.target === event.currentTarget
+                            ) {
+                              onCardClick(item);
+                            }
+                          },
+                        })}
                       >
                         {renderCard(item)}
 

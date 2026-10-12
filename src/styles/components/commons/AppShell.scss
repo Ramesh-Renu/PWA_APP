@@ -1,0 +1,605 @@
+// Authenticated app shell: left sidebar (components/layout/sidenav) + main.
+// >= 1024px: fixed sidebar, collapsible to an icon rail.
+// <  1024px: slim top bar; the sidebar slides in as a drawer.
+
+$ink: #1f2337;
+$ink-soft: #5b6078;
+$ink-faint: #8a8fa6;
+$line: #e6e4f0;
+$surface: #ffffff;
+$brand: #0f766e;
+$brand-strong: #0b5f58;
+$brand-soft: #e7f4f1;
+$desktop: 1024px;
+
+:root {
+  --app-sidebar-offset: 0px;
+}
+
+@media (min-width: $desktop) {
+  :root {
+    --app-sidebar-offset: var(--app-sidebar-width, 248px);
+  }
+}
+
+// Content area sits on a light cool grey so the white sidebar and white
+// cards stand out against it.
+.app-shell {
+  min-height: 100vh;
+  background: #f1f4f8;
+}
+
+.app-shell__main {
+  min-width: 0;
+  min-height: 100vh;
+
+  @media (min-width: $desktop) {
+    margin-left: var(--app-sidebar-width, 248px);
+    transition: margin-left 0.2s ease;
+  }
+}
+
+/* ---------------- Brand ---------------- */
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: $ink;
+  text-decoration: none;
+
+  &:hover {
+    color: $ink;
+  }
+}
+
+.app-brand__mark {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: linear-gradient(135deg, $brand, $brand-strong);
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(15, 118, 110, 0.25);
+}
+
+.app-brand__name {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+
+/* ---------------- Sidebar ---------------- */
+.app-sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1040;
+  display: flex;
+  flex-direction: column;
+  width: var(--app-sidebar-width, 248px);
+  padding: 16px 12px;
+  border-right: 1px solid $line;
+  box-shadow: 2px 0 12px rgba(31, 35, 55, 0.04);
+  background: $surface;
+  font-family: "Montserrat", sans-serif;
+  transition: width 0.2s ease;
+}
+
+.app-sidebar__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  margin-bottom: 18px;
+  padding: 0 6px;
+}
+
+.app-sidebar__close {
+  display: none;
+}
+
+.app-sidebar__nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.app-sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  color: $ink-soft;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background 0.15s,
+    color 0.15s;
+
+  svg {
+    flex-shrink: 0;
+    font-size: 22px;
+  }
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &:hover {
+    background: #f4f5f9;
+    color: $ink;
+  }
+
+  &.is-active {
+    background: $brand-soft;
+    color: $brand-strong;
+    font-weight: 700;
+
+    svg {
+      color: $brand;
+    }
+  }
+}
+
+.app-sidebar__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid $line;
+}
+
+.app-sidebar__user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px 8px 8px;
+}
+
+.app-sidebar__avatar {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: $brand-soft;
+  font-size: 13px;
+  font-weight: 800;
+  color: $brand-strong;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  // LogoAvatarShowLetter paints a per-letter colour behind the initials
+  // (inline style), so the initials themselves must be white.
+  .user-icon-photo {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18);
+  }
+}
+
+.app-sidebar__user-copy {
+  min-width: 0;
+
+  strong,
+  small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  strong {
+    font-size: 13px;
+    color: $ink;
+  }
+
+  small {
+    font-size: 11px;
+    color: $ink-faint;
+  }
+}
+
+.app-sidebar__logout:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.app-sidebar__collapse {
+  align-self: flex-end;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  margin-top: 4px;
+  padding: 0;
+  border: 1px solid $line;
+  border-radius: 10px;
+  background: $surface;
+  color: $ink-faint;
+
+  svg {
+    transition: transform 0.2s ease;
+  }
+
+  &:hover {
+    border-color: $brand;
+    color: $brand;
+  }
+}
+
+// Icon rail (desktop only).
+@media (min-width: $desktop) {
+  .app-sidebar.is-collapsed {
+    padding-inline: 10px;
+
+    .app-brand__name,
+    .app-sidebar__link span,
+    .app-sidebar__user-copy {
+      display: none;
+    }
+
+    .app-sidebar__head,
+    .app-sidebar__user {
+      justify-content: center;
+      padding-inline: 0;
+    }
+
+    .app-sidebar__link {
+      justify-content: center;
+      padding: 0;
+    }
+
+    .app-sidebar__collapse {
+      align-self: center;
+
+      svg {
+        transform: rotate(180deg);
+      }
+    }
+  }
+}
+
+/* ---------------- Top bar (mobile / tablet) ---------------- */
+.app-topbar {
+  display: none;
+}
+
+@media (max-width: #{$desktop - 1px}) {
+  .app-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 120;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 56px;
+    padding: 8px 14px;
+    padding-top: calc(8px + env(safe-area-inset-top));
+    border-bottom: 1px solid $line;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+    font-family: "Montserrat", sans-serif;
+
+    .app-brand {
+      flex: 1;
+    }
+
+    .app-brand__mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+    }
+
+    .app-brand__name {
+      font-size: 16px;
+    }
+  }
+
+  .app-topbar__menu {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 12px;
+    background: none;
+    color: $ink;
+
+    &:hover {
+      background: #f4f5f9;
+    }
+  }
+
+  .app-topbar__avatar .app-sidebar__avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  // Sidebar becomes an off-canvas drawer.
+  .app-sidebar {
+    width: min(300px, 86vw);
+    padding-top: calc(16px + env(safe-area-inset-top));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    box-shadow: 0 0 40px rgba(31, 35, 55, 0.2);
+    transform: translateX(-105%);
+    transition: transform 0.25s ease;
+
+    &.is-open {
+      transform: translateX(0);
+    }
+  }
+
+  .app-sidebar__close {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    color: $ink-soft;
+
+    &:hover {
+      background: #f4f5f9;
+    }
+  }
+
+  .app-sidebar__collapse {
+    display: none;
+  }
+
+  .app-sidebar__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1035;
+    background: rgba(17, 24, 39, 0.45);
+    animation: app-fade-in 0.2s ease;
+  }
+
+  body.app-drawer-open {
+    overflow: hidden;
+  }
+}
+
+@keyframes app-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-sidebar,
+  .app-shell__main,
+  .app-sidebar__backdrop {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* ---------------- Pop-up menus (Settings, account) ---------------- */
+.app-sidebar__link-more,
+.app-sidebar__user-more {
+  margin-left: auto;
+  font-size: 18px !important;
+  color: $ink-faint;
+}
+
+// The account row is a button that opens the account pop-up.
+button.app-sidebar__user {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover,
+  &.is-open {
+    background: #f4f5f9;
+  }
+}
+
+@media (min-width: $desktop) {
+  .app-sidebar.is-collapsed {
+    .app-sidebar__link-more,
+    .app-sidebar__user-more {
+      display: none;
+    }
+  }
+}
+
+.app-flyout {
+  position: fixed;
+  z-index: 1060;
+  min-width: 220px;
+  max-width: calc(100vw - 16px);
+  padding: 6px;
+  border: 1px solid $line;
+  border-radius: 14px;
+  background: $surface;
+  box-shadow: 0 18px 44px rgba(31, 35, 55, 0.18);
+  font-family: "Montserrat", sans-serif;
+  animation: app-flyout-in 0.14s ease-out;
+}
+
+@keyframes app-flyout-in {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+}
+
+.app-flyout__head {
+  padding: 8px 10px 6px;
+
+  strong {
+    display: block;
+    font-size: 13px;
+    color: $ink;
+  }
+
+  small {
+    font-size: 11px;
+    color: $ink-faint;
+  }
+}
+
+.app-flyout__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  color: $ink-soft;
+  text-decoration: none;
+
+  svg {
+    font-size: 20px;
+  }
+
+  &:hover {
+    background: #f4f5f9;
+    color: $ink;
+  }
+
+  &.is-active {
+    background: $brand-soft;
+    color: $brand-strong;
+
+    svg {
+      color: $brand;
+    }
+  }
+
+  &--muted {
+    font-size: 13px;
+    color: $ink-faint;
+  }
+
+  &--danger:hover {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+}
+
+.app-flyout__divider {
+  height: 1px;
+  margin: 4px 6px;
+  background: $line;
+}
+
+.app-flyout__account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+
+  strong,
+  small {
+    display: block;
+  }
+
+  strong {
+    font-size: 14px;
+    color: $ink;
+  }
+
+  small {
+    font-size: 12px;
+    color: $ink-faint;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-flyout {
+    animation: none;
+  }
+}
+
+/* ---------------- Crash screen (AppErrorBoundary) ---------------- */
+.app-crash {
+  display: grid;
+  place-items: center;
+  min-height: 70vh;
+  padding: 24px 16px;
+  font-family: "Montserrat", sans-serif;
+}
+
+.app-crash__card {
+  width: 100%;
+  max-width: 480px;
+  padding: 28px 24px;
+  border: 1px solid $line;
+  border-radius: 20px;
+  background: $surface;
+  box-shadow: 0 10px 30px rgba(15, 75, 67, 0.08);
+  text-align: center;
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+    font-weight: 800;
+    color: $ink;
+  }
+
+  p {
+    margin: 0 0 16px;
+    font-size: 14px;
+    color: $ink-soft;
+  }
+
+  pre {
+    max-height: 160px;
+    margin: 0 0 16px;
+    padding: 10px 12px;
+    overflow: auto;
+    border-radius: 10px;
+    background: #fef2f2;
+    font-size: 12px;
+    text-align: left;
+    white-space: pre-wrap;
+    color: #b91c1c;
+  }
+}

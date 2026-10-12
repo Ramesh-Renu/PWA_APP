@@ -19,6 +19,36 @@ body {
 html,body,#root{min-height:100%;background:#f7f8ff}
 body{min-height:100vh}
 
+/* Thin 2px scrollbars everywhere (page, popups, lists). Chrome/Edge/Safari
+   use the ::-webkit-scrollbar rules; setting scrollbar-width there would
+   override them, so it is limited to Firefox, whose thinnest is "thin". */
+::-webkit-scrollbar {
+  width: 2px;
+  height: 2px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  border-radius: 2px;
+  background: #9aa1b3;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7286;
+}
+::-webkit-scrollbar-button,
+::-webkit-scrollbar-corner {
+  display: none;
+  width: 0;
+  height: 0;
+}
+@supports (-moz-appearance: none) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #9aa1b3 transparent;
+  }
+}
+
 .input-error {
   border: 1px solid red !important;
 }

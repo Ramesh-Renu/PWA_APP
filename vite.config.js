@@ -81,25 +81,31 @@ export default defineConfig(({ mode }) => {
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["appIcon.svg", "robots.txt"],
+      // Single source for the web app manifest (VitePWA injects the link).
       manifest: {
-        short_name: "MyPWA",
-        name: "My Progressive Web App",
-        start_url: ".",
+        short_name: "Table Booking",
+        name: "Table Booking",
+        description: "Find restaurants, reserve your table and order food.",
+        start_url: "/",
+        scope: "/",
         display: "standalone",
-        theme_color: "#000000",
+        orientation: "portrait",
+        theme_color: "#0f766e",
         background_color: "#ffffff",
         icons: [
           {
             src: "appIcon.svg",
-            sizes: "192x192",
+            sizes: "any",
             type: "image/svg+xml",
-          },
-          {
-            src: "appIcon.svg",
-            sizes: "512x512",
-            type: "image/svg+xml",
+            purpose: "any",
           },
         ],
+      },
+      workbox: {
+        // SPA: serve the app shell for deep links when offline,
+        // but never for API calls.
+        navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/api\//, /^\/master\//],
       },
     }),
   ],

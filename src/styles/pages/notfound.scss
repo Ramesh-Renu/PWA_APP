@@ -1,49 +1,73 @@
+// 404 / error page. Same tokens as ui-kit.scss.
 .not-found {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: calc(100vh - var(--app-topnav-height, 0px));
+  margin: 0;
+  padding: 32px 16px;
+  font-family: "Montserrat", sans-serif;
   text-align: center;
-  margin: 0px;
-  height: calc(100vh - 70px);
 
   &-content {
-    max-width: 600px;
     width: 100%;
+    max-width: 520px;
+    padding: 40px 28px;
+    border: 1px solid #e6e4f0;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 10px 30px rgba(15, 75, 67, 0.08);
 
     .error-code {
-      font-size: 120px;
-      font-weight: 500;
-      color: var(--color-light-red);
+      font-size: 88px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -2px;
+      color: #0f766e;
     }
+
     .error-message {
-      font-size: 32px;
-      color: var(--color-gray);
-      margin-bottom: 20px;
+      margin: 18px 0 8px;
+      font-size: 24px;
+      font-weight: 800;
+      color: #1f2337;
     }
 
     .error-description {
-      font-size: 18px;
-      color: var(--color-darkLiver);
-      margin-bottom: 30px;
+      margin: 0 0 26px;
+      font-size: 15px;
+      line-height: 1.55;
+      color: #5b6078;
     }
 
     &-button {
-      display: inline-block;
-      padding: 12px 24px;
-      font-size: 18px;
-      font-weight: bold;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 22px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #0f766e, #0b5f58);
+      box-shadow: 0 8px 20px rgba(15, 118, 110, 0.2);
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
       text-decoration: none;
-      color: var(--color-white);
-      background-color: var(--color-primary-dark);
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
 
       &:hover {
-        background-color: var(--color-darkLiver);
+        color: #fff;
+        box-shadow: 0 10px 24px rgba(15, 118, 110, 0.3);
       }
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .not-found-content {
+    padding: 32px 20px;
+
+    .error-code {
+      font-size: 64px;
     }
   }
 }

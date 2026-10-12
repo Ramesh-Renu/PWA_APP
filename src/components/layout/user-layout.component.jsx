@@ -29,9 +29,9 @@ const UserLayout = () => {
   return (
     <Fragment>
       {/* <Header /> */}
-      <div className="layout-container app-topnav-layout">
+      <div className="app-shell">
         <SideNav />
-        <div className="container layout-page">
+        <main className="app-shell__main">
           {/* <div
             style={{
               display: "flex",
@@ -43,7 +43,7 @@ const UserLayout = () => {
             <ThemeToggle />
           </div> */}
           <Outlet />
-        </div>
+        </main>
       </div>
       {/* <Footer /> */}
     </Fragment>

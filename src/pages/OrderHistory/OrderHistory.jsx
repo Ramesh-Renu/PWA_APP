@@ -1,24 +1,38 @@
+import { ReceiptLongOutlined } from "@mui/icons-material";
 import OrderHistoryCard from "./OrderHistoryCard";
 
-const OrderHistory = ({ orders = [] }) => {
-  if (!orders.length) {
+const OrderHistory = ({ orders = [], loading = false, onChanged }) => {
+  if (loading) {
     return (
-      <div className="order-history-empty">
-        No completed orders found.
+      <div className="cx-grid">
+        {[0, 1].map((key) => (
+          <div key={key} className="cx-card cx-card--skeleton" />
+        ))}
       </div>
     );
   }
 
+  if (!orders.length) {
+    return (
+      <div className="ui-empty">
+        <ReceiptLongOutlined />
+        <h3>No orders yet</h3>
+        <p>Orders you place at the table will show up here.</p>
+      </div>
+    );
+  }
+
+  const sorted = [...orders].sort(
+    (a, b) =>
+      new Date(b.ordered_at || b.createdAt || 0) -
+      new Date(a.ordered_at || a.createdAt || 0),
+  );
+
   return (
-    <div className="order-history">
-
-      {orders.map((order) => (
-        <OrderHistoryCard
-          key={order.id}
-          order={order}
-        />
+    <div className="cx-grid">
+      {sorted.map((order) => (
+        <OrderHistoryCard key={order.id} order={order} onChanged={onChanged} />
       ))}
-
     </div>
   );
 };

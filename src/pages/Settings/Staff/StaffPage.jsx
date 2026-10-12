@@ -1,0 +1,496 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  AddPhotoAlternateOutlined,
+  AddRounded,
+  DeleteOutlineRounded,
+  EditOutlined,
+  SearchRounded,
+} from "@mui/icons-material";
+import PopupModal from "components/common/PopupModal";
+import ConfirmDialog from "components/common/ConfirmDialog";
+import useToast from "hooks/useToast";
+import { getAllHotel, uploadMenuImage } from "services";
+import { getApiErrorMessage } from "utils/apiError";
+import StaffAvatar, { initialsOf } from "./StaffAvatar";
+
+/**
+ * Settings page for staff master data (cooks, servers). `config` comes from
+ * staffConfig.js and supplies field names, labels and API calls.
+ */
+const StaffPage = ({ config }) => {
+  const {
+    title,
+    singular,
+    intro,
+    icon: Icon,
+    kind,
+    nameField,
+    namePlaceholder,
+    detailField,
+    detailLabel,
+    detailPlaceholder,
+    detailSuggestions,
+    api,
+  } = config;
+  const lower = singular.toLowerCase();
+
+  const emptyForm = {
+    name: "",
+    detail: "",
+    hotel_id: "",
+    is_active: true,
+    photo_url: "",
+    photo_file_id: "",
+  };
+
+  const { showToast } = useToast();
+  const [rows, setRows] = useState([]);
+  const [hotels, setHotels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [hotelFilter, setHotelFilter] = useState("");
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(emptyForm);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [toDelete, setToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await api.list();
+      setRows(Array.isArray(response?.data) ? response.data : []);
+    } catch (error) {
+      showToast({
+        message: getApiErrorMessage(error) || `Unable to load ${title.toLowerCase()}.`,
+        variant: "danger",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [api, title]);
+
+  useEffect(() => {
+    load();
+    getAllHotel()
+      .then((response) => setHotels(response?.data || []))
+      .catch(() => setHotels([]));
+  }, [load]);
+
+  const visible = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return rows.filter((row) => {
+      const matchesSearch =
+        !query ||
+        [row[nameField], row[detailField], row.hotel?.hotel_name]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(query));
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" ? row.is_active : !row.is_active);
+      const matchesHotel =
+        !hotelFilter ||
+        (hotelFilter === "all-hotels"
+          ? !row.hotel_id
+          : String(row.hotel_id) === hotelFilter);
+      return matchesSearch && matchesStatus && matchesHotel;
+    });
+  }, [rows, search, statusFilter, hotelFilter, nameField, detailField]);
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyForm);
+    setPhotoFile(null);
+    setPhotoPreview("");
+    setFormError("");
+    setDialogOpen(true);
+  };
+
+  const openEdit = (row) => {
+    setEditing(row);
+    setForm({
+      name: row[nameField] || "",
+      detail: row[detailField] || "",
+      hotel_id: row.hotel_id ? String(row.hotel_id) : "",
+      is_active: Boolean(row.is_active),
+      photo_url: row.photo_url || "",
+      photo_file_id: row.photo_file_id || "",
+    });
+    setPhotoFile(null);
+    setPhotoPreview(row.photo_url || "");
+    setFormError("");
+    setDialogOpen(true);
+  };
+
+  const closeDialog = () => {
+    if (!saving) setDialogOpen(false);
+  };
+
+  const handleChange = ({ target }) =>
+    setForm((current) => ({ ...current, [target.name]: target.value }));
+
+  const pickPhoto = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const removePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview("");
+    setForm((current) => ({ ...current, photo_url: "", photo_file_id: "" }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const name = form.name.trim();
+    if (!name) return;
+
+    setSaving(true);
+    setFormError("");
+    try {
+      const body = {
+        [nameField]: name,
+        [detailField]: form.detail.trim(),
+        hotel_id: form.hotel_id ? Number(form.hotel_id) : null,
+        is_active: form.is_active,
+        photo_url: form.photo_url,
+        photo_file_id: form.photo_file_id,
+      };
+
+      // The photo is optional; upload only when a new one was picked.
+      if (photoFile) {
+        const formData = new FormData();
+        formData.append("image", photoFile);
+        const upload = await uploadMenuImage(formData);
+        const url = upload?.url || upload?.data?.url;
+        if (!url) throw new Error(upload?.message || "Photo upload failed.");
+        body.photo_url = url;
+        body.photo_file_id = upload?.fileId || upload?.data?.fileId || "";
+      }
+
+      const response = editing
+        ? await api.update(editing.id, body)
+        : await api.create(body);
+      showToast({
+        message: response?.message || `${singular} ${editing ? "updated" : "added"}`,
+        variant: "success",
+      });
+      setDialogOpen(false);
+      load();
+    } catch (error) {
+      setFormError(
+        getApiErrorMessage(error) || error?.message || `Unable to save the ${lower}.`,
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!toDelete) return;
+    setDeleting(true);
+    try {
+      const response = await api.remove(toDelete.id);
+      showToast({ message: response?.message || `${singular} deleted`, variant: "success" });
+      load();
+    } catch (error) {
+      showToast({
+        message: getApiErrorMessage(error) || `Unable to delete the ${lower}.`,
+        variant: "danger",
+      });
+    } finally {
+      setToDelete(null);
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <section className="ui-page">
+      <header className="ui-header">
+        <div>
+          <span className="ui-kicker">Settings</span>
+          <h1>{title}</h1>
+          <p>{intro}</p>
+        </div>
+        <div className="ui-header__actions">
+          <button type="button" className="ui-btn ui-btn--primary" onClick={openCreate}>
+            <AddRounded fontSize="small" /> Add {lower}
+          </button>
+        </div>
+      </header>
+
+      <div className="ui-toolbar">
+        <div className="ui-toolbar__group">
+          <label className="ui-search">
+            <SearchRounded fontSize="small" aria-hidden />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={`Search name or ${detailLabel.toLowerCase()}`}
+              aria-label={`Search ${title.toLowerCase()}`}
+            />
+          </label>
+          <select
+            className="ui-select"
+            value={hotelFilter}
+            onChange={(event) => setHotelFilter(event.target.value)}
+            aria-label="Filter by hotel"
+          >
+            <option value="">Every hotel</option>
+            <option value="all-hotels">Works at all hotels</option>
+            {hotels.map((hotel) => (
+              <option key={hotel.id} value={String(hotel.id)}>
+                {hotel.hotel_name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="ui-segment" role="radiogroup" aria-label="Status">
+          {["all", "active", "inactive"].map((value) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={statusFilter === value}
+              className={statusFilter === value ? "is-active" : ""}
+              onClick={() => setStatusFilter(value)}
+            >
+              {value[0].toUpperCase() + value.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="cook-grid">
+          {[0, 1, 2].map((key) => (
+            <div key={key} className="cook-card cook-card--skeleton" />
+          ))}
+        </div>
+      ) : visible.length === 0 ? (
+        <div className="ui-empty">
+          <Icon />
+          <h3>{rows.length ? `No ${title.toLowerCase()} match` : `No ${title.toLowerCase()} yet`}</h3>
+          <p>
+            {rows.length
+              ? "Try another search or filter."
+              : `Add your ${title.toLowerCase()} to assign them to orders.`}
+          </p>
+          {!rows.length && (
+            <button type="button" className="ui-btn ui-btn--primary" onClick={openCreate}>
+              <AddRounded fontSize="small" /> Add {lower}
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="cook-grid">
+          {visible.map((row) => (
+            <article
+              key={row.id}
+              className={`cook-card${row.is_active ? "" : " is-inactive"}`}
+            >
+              <StaffAvatar name={row[nameField]} photo={row.photo_url} size={56} tone={kind} />
+              <div className="cook-card__body">
+                <h3>{row[nameField]}</h3>
+                <p>{row[detailField] || `No ${detailLabel.toLowerCase()} set`}</p>
+                <div className="cook-card__chips">
+                  <span className="ui-chip ui-chip--brand">
+                    {row.hotel?.hotel_name || "All hotels"}
+                  </span>
+                  <span className={`ui-chip ${row.is_active ? "ui-chip--success" : ""}`}>
+                    {row.is_active ? "Active" : "Inactive"}
+                  </span>
+                </div>
+              </div>
+              <div className="cook-card__actions">
+                <button
+                  type="button"
+                  className="ui-icon-btn"
+                  title="Edit"
+                  aria-label={`Edit ${row[nameField]}`}
+                  onClick={() => openEdit(row)}
+                >
+                  <EditOutlined fontSize="small" />
+                </button>
+                <button
+                  type="button"
+                  className="ui-icon-btn ui-icon-btn--danger"
+                  title="Delete"
+                  aria-label={`Delete ${row[nameField]}`}
+                  onClick={() => setToDelete(row)}
+                >
+                  <DeleteOutlineRounded fontSize="small" />
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
+      <PopupModal
+        show={dialogOpen}
+        onClose={closeDialog}
+        header
+        title={editing ? `Edit ${lower}` : `Add ${lower}`}
+        className="hotel-form__body"
+        customClassName="hotel-form-dialog menu-editor-dialog category-dialog"
+      >
+        <form className="menu-editor" onSubmit={handleSubmit}>
+          <div className="hotel-form">
+            {formError && (
+              <p className="menu-editor__alert" role="alert">
+                {formError}
+              </p>
+            )}
+
+            <section className="hotel-form__section cook-form__photo-row">
+              <div className={`cook-form__photo cook-form__photo--${kind}`}>
+                {photoPreview ? (
+                  <img src={photoPreview} alt={singular} />
+                ) : (
+                  <span aria-hidden>
+                    {initialsOf(form.name) || <AddPhotoAlternateOutlined />}
+                  </span>
+                )}
+              </div>
+              <div className="cook-form__photo-actions">
+                <span className="hotel-form__label">Photo (optional)</span>
+                <div>
+                  <label className="ui-btn ui-btn--ghost ui-btn--sm">
+                    {photoPreview ? "Change photo" : "Upload photo"}
+                    <input type="file" accept="image/*" hidden onChange={pickPhoto} />
+                  </label>
+                  {photoPreview && (
+                    <button
+                      type="button"
+                      className="ui-btn ui-btn--ghost ui-btn--sm"
+                      onClick={removePhoto}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <span className="hotel-form__hint">
+                  Without a photo, initials are shown.
+                </span>
+              </div>
+            </section>
+
+            <section className="hotel-form__section">
+              <div className="hotel-form__grid">
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor={`${kind}-name`}>
+                    {singular} name <sup>*</sup>
+                  </label>
+                  <input
+                    id={`${kind}-name`}
+                    name="name"
+                    className="hotel-form__input"
+                    value={form.name}
+                    onChange={handleChange}
+                    placeholder={namePlaceholder}
+                    autoComplete="off"
+                    autoFocus
+                    required
+                  />
+                </div>
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor={`${kind}-detail`}>
+                    {detailLabel}
+                  </label>
+                  <input
+                    id={`${kind}-detail`}
+                    name="detail"
+                    className="hotel-form__input"
+                    value={form.detail}
+                    onChange={handleChange}
+                    placeholder={detailPlaceholder}
+                    list={`${kind}-detail-options`}
+                    autoComplete="off"
+                  />
+                  <datalist id={`${kind}-detail-options`}>
+                    {detailSuggestions.map((item) => (
+                      <option key={item} value={item} />
+                    ))}
+                  </datalist>
+                </div>
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor={`${kind}-hotel`}>
+                    Works at
+                  </label>
+                  <select
+                    id={`${kind}-hotel`}
+                    name="hotel_id"
+                    className="hotel-form__input"
+                    value={form.hotel_id}
+                    onChange={handleChange}
+                  >
+                    <option value="">All hotels</option>
+                    {hotels.map((hotel) => (
+                      <option key={hotel.id} value={String(hotel.id)}>
+                        {hotel.hotel_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <label className="menu-switch cook-form__switch">
+                  <input
+                    type="checkbox"
+                    checked={form.is_active}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, is_active: event.target.checked }))
+                    }
+                  />
+                  <span className="menu-switch__track" aria-hidden />
+                  <span>
+                    <strong>{form.is_active ? "Active" : "Inactive"}</strong>
+                    <small>Only active {title.toLowerCase()} can be assigned</small>
+                  </span>
+                </label>
+              </div>
+            </section>
+          </div>
+
+          <div className="hotel-form__actions">
+            <button
+              type="button"
+              className="hotel-form__btn hotel-form__btn--ghost"
+              onClick={closeDialog}
+              disabled={saving}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="hotel-form__btn hotel-form__btn--primary"
+              disabled={saving || !form.name.trim()}
+            >
+              {saving ? "Saving…" : editing ? "Save changes" : `Add ${lower}`}
+            </button>
+          </div>
+        </form>
+      </PopupModal>
+
+      <ConfirmDialog
+        show={Boolean(toDelete)}
+        title={`Delete ${toDelete?.[nameField] || `this ${lower}`}?`}
+        message={`${title} who have handled orders can't be deleted. Mark them inactive instead.`}
+        confirmLabel={`Delete ${lower}`}
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setToDelete(null)}
+      />
+    </section>
+  );
+};
+
+export default StaffPage;

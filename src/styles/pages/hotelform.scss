@@ -1,0 +1,336 @@
+// Create / edit hotel modal (hotel-form-*). Self-contained so the older
+// .create-hotel-page-popup-content rules do not leak in.
+
+$ink: #1f2337;
+$ink-soft: #5b6078;
+$ink-faint: #8a8fa6;
+$line: #e6e4f0;
+$surface: #ffffff;
+$field: #f8faf9;
+$brand: #0f766e;
+$brand-strong: #0b5f58;
+$brand-soft: #e7f4f1;
+$danger: #c2410c;
+
+.modal-dialog.hotel-form-dialog {
+  width: calc(100% - 32px);
+  max-width: 720px;
+  margin: 16px auto;
+  min-height: calc(100% - 32px);
+
+  .modal-content {
+    max-height: calc(100dvh - 32px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 0;
+    border-radius: 20px;
+    background: $surface;
+    box-shadow: 0 28px 80px rgba(28, 24, 65, 0.25);
+    font-family: "Montserrat", sans-serif;
+    color: $ink;
+  }
+
+  .modal-header {
+    flex-shrink: 0;
+    align-items: center;
+    padding: 18px 24px;
+    border-bottom: 1px solid $line;
+  }
+
+  .modal-title {
+    min-width: 0;
+    font-size: inherit;
+  }
+
+  .btn-close {
+    margin: 0 0 0 12px;
+  }
+}
+
+.hotel-form__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+
+  strong {
+    display: block;
+    font-size: 19px;
+    font-weight: 750;
+    line-height: 1.25;
+    color: $ink;
+  }
+
+  small {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    color: $ink-faint;
+  }
+}
+
+.hotel-form__title-icon {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  color: #fff;
+  background: linear-gradient(135deg, $brand, $brand-strong);
+}
+
+.modal-body.hotel-form__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.hotel-form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 20px 24px 24px;
+}
+
+.hotel-form__section-title {
+  margin: 0 0 12px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $ink-soft;
+}
+
+.hotel-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+
+  &--three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.hotel-form__field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+}
+
+.hotel-form__label {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 650;
+  color: $ink-soft;
+
+  sup {
+    color: $danger;
+  }
+}
+
+.hotel-form__input,
+.hotel-form .react-dropdown-select.hotel-form__select {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid $line !important;
+  border-radius: 11px !important;
+  background: $field !important;
+  font-size: 14px;
+  color: $ink;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.hotel-form__input {
+  padding: 10px 14px;
+  outline: none;
+
+  &::placeholder {
+    color: #a2a4b5;
+  }
+
+  &[type="number"] {
+    appearance: textfield;
+  }
+}
+
+.hotel-form .react-dropdown-select.hotel-form__select {
+  min-width: 0;
+  padding: 4px 12px;
+
+  .react-dropdown-select-input {
+    border: 0 !important;
+    font-size: 14px;
+  }
+}
+
+.hotel-form__input:focus,
+.hotel-form .react-dropdown-select.hotel-form__select:focus-within {
+  border-color: $brand !important;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+
+.hotel-form__input.is-invalid,
+.hotel-form__input.is-invalid:focus {
+  border-color: $danger !important;
+  box-shadow: 0 0 0 3px rgba(194, 65, 12, 0.12);
+}
+
+.hotel-form .react-dropdown-select-dropdown {
+  z-index: 1065;
+}
+
+.hotel-form__grid--prefix {
+  margin-top: 14px;
+}
+
+.hotel-form__input--code {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hotel-form__hint {
+  margin-top: 5px;
+  font-size: 12px;
+  color: $ink-faint;
+}
+
+.hotel-form__codes {
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  margin: 0;
+  padding: 0 14px;
+  border: 1px dashed $line;
+  border-radius: 11px;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: $brand-strong;
+}
+
+.hotel-form__error {
+  margin-top: 5px;
+  font-size: 12px;
+  color: $danger;
+}
+
+.hotel-form__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  border-radius: 11px;
+  background: $brand-soft;
+  font-size: 13px;
+  font-weight: 600;
+  color: $brand-strong;
+
+  svg {
+    font-size: 18px;
+  }
+}
+
+.hotel-form__actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: auto;
+  padding: 14px 24px;
+  border-top: 1px solid $line;
+  background: $surface;
+}
+
+.hotel-form__btn {
+  min-width: 120px;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 700;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
+
+  &--ghost {
+    border: 1px solid $line;
+    background: $surface;
+    color: $ink-soft;
+
+    &:hover {
+      background: #f3f4f8;
+    }
+  }
+
+  &--primary {
+    border: 0;
+    background: linear-gradient(135deg, $brand, $brand-strong);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(15, 118, 110, 0.22);
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 10px 24px rgba(15, 118, 110, 0.3);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+}
+
+@media (max-width: 640px) {
+  .modal-dialog.hotel-form-dialog {
+    width: calc(100% - 20px);
+    margin: 10px auto;
+    min-height: calc(100% - 20px);
+
+    .modal-content {
+      max-height: calc(100dvh - 20px);
+    }
+
+    .modal-header {
+      padding: 14px 16px;
+    }
+  }
+
+  .hotel-form__title strong {
+    font-size: 17px;
+  }
+
+  .hotel-form {
+    padding: 16px;
+  }
+
+  .hotel-form__grid,
+  .hotel-form__grid--three {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hotel-form__actions {
+    padding: 12px 16px;
+
+    .hotel-form__btn {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+}

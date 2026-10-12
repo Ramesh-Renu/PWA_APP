@@ -1,0 +1,1053 @@
+// Customer app (/book-table): Book, Menu, Bookings and Orders tabs (cx-*).
+// Mobile-first: on phones the tabs become an app-style bottom bar.
+// Buttons, search, chips and empty states come from ui-kit.scss.
+
+$ink: #1f2337;
+$ink-soft: #5b6078;
+$ink-faint: #8a8fa6;
+$line: #e6e4f0;
+$surface: #ffffff;
+$field: #f8faf9;
+$brand: #0f766e;
+$brand-strong: #0b5f58;
+$brand-soft: #e7f4f1;
+$radius-lg: 18px;
+$radius-md: 12px;
+$shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+$shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
+$bottom-nav-height: 64px;
+
+/* ---------------- Page shell ---------------- */
+.cx-page {
+  // Full width beside the sidebar; the card grids fill the space.
+  margin: 0;
+  padding: 24px 28px 48px;
+  font-family: "Montserrat", sans-serif;
+  color: $ink;
+}
+
+.cx-hero {
+  margin-bottom: 18px;
+
+  h1 {
+    margin: 4px 0 4px;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+    color: $ink;
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    color: $ink-soft;
+  }
+}
+
+.cx-section {
+  min-width: 0;
+}
+
+/* ---------------- Tabs: pills on desktop ---------------- */
+.cx-tabs {
+  position: sticky;
+  top: var(--app-topnav-height, 64px);
+  z-index: 15;
+  display: flex;
+  gap: 4px;
+  margin: 0 0 20px;
+  padding: 4px;
+  overflow-x: auto;
+  border: 1px solid $line;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  box-shadow: $shadow-sm;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  button {
+    flex: 1 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: $ink-soft;
+    white-space: nowrap;
+    transition:
+      background 0.15s,
+      color 0.15s;
+
+    svg {
+      font-size: 20px;
+    }
+
+    &:hover:not(.is-active) {
+      background: #f4f5f9;
+      color: $ink;
+    }
+
+    &.is-active {
+      background: $brand;
+      color: #fff;
+      box-shadow: 0 6px 16px rgba(15, 118, 110, 0.25);
+    }
+  }
+}
+
+// Desktop: the left sidebar already lists these sections.
+@media (min-width: 1024px) {
+  .cx-tabs {
+    display: none;
+  }
+}
+
+/* ---------------- Tabs: bottom bar on phones ---------------- */
+.cx-bottom-nav {
+  display: none;
+}
+
+/* ---------------- Cards ---------------- */
+.cx-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.cx-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid $line;
+  border-radius: $radius-lg;
+  background: $surface;
+  box-shadow: $shadow-sm;
+
+  &--skeleton {
+    min-height: 200px;
+    border-color: transparent;
+    background: linear-gradient(90deg, #f1f2f6 25%, #f8f9fb 50%, #f1f2f6 75%);
+    background-size: 200% 100%;
+    animation: cx-shimmer 1.2s ease-in-out infinite;
+  }
+
+  &--short {
+    min-height: 110px;
+  }
+}
+
+@keyframes cx-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.cx-card__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+
+  .ui-btn {
+    flex: 1;
+  }
+}
+
+.cx-avatar {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, $brand, $brand-strong);
+}
+
+// "4 floors · 32 tables · 131 seats"
+.cx-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #f4f5f9;
+    font-size: 12px;
+    color: $ink-soft;
+  }
+
+  strong {
+    font-size: 13px;
+    color: $ink;
+  }
+}
+
+/* ---------------- Book: restaurant cards ---------------- */
+.cx-search {
+  flex-basis: auto;
+  max-width: 560px;
+  margin-bottom: 16px;
+}
+
+.cx-hotel {
+  transition:
+    box-shadow 0.2s,
+    border-color 0.2s,
+    transform 0.2s;
+
+  &:hover {
+    border-color: rgba(15, 118, 110, 0.35);
+    box-shadow: $shadow-md;
+    transform: translateY(-2px);
+  }
+}
+
+.cx-hotel__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.cx-hotel__title {
+  flex: 1;
+  min-width: 0;
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 750;
+    line-height: 1.3;
+    color: $ink;
+  }
+
+  p {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: $ink-faint;
+  }
+}
+
+.cx-hotel__address {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: $ink-soft;
+
+  svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+    font-size: 16px;
+    color: $brand;
+  }
+}
+
+.cx-hotel__cta {
+  width: 100%;
+  margin-top: auto;
+}
+
+/* ---------------- Menu ---------------- */
+.cx-menu-filters {
+  margin-bottom: 18px;
+
+  .cx-search {
+    margin-bottom: 10px;
+  }
+}
+
+.cx-chip-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.cx-chip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid $line;
+  border-radius: 999px;
+  background: $surface;
+  font-size: 13px;
+  font-weight: 600;
+  color: $ink-soft;
+  white-space: nowrap;
+
+  &:hover:not(.is-active) {
+    border-color: $brand;
+    color: $brand;
+  }
+
+  &.is-active {
+    border-color: $brand;
+    background: $brand;
+    color: #fff;
+  }
+
+  &--veg.is-active {
+    border-color: #16a34a;
+    background: #dcfce7;
+    color: #166534;
+  }
+}
+
+.cx-menu-group + .cx-menu-group {
+  margin-top: 26px;
+}
+
+.cx-menu-group__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    color: $ink;
+  }
+
+  span {
+    font-size: 12px;
+    color: $ink-faint;
+  }
+}
+
+.cx-dishes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.cx-dish {
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid $line;
+  border-radius: 16px;
+  background: $surface;
+  box-shadow: $shadow-sm;
+
+  &.is-unavailable {
+    opacity: 0.6;
+  }
+}
+
+.cx-dish__media {
+  flex-shrink: 0;
+  width: 88px;
+  height: 88px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 12px;
+  background: $brand-soft;
+  font-size: 24px;
+  font-weight: 800;
+  color: $brand;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.cx-dish__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: $ink;
+  }
+}
+
+.cx-dish__meta {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: $ink-faint;
+}
+
+.cx-dish__sides {
+  margin: 4px 0 0;
+  overflow: hidden;
+  font-size: 12px;
+  color: $ink-soft;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cx-dish__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 6px;
+
+  strong {
+    font-size: 16px;
+    font-weight: 800;
+    color: $ink;
+  }
+}
+
+/* ---------------- Bookings ---------------- */
+.cx-block + .cx-block {
+  margin-top: 26px;
+}
+
+.cx-block__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $ink-soft;
+
+  span {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: #f1f2f7;
+    font-size: 12px;
+    letter-spacing: 0;
+    color: $ink-faint;
+  }
+}
+
+.cx-booking__when {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: $radius-md;
+  background: $brand-soft;
+  font-size: 13px;
+  color: $brand-strong;
+
+  svg {
+    font-size: 20px;
+  }
+
+  strong {
+    font-weight: 800;
+  }
+}
+
+/* ---------------- Orders ---------------- */
+.cx-order__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 750;
+    color: $ink;
+  }
+
+  p {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: $ink-faint;
+  }
+}
+
+.cx-order__items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 0;
+  border-top: 1px dashed $line;
+  border-bottom: 1px dashed $line;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 13px;
+  }
+}
+
+.cx-order__qty {
+  min-width: 26px;
+  font-weight: 700;
+  color: $brand;
+}
+
+.cx-order__name {
+  flex: 1;
+  min-width: 0;
+  color: $ink;
+}
+
+.cx-order__price {
+  font-weight: 600;
+  color: $ink-soft;
+}
+
+.cx-order__more {
+  font-size: 12px;
+  color: $ink-faint;
+}
+
+.cx-order__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+
+  span {
+    font-size: 12px;
+    color: $ink-faint;
+  }
+
+  strong {
+    font-size: 18px;
+    font-weight: 800;
+    color: $ink;
+  }
+}
+
+/* ---------------- Phones: bottom tab bar ---------------- */
+@media (max-width: 768px) {
+  .cx-page {
+    padding: 16px 16px calc(#{$bottom-nav-height} + 24px + env(safe-area-inset-bottom));
+  }
+
+  .cx-hero h1 {
+    font-size: 24px;
+  }
+
+  .cx-tabs {
+    display: none;
+  }
+
+  .cx-bottom-nav {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 110;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    min-height: $bottom-nav-height;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    border-top: 1px solid $line;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 -6px 20px rgba(31, 35, 55, 0.06);
+
+    button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      border: 0;
+      border-radius: 12px;
+      background: none;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      color: $ink-faint;
+      -webkit-tap-highlight-color: transparent;
+
+      svg {
+        width: 44px;
+        height: 28px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        transition: background 0.15s;
+      }
+
+      &.is-active {
+        color: $brand-strong;
+
+        svg {
+          background: $brand-soft;
+        }
+      }
+    }
+  }
+
+  .cx-grid,
+  .cx-dishes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cx-dish__media {
+    width: 76px;
+    height: 76px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cx-card--skeleton {
+    animation: none;
+  }
+
+  .cx-hotel {
+    transition: none;
+  }
+}
+
+/* ---------------- Menu ordering: cart bar, banner, review ---------------- */
+.cx-menu.has-cart {
+  // Room so the last dishes aren't hidden behind the order bar.
+  padding-bottom: 96px;
+}
+
+.cx-dish.is-picked {
+  border-color: $brand;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+
+.cx-order-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid #fde68a;
+  border-radius: $radius-md;
+  background: #fffbeb;
+  color: #92400e;
+
+  svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  strong,
+  span {
+    display: block;
+  }
+
+  strong {
+    font-size: 14px;
+  }
+
+  span {
+    font-size: 13px;
+  }
+}
+
+.cx-cart-bar {
+  position: fixed;
+  // Centred in the content area (beside the desktop sidebar).
+  left: calc(50% + var(--app-sidebar-offset, 0px) / 2);
+  bottom: 20px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: min(640px, calc(100% - 32px - var(--app-sidebar-offset, 0px)));
+  padding: 10px 10px 10px 18px;
+  transform: translateX(-50%);
+  border-radius: 16px;
+  background: $ink;
+  color: #fff;
+  box-shadow: 0 18px 40px rgba(31, 35, 55, 0.35);
+  animation: cx-cart-in 0.2s ease-out;
+
+  .ui-btn--primary {
+    background: #14b8a6;
+    color: #04211e;
+    box-shadow: none;
+
+    &:hover:not(:disabled) {
+      background: #2dd4bf;
+      color: #04211e;
+    }
+  }
+}
+
+@keyframes cx-cart-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+}
+
+.cx-cart-bar__summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+
+  svg {
+    flex-shrink: 0;
+    color: #5eead4;
+  }
+
+  strong,
+  small {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  strong {
+    font-size: 15px;
+  }
+
+  small {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+  }
+}
+
+.cx-order-booking {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: $radius-md;
+  background: $brand-soft;
+  font-size: 14px;
+  font-weight: 600;
+  color: $brand-strong;
+}
+
+.cx-order-nobooking {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px dashed #fcd34d;
+  border-radius: $radius-md;
+  background: #fffbeb;
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: #92400e;
+  }
+}
+
+@media (max-width: 768px) {
+  .cx-menu.has-cart {
+    padding-bottom: 88px;
+  }
+
+  // Above the mobile bottom tab bar.
+  .cx-cart-bar {
+    bottom: calc(#{$bottom-nav-height} + 12px + env(safe-area-inset-bottom));
+    left: 50%;
+    width: calc(100% - 24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cx-cart-bar {
+    animation: none;
+  }
+}
+
+.cx-order-banner--inline {
+  margin-bottom: 0;
+}
+
+.cx-order-banner {
+  align-items: center;
+
+  > div {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.cx-order-banner__action {
+  flex-shrink: 0;
+  border-color: #fcd34d !important;
+  background: #fff !important;
+  color: #92400e !important;
+}
+
+.cx-optional {
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: $ink-faint;
+}
+
+.cx-order-booking--none {
+  background: #f4f5f9;
+  font-weight: 500;
+  color: $ink-soft;
+}
+
+.cx-order__cancel {
+  align-self: flex-start;
+}
+
+.cx-cart-bar__actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+// Light button on the dark order bar.
+.cx-cart-bar__cancel {
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+
+  &:hover:not(:disabled) {
+    border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+  }
+}
+
+@media (max-width: 480px) {
+  .cx-cart-bar__actions .ui-btn {
+    padding: 0 12px;
+  }
+}
+
+/* ---------------- Order card head + final state ---------------- */
+.cx-order__hotel {
+  flex-shrink: 1;
+  max-width: 50%;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 700;
+  color: $ink-soft;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Completed / cancelled: status + when it ended, no tracker.
+.cx-order__final {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  font-size: 13px;
+  color: $ink-faint;
+}
+
+/* ---------------- Order tracker (open orders) ---------------- */
+// Left-aligned steps; each reached step uses its own status colour
+// (--step-color, set per step from the order status master).
+.order-tracker {
+  padding: 12px 12px 10px;
+  border-radius: $radius-md;
+  background: #f7f8fb;
+}
+
+.order-tracker__steps {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.order-tracker__step {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+
+  // Line from this dot to the next step's dot.
+  &:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 9px;
+    left: 20px;
+    right: 0;
+    height: 2px;
+    background: #dfe2ea;
+  }
+
+  &.is-done:not(:last-child)::after {
+    background: var(--step-color);
+  }
+
+  &:last-child {
+    flex: 0 0 auto;
+  }
+}
+
+.order-tracker__dot {
+  position: relative;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #cfd3de;
+  border-radius: 50%;
+  background: #fff;
+
+  svg {
+    font-size: 14px;
+    color: #fff;
+  }
+
+  .is-done & {
+    border-color: var(--step-color);
+    background: var(--step-color);
+  }
+
+  .is-current & {
+    border-color: var(--step-color);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--step-color) 22%, transparent);
+
+    &::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--step-color);
+      animation: tracker-pulse 1.4s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes tracker-pulse {
+  50% {
+    transform: scale(0.6);
+    opacity: 0.6;
+  }
+}
+
+.order-tracker__label {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: 600;
+  color: $ink-faint;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  .is-done &,
+  .is-current & {
+    color: var(--step-color);
+  }
+
+  .is-current & {
+    font-weight: 800;
+  }
+}
+
+.order-tracker__now {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: $ink-soft;
+
+  strong {
+    color: var(--step-color);
+  }
+}
+
+// Narrow cards: only the current step keeps its label.
+@media (max-width: 420px) {
+  .order-tracker__label {
+    visibility: hidden;
+  }
+
+  .order-tracker__step.is-current .order-tracker__label {
+    visibility: visible;
+    overflow: visible;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .order-tracker__dot::after {
+    animation: none !important;
+  }
+}
+
+// "Your booking #123 · Tue, 13 Oct, 7:45 AM" on a restaurant card.
+.cx-hotel__booking {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border: 1px solid rgba(15, 118, 110, 0.25);
+  border-radius: $radius-md;
+  background: $brand-soft;
+  font-size: 13px;
+  text-align: left;
+  color: $brand-strong;
+
+  span {
+    font-weight: 600;
+  }
+
+  strong {
+    font-weight: 800;
+  }
+
+  &:hover {
+    border-color: $brand;
+  }
+}

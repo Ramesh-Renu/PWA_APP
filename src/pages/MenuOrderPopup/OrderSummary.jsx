@@ -1,48 +1,31 @@
-
 import React from "react";
-import { Box, Typography, Button, Divider } from "@mui/material";
 
-const OrderSummary = ({
-  totalItems=0,
-  totalAmount=0,
-  onSkip,
-  onPlaceOrder
-}) => {
+const OrderSummary = ({ totalItems = 0, totalAmount = 0, onSkip, onPlaceOrder }) => {
   return (
-    <Box className="footer">
-      <Box>
-        <Typography variant="subtitle1">
-          Total Items : {totalItems}
-        </Typography>
+    <div className="hotel-form__actions order-summary">
+      <div className="order-summary__total">
+        <span>
+          {totalItems} {totalItems === 1 ? "item" : "items"}
+        </span>
+        <strong>₹{Number(totalAmount).toFixed(2)}</strong>
+      </div>
 
-        <Typography variant="h6" fontWeight={700}>
-          Total : ₹{Number(totalAmount).toFixed(2)}
-        </Typography>
-      </Box>
-
-      <Divider
-        orientation="vertical"
-        flexItem
-        sx={{mx:2}}
-      />
-
-      <Box display="flex" gap={2}>
-        <Button
-          variant="outlined"
-          color="inherit"
-          onClick={onSkip}
-        >
-          Skip
-        </Button>
-
-        <Button
-          variant="contained"
-          onClick={onPlaceOrder}
-        >
-          Place Order
-        </Button>
-      </Box>
-    </Box>
+      <button
+        type="button"
+        className="hotel-form__btn hotel-form__btn--ghost"
+        onClick={onSkip}
+      >
+        Skip
+      </button>
+      <button
+        type="button"
+        className="hotel-form__btn hotel-form__btn--primary"
+        onClick={onPlaceOrder}
+        disabled={totalItems === 0}
+      >
+        Place order
+      </button>
+    </div>
   );
 };
 

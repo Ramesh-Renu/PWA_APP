@@ -966,11 +966,28 @@ const CustomDatePicker = ({
       </div>
 
       {showPopup && (
-        <PopupModal show={showPopup} onClose={() => setShowPopup(false)} title="Reason">
-          <textarea
-            value={description || ""}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+        <PopupModal
+          show={showPopup}
+          onClose={() => setShowPopup(false)}
+          header
+          title="Reason"
+          className="hotel-form__body"
+          customClassName="hotel-form-dialog menu-editor-dialog category-dialog"
+        >
+          <div className="hotel-form">
+            <div className="hotel-form__field">
+              <label className="hotel-form__label" htmlFor="date-reason">
+                Reason
+              </label>
+              <textarea
+                id="date-reason"
+                className="hotel-form__input menu-editor__textarea"
+                rows={4}
+                value={description || ""}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+          </div>
         </PopupModal>
       )}
     </div>

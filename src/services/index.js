@@ -31,7 +31,12 @@ export const deleteHotel = (params) => baseAPI.DELETE(API.HOTEL_API+"/"+params.h
 /** Table **/
 export const createTable = (body, hotelId, floorId) => baseAPI.POST(`${API.TABLE_API}/${hotelId}/${floorId}`, body);
 export const getAllTable = (params) => baseAPI.GET(API.TABLE_API, params);
-export const getTablebyid = (params) => baseAPI.GET(API.TABLE_API+"/"+params.hotel_id);
+// date (YYYY-MM-DD) + time (HH:mm) return seat availability for that slot.
+export const getTablebyid = (params) =>
+  baseAPI.GET(
+    API.TABLE_API + "/" + params.hotel_id,
+    params.date && params.time ? { date: params.date, time: params.time } : undefined,
+  );
 export const deleteTable = (params) => baseAPI.DELETE(API.DELETE_TABLE_API +"/"+params.table_id);
 
 /** Floor **/
@@ -57,10 +62,37 @@ export const getDashboardSummary = (params) => baseAPI.POST(API.DASHBOARD_SUMMAR
 export const deleteReservation = (params) => baseAPI.DELETE(API.RESERVATION_API+"/"+params.reservation_id+"/cancel");
 
 /** Orders  **/
-export const createOrder = (params) => baseAPI.POST(`${API.ORDERS_API}/reservation/${params.reservation_id}`, params);
+// With reservation_id the order goes on that table booking; without it the
+// order is placed with no booking.
+export const createOrder = (params) =>
+  params.reservation_id
+    ? baseAPI.POST(`${API.ORDERS_API}/reservation/${params.reservation_id}`, params)
+    : baseAPI.POST(API.ORDERS_API, params);
 export const getAllOrders = (params) => baseAPI.GET(`${API.ORDERS_API}`, params);
 export const updateOrderStatus = (orderId, body) => baseAPI.PATCH(`${API.ORDERS_API}/${orderId}/status`, body);
 export const cancelOrder = (orderId) => baseAPI.PATCH(`${API.ORDERS_API}/${orderId}/cancel`);
+
+/** Cooks (assigned to orders when accepted) **/
+export const getCooks = (params) => baseAPI.GET(API.COOK_API, params);
+export const createCook = (body) => baseAPI.POST(API.COOK_API, body);
+export const updateCook = (cookId, body) => baseAPI.PUT(`${API.COOK_API}/${cookId}`, body);
+export const deleteCook = (cookId) => baseAPI.DELETE(`${API.COOK_API}/${cookId}`);
+
+/** Servers (assigned to orders when served) **/
+export const getServers = (params) => baseAPI.GET(API.SERVER_API, params);
+export const createServer = (body) => baseAPI.POST(API.SERVER_API, body);
+export const updateServer = (serverId, body) => baseAPI.PUT(`${API.SERVER_API}/${serverId}`, body);
+export const deleteServer = (serverId) => baseAPI.DELETE(`${API.SERVER_API}/${serverId}`);
+
+/** Cleaners (assigned when a table goes to Cleaning) **/
+export const getCleaners = (params) => baseAPI.GET(API.CLEANER_API, params);
+export const createCleaner = (body) => baseAPI.POST(API.CLEANER_API, body);
+export const updateCleaner = (cleanerId, body) => baseAPI.PUT(`${API.CLEANER_API}/${cleanerId}`, body);
+export const deleteCleaner = (cleanerId) => baseAPI.DELETE(`${API.CLEANER_API}/${cleanerId}`);
+
+/** Replace an order's items: [{ menu_id, quantity }] (admin) **/
+export const updateOrderItems = (orderId, items) =>
+  baseAPI.PUT(`${API.ORDERS_API}/${orderId}/items`, { items });
 
 
 /** Masters */

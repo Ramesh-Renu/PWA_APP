@@ -12,9 +12,14 @@ import {
   LayersOutlined,
   TableRestaurantOutlined,
   EventSeatOutlined,
+  RefreshRounded,
+  SearchRounded,
 } from "@mui/icons-material";
 import KanbanBoard from "components/common/KanbanBoard";
-import PopupModal from "components/common/PopupModal";
+import ConfirmDialog from "components/common/ConfirmDialog";
+import AssignStaffDialog from "pages/Orders/AssignStaffDialog";
+import StaffAvatar from "pages/Settings/Staff/StaffAvatar";
+import { CLEANER_CONFIG, SERVER_CONFIG } from "pages/Settings/Staff/staffConfig";
 import useToast from "hooks/useToast";
 import useGlobalMaster from "hooks/useGlobalMaster";
 import {
@@ -43,6 +48,29 @@ const FLOW_ORDER = [
   STATUS.CANCELLED,
 ];
 const LOCKED_STATUSES = [STATUS.COMPLETED, STATUS.CANCELLED];
+// Guests can only be seated / served once their booking time has come
+// (up to 15 minutes early). The API applies the same rule.
+const ARRIVAL_STATUSES = [STATUS.SEATED, STATUS.SERVING];
+const EARLY_ARRIVAL_MINUTES = 15;
+// The server is chosen when a booking is confirmed and can be changed while
+// the guests are at the table; the cleaner is chosen when the table goes to
+// Cleaning. Later columns just show who it was.
+const STAFF = {
+  server: {
+    config: SERVER_CONFIG,
+    editableIn: [STATUS.CONFIRMED, STATUS.SEATED, STATUS.SERVING],
+    question: "Who will serve this table?",
+    moveLabel: "Confirm booking",
+    movedVerb: "confirmed",
+  },
+  cleaner: {
+    config: CLEANER_CONFIG,
+    editableIn: [STATUS.CLEANING],
+    question: "Who will clean this table?",
+    moveLabel: "Start cleaning",
+    movedVerb: "moved to Cleaning",
+  },
+};
 
 const countSeats = (seatStatus) =>
   Array.isArray(seatStatus)
@@ -54,6 +82,23 @@ const getTableIds = (seatStatus) =>
     ? [...new Set(seatStatus.map((table) => table.table_id).filter(Boolean))]
     : [];
 
+// Table codes (e.g. "SACT0001"); older rows without a code fall back to T<n>.
+const getTableLabels = (seatStatus) =>
+  Array.isArray(seatStatus)
+    ? [
+        ...new Set(
+          seatStatus
+            .map(
+              (table) =>
+                table.table_code ||
+                (table.table_number != null ? `T${table.table_number}` : null) ||
+                (table.table_id != null ? `#${table.table_id}` : null),
+            )
+            .filter(Boolean),
+        ),
+      ]
+    : [];
+
 const SEARCH_FIELDS = [
   {
     value: "all",
@@ -63,7 +108,7 @@ const SEARCH_FIELDS = [
   { value: "hotel", label: "Hotel name", placeholder: "e.g. Sangeetha Veg" },
   { value: "booking", label: "Booking ID", placeholder: "e.g. 110" },
   { value: "floor", label: "Floor", placeholder: "e.g. 2" },
-  { value: "table", label: "Table ID", placeholder: "e.g. 12" },
+  { value: "table", label: "Table code", placeholder: "e.g. SACT0001" },
 ];
 
 // "#110", "Booking 110", "Floor 2", "Table #12" → just the useful part.
@@ -81,7 +126,7 @@ const matchesSearch = (row, field, query) => {
     hotel: [row.hotel?.hotel_name],
     booking: [row.id],
     floor: [row.floor?.floor_number],
-    table: getTableIds(row.seat_status),
+    table: [...getTableLabels(row.seat_status), ...getTableIds(row.seat_status)],
   };
   const fields = field === "all" ? Object.keys(values) : [field];
   return fields.some((key) =>
@@ -98,6 +143,8 @@ const ReservationBoard = () => {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pendingCancel, setPendingCancel] = useState(null);
+  // { kind: "server" | "cleaner", reservation, status } while picking staff.
+  const [staffRequest, setStaffRequest] = useState(null);
   const [searchField, setSearchField] = useState("all");
   const [searchText, setSearchText] = useState("");
 
@@ -225,12 +272,126 @@ const ReservationBoard = () => {
     });
   };
 
+  // Moving to Confirmed / Cleaning (or changing the person) saves the status
+  // and the server / cleaner together.
+  const assignStaff = async (person) => {
+    const { kind, reservation, status } = staffRequest;
+    const { config, movedVerb } = STAFF[kind];
+    const name = person[config.nameField];
+    setStaffRequest(null);
+    const previous = {
+      dining_status: reservation.dining_status,
+      [config.orderField]: reservation[config.orderField] ?? null,
+      [config.orderRelation]: reservation[config.orderRelation] ?? null,
+    };
+    const patch = (values) =>
+      setReservations((current) =>
+        current.map((row) => (row.id === reservation.id ? { ...row, ...values } : row)),
+      );
+    patch({
+      dining_status: status,
+      [config.orderField]: person.id,
+      [config.orderRelation]: person,
+    });
+    try {
+      const response = await updateDiningStatus(reservation.id, {
+        dining_status: status,
+        [config.orderField]: person.id,
+      });
+      if (!response.success) throw response.message;
+      showToast({
+        message:
+          status === reservation.dining_status
+            ? `${name} assigned to booking #${reservation.id}`
+            : `Booking #${reservation.id} ${movedVerb} · ${name}`,
+        variant: "success",
+      });
+    } catch (error) {
+      patch(previous);
+      showToast({
+        title: `Couldn't assign ${name} to booking #${reservation.id}`,
+        message: error?.response?.data?.message || error,
+        variant: "danger",
+      });
+    }
+  };
+
   const handleMove = (reservation, column) => {
+    if (ARRIVAL_STATUSES.includes(column.id) && reservation.dining_date) {
+      const bookedFor = dayjs(reservation.dining_date);
+      const openFrom = bookedFor.subtract(EARLY_ARRIVAL_MINUTES, "minute");
+      if (dayjs().isBefore(openFrom)) {
+        showToast({
+          title: `Booking #${reservation.id} isn't due yet`,
+          message: `It is for ${bookedFor.format("D MMM YYYY, h:mm A")}. It can move to ${column.name} from ${openFrom.format("D MMM, h:mm A")}.`,
+          variant: "warning",
+        });
+        return;
+      }
+    }
     if (column.id === STATUS.CANCELLED) {
       setPendingCancel(reservation);
       return;
     }
+    if (column.id === STATUS.CONFIRMED) {
+      setStaffRequest({ kind: "server", reservation, status: STATUS.CONFIRMED });
+      return;
+    }
+    if (column.id === STATUS.CLEANING) {
+      setStaffRequest({ kind: "cleaner", reservation, status: STATUS.CLEANING });
+      return;
+    }
     changeStatus(reservation, column.id);
+  };
+
+  // Server / cleaner on a card, with Add / Change only in the columns where
+  // that person can still be changed.
+  const renderStaff = (row, kind) => {
+    const { config, editableIn } = STAFF[kind];
+    const person = row[config.orderRelation];
+    const editable = editableIn.includes(row.dining_status);
+    const ask = () => setStaffRequest({ kind, reservation: row, status: row.dining_status });
+
+    if (!person) {
+      return editable ? (
+        <button
+          type="button"
+          data-no-drag
+          className="kanban-card__cook-assign"
+          onClick={ask}
+        >
+          + Add {config.singular.toLowerCase()}
+        </button>
+      ) : null;
+    }
+
+    return (
+      <div className={`kanban-card__cook kanban-card__cook--${kind}`}>
+        <StaffAvatar
+          name={person[config.nameField]}
+          photo={person.photo_url}
+          size={26}
+          tone={kind}
+        />
+        <span>
+          <strong>{person[config.nameField]}</strong>
+          <small>
+            {config.singular}
+            {person[config.detailField] ? ` · ${person[config.detailField]}` : ""}
+          </small>
+        </span>
+        {editable && (
+          <button
+            type="button"
+            data-no-drag
+            className="kanban-card__cook-change"
+            onClick={ask}
+          >
+            Change
+          </button>
+        )}
+      </div>
+    );
   };
 
   const renderCard = (row) => (
@@ -243,7 +404,10 @@ const ReservationBoard = () => {
           title={row.hotel?.hotel_name || "Unnamed Hotel"}
           onClick={() =>
             navigate("/book-table/details/" + row.hotel_id, {
-              state: { hotel_id: row.hotel_id },
+              state: {
+                hotel_id: row.hotel_id,
+                from: { label: "Reservations", path: "/booked-table" },
+              },
             })
           }
         >
@@ -262,11 +426,9 @@ const ReservationBoard = () => {
         <span>
           <TableRestaurantOutlined sx={{ fontSize: 16, color: "#f59e0b" }} />
           {(() => {
-            const tableIds = getTableIds(row.seat_status);
-            if (!tableIds.length) return "No table";
-            return `${tableIds.length > 1 ? "Tables" : "Table"} ${tableIds
-              .map((tableId) => `#${tableId}`)
-              .join(", ")}`;
+            const labels = getTableLabels(row.seat_status);
+            if (!labels.length) return "No table";
+            return labels.join(", ");
           })()}
         </span>
         <span>
@@ -274,19 +436,39 @@ const ReservationBoard = () => {
           {countSeats(row.seat_status)} Seats
         </span>
       </div>
+      {renderStaff(row, "server")}
+      {renderStaff(row, "cleaner")}
     </Fragment>
   );
 
   return (
     <Fragment>
-      <section className="app-page kanban-page">
-        <div className="kanban-search" role="search">
+      <section className="ui-page kanban-page">
+        <header className="ui-header">
           <div>
+            <span className="ui-kicker">Front desk</span>
+            <h1>Reservations</h1>
+            <p>Drag a booking to a new column to update its status.</p>
+          </div>
+          <div className="ui-header__actions">
+            <button
+              type="button"
+              className="ui-btn ui-btn--ghost"
+              onClick={fetchReservations}
+              disabled={loading}
+            >
+              <RefreshRounded fontSize="small" /> Refresh
+            </button>
+          </div>
+        </header>
+
+        <div className="ui-toolbar" role="search">
+          <label className="ui-search">
+            <SearchRounded fontSize="small" aria-hidden />
             <select
-              className="kanban-search__field"
               value={searchField}
               onChange={(event) => setSearchField(event.target.value)}
-              aria-label="Search by"
+              aria-label="Search in"
             >
               {SEARCH_FIELDS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -294,34 +476,24 @@ const ReservationBoard = () => {
                 </option>
               ))}
             </select>
-            &#160;
             <input
               type="search"
-              className="kanban-search__input"
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder={activeSearchField?.placeholder}
               aria-label={`Search by ${activeSearchField?.label}`}
             />
+          </label>
+          <span className="ui-toolbar__count">
+            {searchQuery
+              ? `${visibleReservations.length} of ${reservations.length} reservations`
+              : `${reservations.length} reservations`}
             {searchQuery && (
-              <span className="kanban-search__summary">
-                {visibleReservations.length} of {reservations.length}{" "}
-                reservations
-                <button type="button" onClick={() => setSearchText("")}>
-                  Clear
-                </button>
-              </span>
+              <button type="button" onClick={() => setSearchText("")}>
+                Clear
+              </button>
             )}
-          </div>
-            <button
-              type="button"
-              className="kanban-page__refresh"
-              onClick={fetchReservations}
-              disabled={loading}
-            >
-              Refresh
-            </button>
-
+          </span>
         </div>
 
         <KanbanBoard
@@ -337,32 +509,30 @@ const ReservationBoard = () => {
         />
       </section>
 
-      <PopupModal
+      <AssignStaffDialog
+        config={STAFF[staffRequest?.kind || "server"].config}
+        order={staffRequest?.reservation}
+        question={STAFF[staffRequest?.kind || "server"].question}
+        confirmLabel={
+          staffRequest &&
+          staffRequest.status !== staffRequest.reservation.dining_status
+            ? STAFF[staffRequest.kind].moveLabel
+            : `Assign ${staffRequest?.kind || "server"}`
+        }
+        onAssign={assignStaff}
+        onCancel={() => setStaffRequest(null)}
+      />
+
+      <ConfirmDialog
         show={Boolean(pendingCancel)}
-        onClose={() => setPendingCancel(null)}
-        className={"popupModal bg-white rounded-4"}
-        width={"40vh"}
-      >
-        <div>
-          <h5 className="text-center">
-            Cancel reservation #{pendingCancel?.id} and release its seats?
-          </h5>
-          <div className="d-flex flex-row justify-content-center gap-3 mt-4 modalActions">
-            <button
-              className="btn btn-0 modalDelete_btn px-3"
-              onClick={confirmCancel}
-            >
-              Yes
-            </button>
-            <button
-              className="btn btn-0 modalCancel_btn px-3"
-              onClick={() => setPendingCancel(null)}
-            >
-              No
-            </button>
-          </div>
-        </div>
-      </PopupModal>
+        tone="warning"
+        title={`Cancel reservation #${pendingCancel?.id}?`}
+        message="Its seats will be released for new bookings."
+        confirmLabel="Cancel reservation"
+        cancelLabel="Keep it"
+        onConfirm={confirmCancel}
+        onCancel={() => setPendingCancel(null)}
+      />
     </Fragment>
   );
 };

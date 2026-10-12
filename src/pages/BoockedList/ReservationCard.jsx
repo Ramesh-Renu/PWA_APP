@@ -1,106 +1,88 @@
-import React, { useEffect } from "react";
-import {
-  Calendar,
-  Building2,
-  Pencil,
-  TableProperties,
-  Users,
-} from "lucide-react";
-import useGlobalMaster from "hooks/useGlobalMaster";
+import React from "react";
+import dayjs from "dayjs";
+import { EventAvailableOutlined } from "@mui/icons-material";
 
-const ReservationCard = ({ reservation, onEdit }) => {
-  const tableCount = reservation.seat_status?.length || 0;
-  const {
-    areaList,
-    locationList,
-    getAllArea,
-    getAllLocation,
-    diningStatusList,
-    getDiningStatus,
-  } = useGlobalMaster();
+const initialsOf = (name = "") =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0].toUpperCase())
+    .join("");
 
-  const seatCount =
-    reservation.seat_status?.reduce(
-      (total, table) => total + table.seat_ids.length,
-      0,
-    ) || 0;
-
-  useEffect(() => {
-    if (areaList.data.length === 0) {
-      getAllArea();
-    }
-    if (locationList.data.length === 0) {
-      getAllLocation();
-    }
-    if (diningStatusList.data.length === 0) {
-      getDiningStatus();
-    }
-  }, []);
+const ReservationCard = ({ reservation, status, canCancel, isPast, onView, onCancel }) => {
+  const tables = reservation.seat_status || [];
+  const seatCount = tables.reduce(
+    (total, table) => total + (table.seat_ids?.length || 0),
+    0,
+  );
+  const hotelName = reservation.hotel?.hotel_name || "Restaurant";
+  // Table codes from the API (e.g. "SACT0001").
+  const codes = tables.map((table) => table.table_code).filter(Boolean);
+  const dining = reservation.dining_date ? dayjs(reservation.dining_date) : null;
 
   return (
-    <div className="reservation-card">
-      <div className="reservation-card__header">
-        <div>
-          <h4>#{reservation.id}</h4>
-          <span>
-            <Calendar size={14} />
-            {new Date(reservation.booking_date).toLocaleDateString()}
-          </span>
+    <article className="cx-card cx-booking">
+      <div className="cx-hotel__head">
+        <span className="cx-avatar" aria-hidden>
+          {initialsOf(hotelName) || "R"}
+        </span>
+        <div className="cx-hotel__title">
+          <h3>{hotelName}</h3>
+          <p>
+            Booking #{reservation.id}
+            {reservation.floor?.floor_number != null &&
+              ` · Floor ${reservation.floor.floor_number}`}
+            {codes.length > 0 && ` · ${codes.join(", ")}`}
+          </p>
         </div>
-
         <span
-          className={`status status-${reservation.dining_status}`}
-          style={{
-            border: `1px solid ${diningStatusList?.data?.find((status) => status.status_id === reservation.dining_status)?.color_code}`,
-            background: "#ffffff",
-            borderRadius: "8px",
-            color: diningStatusList?.data?.find(
-              (status) => status.status_id === reservation?.dining_status,
-            )?.color_code,
-          }}
+          className="ui-chip booking-status"
+          style={{ "--status-color": status?.color_code || "#64748b" }}
         >
-          {diningStatusList?.data?.find(
-            (status) => status.status_id === reservation.dining_status,
-          )?.name || "Unknown"}
+          {status?.name || "—"}
         </span>
       </div>
 
-      <div className="reservation-card__hotel">
-        <Building2 size={18} />
-        <div>
-          <h5>{reservation.hotel.hotel_name}</h5>
-          <p>Floor {reservation.floor.floor_number}</p>
-        </div>
-      </div>
+      {dining && (
+        <p className="cx-booking__when">
+          <EventAvailableOutlined aria-hidden />
+          <span>
+            <strong>{dining.format("ddd, D MMM")}</strong>
+            {reservation.start_time
+              ? ` · ${reservation.start_time}`
+              : ` · ${dining.format("h:mm A")}`}
+          </span>
+        </p>
+      )}
 
-      <div className="reservation-card__chips">
-        <div className="chip">
-          <TableProperties size={14} />
-          {tableCount} Tables
-        </div>
+      <ul className="cx-facts">
+        <li>
+          <strong>{tables.length}</strong>
+          {tables.length === 1 ? "table" : "tables"}
+        </li>
+        <li>
+          <strong>{seatCount}</strong>
+          {seatCount === 1 ? "seat" : "seats"}
+        </li>
+      </ul>
 
-        <div className="chip">
-          <Users size={14} />
-          {seatCount} Seats
-        </div>
-      </div>
-
-      <div className="reservation-card__footer">
-        <div>
-          <small>Dining Time</small>
-          <h5>{reservation.start_time}</h5>
-        </div>
-
+      <div className="cx-card__actions">
+        {canCancel && (
+          <button type="button" className="ui-btn ui-btn--ghost" onClick={onCancel}>
+            Cancel
+          </button>
+        )}
         <button
           type="button"
-          className="reservation-card__edit-btn"
-          onClick={() => onEdit(reservation)}
+          className={`ui-btn ${isPast ? "ui-btn--ghost" : "ui-btn--primary"}`}
+          onClick={onView}
         >
-          <Pencil size={16} />
-          Edit
+          {/* A finished booking can't be changed; offer a new one instead. */}
+          {isPast ? "Book again" : "View booking"}
         </button>
       </div>
-    </div>
+    </article>
   );
 };
 

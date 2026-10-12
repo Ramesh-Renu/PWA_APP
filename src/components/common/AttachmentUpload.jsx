@@ -10,7 +10,7 @@ import {
   deleteAttachmentFile,
 } from "services";
 import Spinner from "../spinner/spinner.component";
-import PopupModal from "./PopupModal";
+import ConfirmDialog from "./ConfirmDialog";
 const AttachmentUpload = ({
   heading,
   headingSize,
@@ -312,32 +312,14 @@ const AttachmentUpload = ({
         )}
       </Col>
       {showRemoveFieldMsg && (
-        <PopupModal
+        <ConfirmDialog
           show={showRemoveFieldMsg}
-          onClose={closeShowPopup}
-          className={"orderOrionDashboard bg-white rounded-4"}
-          width={"40vh"}
-        >
-          <div>
-            <h5 className="text-center">
-              {`Are you sure you want to delete the "${isRemoveFile?.file_name}" attachments?`}
-            </h5>
-            <div className="d-flex flex-row justify-content-center gap-3 mt-4 modalActions">
-              <button
-                className="btn btn-0 modalDelete_btn px-3"
-                onClick={() => removeAttachment(isRemoveFile)}
-              >
-                Yes
-              </button>
-              <button
-                className="btn btn-0 modalCancel_btn px-3"
-                onClick={closeShowPopup}
-              >
-                No
-              </button>
-            </div>
-          </div>
-        </PopupModal>
+          title={`Delete "${isRemoveFile?.file_name}"?`}
+          message="This attachment will be removed."
+          confirmLabel="Delete"
+          onConfirm={() => removeAttachment(isRemoveFile)}
+          onCancel={closeShowPopup}
+        />
       )}
     </Fragment>
   );

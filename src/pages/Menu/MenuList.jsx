@@ -1,13 +1,10 @@
-import React, { use, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Avatar,
-  Button,
-  TextField,
-  MenuItem,
-  Paper,
-  Typography,
-  Box,
-} from "@mui/material";
+  AddRounded,
+  DeleteOutlineRounded,
+  EditOutlined,
+  SearchRounded,
+} from "@mui/icons-material";
 
 import {
   deleteMenu,
@@ -17,6 +14,7 @@ import {
 } from "services";
 import { Fragment } from "react";
 import PopupModal from "components/common/PopupModal";
+import ConfirmDialog from "components/common/ConfirmDialog";
 import AddMenu from "./AddMenu";
 
 const extractList = (response) => {
@@ -41,7 +39,7 @@ const MenuList = ({ hotelId }) => {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [selectedMenu, setSelectedMenu] = useState(null);
   const [deletingMenuId, setDeletingMenuId] = useState(null);
-  const [showDeleteCategory, setShowDeleteCategory] = useState(false);
+  const [menuToDelete, setMenuToDelete] = useState(null);
   const [selectedMenuSidedishes, setSelectedMenuSidedishes] = useState([]);
   const [filters, setFilters] = useState({
     search: "",
@@ -77,7 +75,9 @@ const MenuList = ({ hotelId }) => {
 
   const loadCategories = async () => {
     try {
-      const res = await getAllMenuCategories();
+      const res = await getAllMenuCategories(
+        hotelId ? { hotel_id: hotelId, limit: 500 } : { limit: 500 },
+      );
 
       setCategories(extractList(res));
     } catch (err) {
@@ -89,7 +89,7 @@ const MenuList = ({ hotelId }) => {
     try {
       setLoading(true);
 
-      const res = await getAllMenu(filters);
+      const res = await getAllMenu({ ...filters, limit: 500 }); // API default is 10
       setMenus(res.rows);
     } catch (err) {
       console.error(err);
@@ -112,6 +112,7 @@ const MenuList = ({ hotelId }) => {
 
   const handleAddMenu = () => {
     setSelectedMenu(null);
+    setSelectedMenuSidedishes([]);
     setShowAddMenu(true);
   };
 
@@ -127,17 +128,12 @@ const MenuList = ({ hotelId }) => {
 
   const handleDeleteMenu = async (menu) => {
     const menuId = menu?.id ?? menu?.menu_id;
+    if (!menuId) return;
 
-    if (
-      !window.confirm(
-        `Delete ${menu?.menu_name || menu?.name || "this menu item"}?`,
-      )
-    ) {
-      return;
-    }
     setDeletingMenuId(menuId);
     try {
       await deleteMenu(menuId);
+      setMenuToDelete(null);
       await loadMenus();
     } catch (err) {
       console.error(err);
@@ -149,102 +145,78 @@ const MenuList = ({ hotelId }) => {
 
   return (
     <Fragment>
-      <Box className="menu-management-page">
-        {/* Header */}
-
-        <Box className="menu-management-header">
-          <Box>
-            <Typography
-              variant="h5"
-              fontWeight={700}
-              className="menu-management-title"
+      <section className="ui-page ui-page--embedded menu-page">
+        <header className="ui-header">
+          <div>
+            <span className="ui-kicker">Menu</span>
+            <h2>Menu management</h2>
+            <p>Manage menu items, availability and pricing.</p>
+          </div>
+          <div className="ui-header__actions">
+            <button
+              type="button"
+              className="ui-btn ui-btn--primary"
+              onClick={handleAddMenu}
             >
-              Menu Management
-            </Typography>
-            <Typography variant="body2" className="menu-management-subtitle">
-              Manage menu items, availability, and pricing.
-            </Typography>
-          </Box>
-          <Button
-            variant="contained"
-            className="menu-add-button"
-            onClick={handleAddMenu}
-          >
-            Add Menu
-          </Button>
-        </Box>
+              <AddRounded fontSize="small" /> Add menu item
+            </button>
+          </div>
+        </header>
 
-        {/* Filters */}
-
-        <Paper className="menu-filter-panel">
-          <Box className="menu-filter-grid">
-            <TextField
-              fullWidth
-              label="Search"
-              name="search"
-              value={filters.search}
-              onChange={handleFilterChange}
-              size="small"
-            />
-
-            <TextField
-              select
-              fullWidth
-              label="Category"
+        <div className="ui-toolbar">
+          <div className="ui-toolbar__group">
+            <label className="ui-search">
+              <SearchRounded fontSize="small" aria-hidden />
+              <input
+                type="search"
+                name="search"
+                value={filters.search}
+                onChange={handleFilterChange}
+                placeholder="Search menu items"
+                aria-label="Search menu items"
+              />
+            </label>
+            <select
+              className="ui-select"
               name="category_id"
               value={filters.category_id}
               onChange={handleFilterChange}
-              size="small"
+              aria-label="Filter by category"
             >
-              <MenuItem value="">All Categories</MenuItem>
-
+              <option value="">All categories</option>
               {categories.map((category) => (
-                <MenuItem key={category.id} value={category.id}>
+                <option key={category.id} value={category.id}>
                   {category.category_name}
-                </MenuItem>
+                </option>
               ))}
-            </TextField>
-          </Box>
-        </Paper>
+            </select>
+          </div>
+          <span className="ui-toolbar__count">
+            {menus.length} {menus.length === 1 ? "item" : "items"}
+          </span>
+        </div>
 
-        {/* Table */}
-        <Paper className="menu-table-panel">
-          <table className="menu-table">
+        <div className="ui-panel ui-table-wrap">
+          <table className="ui-table menu-page__table">
             <thead>
               <tr>
-                <th>Image</th>
-                <th>Menu Name</th>
-                <th>Side Dishes</th>
+                <th>Item</th>
                 <th>Category</th>
-                <th>Price</th>
-                <th>Veg</th>
+                <th>Side dishes</th>
+                <th className="is-right">Price</th>
                 <th>Status</th>
-                <th>Actions</th>
+                <th className="is-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    style={{
-                      textAlign: "center",
-                      padding: 30,
-                    }}
-                  >
-                    Loading...
-                  </td>
+                <tr className="ui-table__state">
+                  <td colSpan={6}>Loading menu…</td>
                 </tr>
               ) : menus.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    style={{
-                      textAlign: "center",
-                      padding: 30,
-                    }}
-                  >
-                    No Menu Found
+                <tr className="ui-table__state">
+                  <td colSpan={6}>
+                    No menu items yet. Use “Add menu item” to create one.
                   </td>
                 </tr>
               ) : (
@@ -254,64 +226,87 @@ const MenuList = ({ hotelId }) => {
                   const imageUrl = menu.image_url ?? menu.image;
                   const categoryName =
                     menu.category_name ?? menu.category?.category_name;
-                  console.log("menu", menu);
+                  const sideDishes = menu.sideDishes || [];
 
                   return (
                     <tr key={menuId}>
-                      <td data-label="Image">
-                        {imageUrl ? (
-                          <img
-                            src={imageUrl}
-                            alt={menuName}
-                            className="menu-item-image"
-                          />
-                        ) : (
-                          <Avatar className="menu-item-image menu-item-avatar">
-                            {menuName?.charAt(0) || "M"}
-                          </Avatar>
-                        )}
+                      <td data-label="Item">
+                        <div className="menu-row__item">
+                          {imageUrl ? (
+                            <img src={imageUrl} alt="" className="menu-row__thumb" />
+                          ) : (
+                            <span className="menu-row__thumb menu-row__thumb--empty" aria-hidden>
+                              {menuName?.charAt(0) || "M"}
+                            </span>
+                          )}
+                          <div className="menu-row__name">
+                            <strong>
+                              <span
+                                className={`ui-diet ${menu.is_veg ? "ui-diet--veg" : "ui-diet--nonveg"}`}
+                                title={menu.is_veg ? "Veg" : "Non-veg"}
+                                aria-label={menu.is_veg ? "Veg" : "Non-veg"}
+                              />
+                              {menuName}
+                            </strong>
+                            {menu.menu_code && <small>{menu.menu_code}</small>}
+                          </div>
+                        </div>
                       </td>
-                      <td data-label="Menu Name">{menuName}</td>
-                      <td data-label="Side Dishes">
-                        {menu.sideDishes?.length ? (
-                          <ul className="menu-side-dishes">
-                            {menu.sideDishes.map((dish) => (
-                              <li key={dish.id} className="side-dish-item">
+                      <td data-label="Category">{categoryName || "—"}</td>
+                      <td data-label="Side dishes">
+                        {sideDishes.length ? (
+                          <div className="menu-row__dishes">
+                            {sideDishes.slice(0, 3).map((dish) => (
+                              <span key={dish.id} className="ui-chip">
                                 {dish.side_dish_name}
-                              </li>
+                              </span>
                             ))}
-                          </ul>
+                            {sideDishes.length > 3 && (
+                              <span
+                                className="ui-chip ui-chip--brand"
+                                title={sideDishes
+                                  .slice(3)
+                                  .map((dish) => dish.side_dish_name)
+                                  .join(", ")}
+                              >
+                                +{sideDishes.length - 3}
+                              </span>
+                            )}
+                          </div>
                         ) : (
-                          "-"
+                          <span className="is-muted">—</span>
                         )}
                       </td>
-                      <td data-label="Category">{categoryName}</td>
-                      <td data-label="Price">&#8377; {menu.price}</td>
-                      <td data-label="Veg">
-                        {menu.is_veg ? "Veg" : "Non Veg"}
+                      <td data-label="Price" className="is-right is-strong">
+                        ₹{Number(menu.price)}
                       </td>
                       <td data-label="Status">
-                        {menu.is_available ? "Available" : "Unavailable"}
+                        <span
+                          className={`ui-chip ${menu.is_available ? "ui-chip--success" : ""}`}
+                        >
+                          {menu.is_available ? "Available" : "Unavailable"}
+                        </span>
                       </td>
-                      <td data-label="Actions">
-                        <Button
-                          size="small"
-                          className="menu-action-button"
+                      <td data-label="Actions" className="is-right">
+                        <button
+                          type="button"
+                          className="ui-icon-btn"
+                          title="Edit"
+                          aria-label={`Edit ${menuName}`}
                           onClick={() => handleEditMenu(menu, menu.id)}
                         >
-                          Edit
-                        </Button>
-
-                        <Button
-                          size="small"
-                          color="error"
-                          className="menu-action-button"
-                          onClick={() =>
-                            setShowDeleteCategory(!showDeleteCategory)
-                          }
+                          <EditOutlined fontSize="small" />
+                        </button>
+                        <button
+                          type="button"
+                          className="ui-icon-btn ui-icon-btn--danger"
+                          title="Delete"
+                          aria-label={`Delete ${menuName}`}
+                          onClick={() => setMenuToDelete(menu)}
+                          disabled={deletingMenuId === menuId}
                         >
-                          Delete
-                        </Button>
+                          <DeleteOutlineRounded fontSize="small" />
+                        </button>
                       </td>
                     </tr>
                   );
@@ -319,21 +314,22 @@ const MenuList = ({ hotelId }) => {
               )}
             </tbody>
           </table>
-        </Paper>
-      </Box>
+        </div>
+      </section>
       <PopupModal
         show={showAddMenu}
         onClose={closeShowPopup}
         header
         title={selectedMenu ? "Edit Menu" : "Add Menu"}
-        className={"orderOrionDashboard bg-white rounded-4"}
-        customClassName="menu-modal-dialog"
+        className="hotel-form__body"
+        customClassName="hotel-form-dialog menu-editor-dialog"
       >
         <AddMenu
           hotels={hotels}
           categories={categories}
           hotelId={hotelId}
           menu={selectedMenu}
+          onCancel={closeShowPopup}
           onSaved={async () => {
             closeShowPopup();
             await loadMenus();
@@ -341,33 +337,17 @@ const MenuList = ({ hotelId }) => {
           selectedMenuSidedishes={selectedMenuSidedishes}
         />
       </PopupModal>
-      <PopupModal
-        show={showDeleteCategory}
-        onClose={() => setShowDeleteCategory(false)}
-        className={"popupModal bg-white rounded-4"}
-        width={"40vh"}
-      >
-        <div>
-          <h5 className="text-center">Do you want to Delete this Category ?</h5>
-          <div className="d-flex flex-row justify-content-center gap-3 mt-4 modalActions">
-            <button
-              className="btn btn-0 modalDelete_btn px-3"
-              onClick={() => handleDeleteMenu(menu)}
-            >
-              Yes
-            </button>
-            <button
-              className="btn btn-0 modalCancel_btn px-3"
-              onClick={() => {
-                setShowDeleteCategory(false);
-                setDeletingMenuId(null);
-              }}
-            >
-              No
-            </button>
-          </div>
-        </div>
-      </PopupModal>
+      <ConfirmDialog
+        show={Boolean(menuToDelete)}
+        title={`Delete ${
+          menuToDelete?.menu_name || menuToDelete?.name || "this menu item"
+        }?`}
+        message="It will be removed from this hotel's menu."
+        confirmLabel="Delete item"
+        loading={Boolean(deletingMenuId)}
+        onConfirm={() => handleDeleteMenu(menuToDelete)}
+        onCancel={() => setMenuToDelete(null)}
+      />
     </Fragment>
   );
 };
