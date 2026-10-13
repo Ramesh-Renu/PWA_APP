@@ -7,8 +7,8 @@ import PopupModal from "components/common/PopupModal";
 import ConfirmDialog from "components/common/ConfirmDialog";
 import SideDishesDialog from "./SideDishesDialog";
 
-import { getAllHotel } from "services";
 import { getApiErrorMessage } from "utils/apiError";
+import SettingsBackLink from "pages/Settings/SettingsBackLink";
 import {
   createMenuCategory,
   deleteMenuCategory,
@@ -17,7 +17,7 @@ import {
   updateMenuCategory,
 } from "services";
 
-// Offered in the "Category names" picker alongside names other hotels use.
+// Offered in the "Category names" picker alongside the existing categories.
 const DEFAULT_CATEGORY_NAMES = [
   "Starters",
   "Soups",
@@ -36,8 +36,9 @@ const DEFAULT_CATEGORY_NAMES = [
   "Beverages",
 ];
 
+// Categories are shared by every hotel (no hotel to pick); each hotel
+// chooses one when it adds a menu item.
 const emptyForm = {
-  hotel_id: "",
   category_name: "",
   description: "",
   display_order: 0,
@@ -56,22 +57,11 @@ const unwrapList = (response) => {
 const categoryId = (category) =>
   category?.id ?? category?.menu_category_id ?? category?.category_id;
 
-const hotelName = (category, hotels) => {
-  if (Number(category?.hotel_id) === 0) return "All hotels";
-
-  const hotel = hotels.find(
-    (item) => String(item?.id ?? item?.hotel_id) === String(category?.hotel_id),
-  );
-
-  return hotel?.hotel_name ?? hotel?.name ?? category?.hotel_name ?? "—";
-};
-
 const isActive = (value) =>
   value === true || value === 1 || value === "1" || value === "true";
 
 const MenuCategories = () => {
   const [categories, setCategories] = useState([]);
-  const [hotels, setHotels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -131,39 +121,33 @@ const MenuCategories = () => {
     loadCategories();
     loadSideDishes();
 
-    getAllHotel()
-      .then((response) => setHotels(unwrapList(response)))
-      .catch(() => setHotels([]));
   }, [loadCategories, loadSideDishes]);
 
-  // Other categories of the hotel picked in the form (excluding the one being
-  // edited). A hotel can't have two categories with the same name.
-  const hotelCategories = useMemo(
+  // Every other category (excluding the one being edited). The list is
+  // shared by all hotels, so a name can exist only once.
+  const otherCategories = useMemo(
     () =>
       categories.filter(
-        (category) =>
-          form.hotel_id !== "" &&
-          String(category?.hotel_id) === String(form.hotel_id) &&
-          categoryId(category) !== categoryId(editingCategory),
+        (category) => categoryId(category) !== categoryId(editingCategory),
       ),
-    [categories, form.hotel_id, editingCategory],
+    [categories, editingCategory],
   );
 
   const duplicateName = useMemo(() => {
     const name = form.category_name.trim().toLowerCase();
     if (!name) return false;
-    return hotelCategories.some(
+    return otherCategories.some(
       (category) =>
         String(category?.category_name || "").trim().toLowerCase() === name,
     );
-  }, [hotelCategories, form.category_name]);
+  }, [otherCategories, form.category_name]);
 
-  // Names to pick from: common ones plus every name used by any hotel,
-  // de-duplicated case-insensitively. Names this hotel already has are
-  // shown but disabled.
+  // Names to pick from: common ones plus the existing categories,
+  // de-duplicated case-insensitively. Names already added are shown but
+  // disabled.
   const nameSuggestions = useMemo(() => {
     const taken = new Set(
-      hotelCategories.map((category) =>
+      otherCategories.map((category) =>
         String(category?.category_name || "").trim().toLowerCase(),
       ),
     );
@@ -182,7 +166,7 @@ const MenuCategories = () => {
       .filter(([key]) => !query || key.includes(query))
       .map(([key, label]) => ({ label, taken: taken.has(key) }))
       .sort((a, b) => Number(a.taken) - Number(b.taken));
-  }, [categories, hotelCategories, form.category_name]);
+  }, [categories, otherCategories, form.category_name]);
 
   const filteredCategories = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -190,7 +174,7 @@ const MenuCategories = () => {
     return [...categories]
       .filter((category) => {
         const matchesSearch = !query ||
-          [category?.category_name, category?.description, category?.hotel_name]
+          [category?.category_name, category?.description]
             .filter(Boolean)
             .some((value) => String(value).toLowerCase().includes(query));
         const active = isActive(category?.is_active);
@@ -214,7 +198,6 @@ const MenuCategories = () => {
   const openEditDialog = (category) => {
     setEditingCategory(category);
     setForm({
-      hotel_id: category?.hotel_id ?? "",
       category_name: category?.category_name ?? "",
       description: category?.description ?? "",
       display_order: category?.display_order ?? 0,
@@ -240,14 +223,13 @@ const MenuCategories = () => {
     event.preventDefault();
 
     const body = {
-      hotel_id: Number(form.hotel_id),
       category_name: form.category_name.trim(),
       description: form.description.trim(),
       display_order: Number(form.display_order) || 0,
       is_active: Boolean(form.is_active),
     };
 
-    if (!body.category_name || !body.hotel_id || duplicateName) return;
+    if (!body.category_name || duplicateName) return;
 
     setSaving(true);
     setError("");
@@ -270,6 +252,38 @@ const MenuCategories = () => {
       );
     } finally {
       setSaving(false);
+    }
+  };
+
+  // A category with menu items can't be deleted (the API refuses); the
+  // dialog offers to hide it instead.
+  const deleteTargetItems = Number(deleteTarget?.menu_count) || 0;
+  const deleteTargetActive = isActive(deleteTarget?.is_active);
+
+  const handleDeactivate = async () => {
+    if (!deleteTarget) return;
+    if (!deleteTargetActive) {
+      setDeleteTarget(null);
+      return;
+    }
+
+    setDeleting(true);
+    setError("");
+
+    try {
+      await updateMenuCategory(categoryId(deleteTarget), { is_active: false });
+      setNotice(
+        `“${deleteTarget.category_name}” is now inactive and hidden from menus.`,
+      );
+      setDeleteTarget(null);
+      await loadCategories();
+    } catch (requestError) {
+      setError(
+        getApiErrorMessage(requestError) ||
+          "Unable to update this menu category. Please try again.",
+      );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -296,11 +310,12 @@ const MenuCategories = () => {
 
   return (
     <section className="ui-page">
+      <SettingsBackLink />
       <header className="ui-header">
         <div>
           <span className="ui-kicker">Settings</span>
           <h1>Menu categories</h1>
-          <p>Create and organize the categories used by each hotel's menu.</p>
+          <p>Menu categories shared by all hotels — each hotel picks from this list when adding a menu item.</p>
         </div>
         <div className="ui-header__actions">
           <button
@@ -367,7 +382,6 @@ const MenuCategories = () => {
             <tr>
               <th>Category</th>
               <th>Description</th>
-              <th>Hotel</th>
               <th>Side dishes</th>
               <th className="is-center">Order</th>
               <th>Status</th>
@@ -377,11 +391,11 @@ const MenuCategories = () => {
           <tbody>
             {loading ? (
               <tr className="ui-table__state">
-                <td colSpan={7}>Loading categories…</td>
+                <td colSpan={6}>Loading categories…</td>
               </tr>
             ) : filteredCategories.length === 0 ? (
               <tr className="ui-table__state">
-                <td colSpan={7}>
+                <td colSpan={6}>
                   No menu categories found. Add one or adjust your search.
                 </td>
               </tr>
@@ -394,7 +408,6 @@ const MenuCategories = () => {
                   <tr key={categoryId(category)}>
                     <td className="is-strong">{category?.category_name || "—"}</td>
                     <td className="is-muted">{category?.description || "—"}</td>
-                    <td>{hotelName(category, hotels)}</td>
                     <td>
                       <div className="category-sides">
                         {dishes.slice(0, 3).map((dish) => (
@@ -480,31 +493,7 @@ const MenuCategories = () => {
             <section className="hotel-form__section">
               <h3 className="hotel-form__section-title">Category</h3>
               <div className="hotel-form__grid">
-                <div className="hotel-form__field">
-                  <label className="hotel-form__label" htmlFor="category-hotel">
-                    Hotel <sup>*</sup>
-                  </label>
-                  <select
-                    id="category-hotel"
-                    name="hotel_id"
-                    className="hotel-form__input"
-                    value={String(form.hotel_id)}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">Select hotel</option>
-                    {hotels.map((hotel) => {
-                      const id = hotel?.id ?? hotel?.hotel_id;
-                      return (
-                        <option key={id} value={String(id)}>
-                          {hotel?.hotel_name ?? hotel?.name}
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-
-                <div className="hotel-form__field">
+                <div className="hotel-form__field hotel-form__field--full">
                   <label className="hotel-form__label" htmlFor="category-name">
                     Category name <sup>*</sup>
                   </label>
@@ -523,24 +512,21 @@ const MenuCategories = () => {
                   />
                   {duplicateName ? (
                     <span id="category-name-help" className="hotel-form__error">
-                      This hotel already has a “{form.category_name.trim()}” category.
+                      A “{form.category_name.trim()}” category already exists.
                     </span>
                   ) : (
                     <span id="category-name-help" className="hotel-form__hint">
+                      Shared by all hotels: each hotel picks it when adding a menu item.
                       Pick a name below or type a new one.
                     </span>
                   )}
                 </div>
 
                 <div className="hotel-form__field hotel-form__field--full">
-                  <span className="hotel-form__label">
-                    {form.hotel_id
-                      ? "Category names"
-                      : "Category names (select a hotel to see which are taken)"}
-                  </span>
+                  <span className="hotel-form__label">Category names</span>
                   {nameSuggestions.length === 0 ? (
                     <p className="category-names__empty">
-                      “{form.category_name.trim()}” is a new name for this hotel.
+                      “{form.category_name.trim()}” is a new category name.
                     </p>
                   ) : (
                     <div className="category-names" role="listbox" aria-label="Category names">
@@ -556,7 +542,7 @@ const MenuCategories = () => {
                             aria-disabled={taken}
                             disabled={taken}
                             className={`category-name${selected ? " is-selected" : ""}${taken ? " is-taken" : ""}`}
-                            title={taken ? "Already added to this hotel" : `Use “${label}”`}
+                            title={taken ? "Already added" : `Use “${label}”`}
                             onClick={() =>
                               setForm((current) => ({ ...current, category_name: label }))
                             }
@@ -641,7 +627,6 @@ const MenuCategories = () => {
               disabled={
                 saving ||
                 !form.category_name.trim() ||
-                !form.hotel_id ||
                 duplicateName
               }
             >
@@ -651,15 +636,36 @@ const MenuCategories = () => {
         </form>
       </PopupModal>
 
-      <ConfirmDialog
-        show={Boolean(deleteTarget)}
-        title={`Delete “${deleteTarget?.category_name || "this category"}”?`}
-        message="It will be removed from the menu categories, along with its side dishes."
-        confirmLabel="Delete category"
-        loading={deleting}
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
-      />
+      {deleteTargetItems > 0 ? (
+        // In use: explain up front and offer to hide it instead.
+        <ConfirmDialog
+          show={Boolean(deleteTarget)}
+          tone="warning"
+          title={`“${deleteTarget?.category_name}” has ${deleteTargetItems} menu ${
+            deleteTargetItems === 1 ? "item" : "items"
+          }`}
+          message={
+            deleteTargetActive
+              ? "A category with menu items can't be deleted. Move those items to another category first, or mark this category inactive to hide it from menus."
+              : "A category with menu items can't be deleted. Move those items to another category first. It is already inactive, so it is hidden from menus."
+          }
+          confirmLabel={deleteTargetActive ? "Mark inactive" : "OK"}
+          cancelLabel={deleteTargetActive ? "Cancel" : "Close"}
+          loading={deleting}
+          onConfirm={handleDeactivate}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      ) : (
+        <ConfirmDialog
+          show={Boolean(deleteTarget)}
+          title={`Delete “${deleteTarget?.category_name || "this category"}”?`}
+          message="It will be removed from the menu categories, along with its side dishes."
+          confirmLabel="Delete category"
+          loading={deleting}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
 
       <SideDishesDialog
         category={sideDishTarget}

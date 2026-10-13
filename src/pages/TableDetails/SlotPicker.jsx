@@ -7,6 +7,7 @@ import {
   LightModeOutlined,
   WbTwilightRounded,
 } from "@mui/icons-material";
+import AppSelect from "components/common/AppSelect";
 
 // Booking windows; slots every 15 minutes. A booking holds its seats for
 // 60 minutes (utils/slotAvailability.js in the API).
@@ -19,9 +20,9 @@ const STEP_MINUTES = 15;
 const DAYS_AHEAD = 7;
 const MAX_GUESTS = 20;
 
-// Guest count is hidden for now (kept for later): when false the picker
-// doesn't show it and bookings don't require one seat per guest.
-export const SHOW_GUESTS = false;
+// Guests are chosen first: tables appear only for a party size, and each
+// guest gets one seat (see TableDetails guest mode).
+export const SHOW_GUESTS = true;
 
 const toMinutes = (hm) => {
   const [h, m] = hm.split(":").map(Number);
@@ -54,7 +55,14 @@ export const defaultMeal = (date) =>
  * Date / meal / time picker for a table booking.
  * value = { date: "YYYY-MM-DD", guests, meal, time: "HH:mm" | "" }
  */
-const SlotPicker = ({ value, onChange }) => {
+// maxGuests: free seats on the floor shown (null until a time is picked):
+// the Guests list offers no more than that.
+const SlotPicker = ({ value, onChange, maxGuests = null }) => {
+  const guestCap =
+    maxGuests === null || maxGuests === undefined
+      ? MAX_GUESTS
+      : Math.max(0, Math.min(MAX_GUESTS, Number(maxGuests) || 0));
+  const tooMany = Boolean(value.guests) && maxGuests !== null && value.guests > guestCap;
   const days = useMemo(
     () =>
       Array.from({ length: DAYS_AHEAD }, (_, index) => {
@@ -93,20 +101,37 @@ const SlotPicker = ({ value, onChange }) => {
       <div className="slot-picker__top">
         <h3>When would you like to dine?</h3>
         {SHOW_GUESTS && (
-          <label className="slot-picker__guests">
-            <GroupOutlined aria-hidden />
-            <select
-              value={value.guests || 2}
-              onChange={(event) => update({ guests: Number(event.target.value) })}
-              aria-label="Guests"
-            >
-              {Array.from({ length: MAX_GUESTS }, (_, index) => index + 1).map((count) => (
-                <option key={count} value={count}>
-                  {count} {count === 1 ? "guest" : "guests"}
-                </option>
-              ))}
-            </select>
-          </label>
+          // Step 1 of booking: highlighted until a party size is chosen.
+          <div className={`slot-guests${value.guests ? "" : " is-empty"}`}>
+            <span className="slot-guests__label">
+              <GroupOutlined aria-hidden />
+              Guests
+              {!value.guests && <em>Start here</em>}
+            </span>
+            <AppSelect
+              variant="toolbar"
+              className="slot-guests__select"
+              // Too many for this floor: shown empty with the note below.
+              value={tooMany ? "" : value.guests || ""}
+              placeholder={guestCap === 0 ? "No seats free" : "How many?"}
+              disabled={guestCap === 0}
+              onChange={(event) => update({ guests: Number(event.target.value) || null })}
+              aria-label="Number of guests"
+              searchable={false}
+              options={Array.from({ length: guestCap }, (_, index) => index + 1).map(
+                (count) => ({ value: count, label: `${count} ${count === 1 ? "guest" : "guests"}` }),
+              )}
+            />
+            {maxGuests !== null && maxGuests !== undefined && (
+              <span className={`slot-guests__cap${tooMany || guestCap === 0 ? " is-warning" : ""}`}>
+                {guestCap === 0
+                  ? "No seats free on this floor at this time"
+                  : tooMany
+                    ? `Only ${guestCap} seats free on this floor — choose ${guestCap} or fewer, or another floor`
+                    : `Up to ${guestCap} on this floor`}
+              </span>
+            )}
+          </div>
         )}
       </div>
 

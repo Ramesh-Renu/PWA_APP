@@ -10,6 +10,7 @@ import PopupModal from "components/common/PopupModal";
 import { getAllMenu, getCooks, updateOrderItems } from "services";
 import { getApiErrorMessage } from "utils/apiError";
 import StaffAvatar from "pages/Settings/Staff/StaffAvatar";
+import AppSelect from "components/common/AppSelect";
 
 const TAX_RATE = 0.05; // same as the API (reservationOrder.controller.js)
 const money = (value) => `₹${Number(value || 0).toFixed(2)}`;
@@ -274,27 +275,24 @@ const OrderDetailsDialog = ({
                         />
                       ) : null;
                     })()}
-                    <select
-                      className="order-lines__cook"
+                    <AppSelect
+                      variant="compact"
+                      className="order-lines__cook-select"
                       value={line.cook_id ?? ""}
                       onChange={(event) => setLineCook(line.menu_id, event.target.value)}
                       aria-label={`Cook for ${line.name}`}
-                    >
-                      <option value="">No cook</option>
-                      {/* Keep a cook who is no longer active selectable for display. */}
-                      {line.cook_id &&
-                        !cooks.some((cook) => cook.id === line.cook_id) && (
-                          <option value={line.cook_id}>
-                            {line.cook_name || `Cook #${line.cook_id}`}
-                          </option>
-                        )}
-                      {cooks.map((cook) => (
-                        <option key={cook.id} value={cook.id}>
-                          {cook.cook_name}
-                          {cook.speciality ? ` · ${cook.speciality}` : ""}
-                        </option>
-                      ))}
-                    </select>
+                      options={[
+                        { value: "", label: "No cook" },
+                        // Keep a cook who is no longer active selectable for display.
+                        ...(line.cook_id && !cooks.some((cook) => cook.id === line.cook_id)
+                          ? [{ value: line.cook_id, label: line.cook_name || `Cook #${line.cook_id}` }]
+                          : []),
+                        ...cooks.map((cook) => ({
+                          value: cook.id,
+                          label: `${cook.cook_name}${cook.speciality ? ` · ${cook.speciality}` : ""}`,
+                        })),
+                      ]}
+                    />
                     </span>
                   )}
                   {readOnly ? (

@@ -9,9 +9,17 @@ import {
 import PopupModal from "components/common/PopupModal";
 import ConfirmDialog from "components/common/ConfirmDialog";
 import useToast from "hooks/useToast";
-import { getAllHotel, uploadMenuImage } from "services";
+import {
+  getAllArea,
+  getAllFloor,
+  getAllHotel,
+  getAllLocation,
+  uploadMenuImage,
+} from "services";
 import { getApiErrorMessage } from "utils/apiError";
 import StaffAvatar, { avatarColorOf, initialsOf } from "./StaffAvatar";
+import SettingsBackLink from "pages/Settings/SettingsBackLink";
+import AppSelect from "components/common/AppSelect";
 
 // Optional personal details + working hours (API: staffPersonalFields.js).
 const PERSONAL_FIELDS = [
@@ -24,6 +32,10 @@ const PERSONAL_FIELDS = [
   "joined_on",
   "shift_start",
   "shift_end",
+  // Where they work (API keeps these in step with the hotel).
+  "location_id",
+  "area_id",
+  "floor_id",
 ];
 const TIME_FIELDS = ["shift_start", "shift_end"];
 const EMPTY_PERSONAL = Object.fromEntries(PERSONAL_FIELDS.map((field) => [field, ""]));
@@ -78,6 +90,9 @@ const StaffPage = ({ config }) => {
   const { showToast } = useToast();
   const [rows, setRows] = useState([]);
   const [hotels, setHotels] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [areas, setAreas] = useState([]);
+  const [floors, setFloors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -110,6 +125,12 @@ const StaffPage = ({ config }) => {
 
   useEffect(() => {
     load();
+    getAllLocation()
+      .then((response) => setLocations(Array.isArray(response?.data) ? response.data : []))
+      .catch(() => setLocations([]));
+    getAllArea()
+      .then((response) => setAreas(Array.isArray(response?.data) ? response.data : []))
+      .catch(() => setAreas([]));
     getAllHotel()
       .then((response) => setHotels(response?.data || []))
       .catch(() => setHotels([]));
@@ -159,7 +180,7 @@ const StaffPage = ({ config }) => {
           field,
           TIME_FIELDS.includes(field)
             ? String(row[field] || "").slice(0, 5)
-            : row[field] || "",
+            : row[field] == null ? "" : String(row[field]),
         ]),
       ),
     });
@@ -174,7 +195,43 @@ const StaffPage = ({ config }) => {
   };
 
   const handleChange = ({ target }) =>
-    setForm((current) => ({ ...current, [target.name]: target.value }));
+    setForm((current) => {
+      const next = { ...current, [target.name]: target.value };
+      // A hotel fixes the location / area (they come from the hotel) and
+      // has its own floors.
+      if (target.name === "hotel_id") {
+        const hotel = hotels.find((row) => String(row.id) === target.value);
+        next.location_id = hotel?.location_id ? String(hotel.location_id) : current.location_id;
+        next.area_id = hotel?.area_id ? String(hotel.area_id) : hotel ? "" : current.area_id;
+        next.floor_id = "";
+      }
+      // Areas belong to a location.
+      if (target.name === "location_id") {
+        const area = areas.find((row) => String(row.id) === String(current.area_id));
+        if (area && String(area.location_id) !== target.value) next.area_id = "";
+      }
+      return next;
+    });
+
+  // Floors of the hotel picked in the form.
+  useEffect(() => {
+    if (!dialogOpen || !form.hotel_id) {
+      setFloors([]);
+      return undefined;
+    }
+    let active = true;
+    getAllFloor({ hotel_id: form.hotel_id })
+      .then((response) => active && setFloors(Array.isArray(response?.data) ? response.data : []))
+      .catch(() => active && setFloors([]));
+    return () => {
+      active = false;
+    };
+  }, [dialogOpen, form.hotel_id]);
+
+  const areaOptions = areas.filter(
+    (area) => !form.location_id || String(area.location_id) === String(form.location_id),
+  );
+  const nameById = (list, id) => list.find((row) => String(row.id) === String(id))?.name;
 
   const pickPhoto = (event) => {
     const file = event.target.files?.[0];
@@ -259,6 +316,7 @@ const StaffPage = ({ config }) => {
 
   return (
     <section className="ui-page">
+      <SettingsBackLink />
       <header className="ui-header">
         <div>
           <span className="ui-kicker">Settings</span>
@@ -284,20 +342,17 @@ const StaffPage = ({ config }) => {
               aria-label={`Search ${title.toLowerCase()}`}
             />
           </label>
-          <select
-            className="ui-select"
+          <AppSelect
+            variant="toolbar"
             value={hotelFilter}
             onChange={(event) => setHotelFilter(event.target.value)}
             aria-label="Filter by hotel"
-          >
-            <option value="">Every hotel</option>
-            <option value="all-hotels">Works at all hotels</option>
-            {hotels.map((hotel) => (
-              <option key={hotel.id} value={String(hotel.id)}>
-                {hotel.hotel_name}
-              </option>
-            ))}
-          </select>
+            options={[
+              { value: "", label: "Every hotel" },
+              { value: "all-hotels", label: "Works at all hotels" },
+              ...hotels.map((hotel) => ({ value: hotel.id, label: hotel.hotel_name })),
+            ]}
+          />
         </div>
         <div className="ui-segment" role="radiogroup" aria-label="Status">
           {["all", "active", "inactive"].map((value) => (
@@ -347,8 +402,16 @@ const StaffPage = ({ config }) => {
               <div className="cook-card__body">
                 <h3>{row[nameField]}</h3>
                 <p>{row[detailField] || `No ${detailLabel.toLowerCase()} set`}</p>
-                {(shiftLabel(row) || row.phone) && (
+                {(shiftLabel(row) || row.phone || row.location_id || row.area_id) && (
                   <p className="cook-card__extra">
+                    {(row.location_id || row.area_id) && (
+                      <span>
+                        📍{" "}
+                        {[nameById(locations, row.location_id), nameById(areas, row.area_id)]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    )}
                     {shiftLabel(row) && <span>🕘 {shiftLabel(row)}</span>}
                     {row.phone && <span>📞 {row.phone}</span>}
                   </p>
@@ -488,20 +551,16 @@ const StaffPage = ({ config }) => {
                   <label className="hotel-form__label" htmlFor={`${kind}-hotel`}>
                     Works at
                   </label>
-                  <select
+                  <AppSelect
                     id={`${kind}-hotel`}
                     name="hotel_id"
-                    className="hotel-form__input"
                     value={form.hotel_id}
                     onChange={handleChange}
-                  >
-                    <option value="">All hotels</option>
-                    {hotels.map((hotel) => (
-                      <option key={hotel.id} value={String(hotel.id)}>
-                        {hotel.hotel_name}
-                      </option>
-                    ))}
-                  </select>
+                    options={[
+                      { value: "", label: "All hotels" },
+                      ...hotels.map((hotel) => ({ value: hotel.id, label: hotel.hotel_name })),
+                    ]}
+                  />
                 </div>
                 <label className="menu-switch cook-form__switch">
                   <input
@@ -518,6 +577,75 @@ const StaffPage = ({ config }) => {
                   </span>
                 </label>
               </div>
+            </section>
+
+            {/* Where they work. With a hotel, location / area are the hotel's
+                and the floor is one of its floors. */}
+            <section className="hotel-form__section">
+              <h3 className="hotel-form__section-title">Work place</h3>
+              <div className="hotel-form__grid hotel-form__grid--three">
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor={`${kind}-location`}>
+                    Location
+                  </label>
+                  <AppSelect
+                    id={`${kind}-location`}
+                    name="location_id"
+                    value={form.location_id}
+                    onChange={handleChange}
+                    disabled={Boolean(form.hotel_id)}
+                    options={[
+                      { value: "", label: "Any location" },
+                      ...locations.map((location) => ({ value: location.id, label: location.name })),
+                    ]}
+                  />
+                </div>
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor={`${kind}-area`}>
+                    Area
+                  </label>
+                  <AppSelect
+                    id={`${kind}-area`}
+                    name="area_id"
+                    value={form.area_id}
+                    onChange={handleChange}
+                    disabled={Boolean(form.hotel_id)}
+                    options={[
+                      { value: "", label: "Any area" },
+                      ...areaOptions.map((area) => ({ value: area.id, label: area.name })),
+                    ]}
+                  />
+                </div>
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor={`${kind}-floor`}>
+                    Floor
+                  </label>
+                  <AppSelect
+                    id={`${kind}-floor`}
+                    name="floor_id"
+                    value={form.floor_id}
+                    onChange={handleChange}
+                    disabled={!form.hotel_id}
+                    placeholder="Pick a hotel first"
+                    options={
+                      form.hotel_id
+                        ? [
+                            { value: "", label: "Any floor" },
+                            ...floors.map((floor) => ({
+                              value: floor.id,
+                              label: `Floor ${floor.floor_number}`,
+                            })),
+                          ]
+                        : []
+                    }
+                  />
+                </div>
+              </div>
+              <span className="hotel-form__hint">
+                {form.hotel_id
+                  ? "Location and area come from the hotel. Pick the floor they cover."
+                  : "Working at all hotels: optionally limit them to a location / area."}
+              </span>
             </section>
 
             <section className="hotel-form__section">
@@ -592,20 +720,17 @@ const StaffPage = ({ config }) => {
                   <label className="hotel-form__label" htmlFor={`${kind}-gender`}>
                     Gender
                   </label>
-                  <select
+                  <AppSelect
                     id={`${kind}-gender`}
                     name="gender"
-                    className="hotel-form__input"
                     value={form.gender}
                     onChange={handleChange}
-                  >
-                    <option value="">Not specified</option>
-                    {GENDERS.map((gender) => (
-                      <option key={gender} value={gender}>
-                        {gender}
-                      </option>
-                    ))}
-                  </select>
+                    searchable={false}
+                    options={[
+                      { value: "", label: "Not specified" },
+                      ...GENDERS.map((gender) => ({ value: gender, label: gender })),
+                    ]}
+                  />
                 </div>
                 <div className="hotel-form__field">
                   <label className="hotel-form__label" htmlFor={`${kind}-dob`}>

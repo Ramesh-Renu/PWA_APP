@@ -14,6 +14,7 @@ import OrderDetailsDialog from "./OrderDetailsDialog";
 import CreateOrderDialog from "./CreateOrderDialog";
 import PrepTimer, { ItemTimer, formatElapsed } from "./PrepTimer";
 import { notifyOrdersChanged, onOrdersChanged } from "utils/orderEvents";
+import { paymentColor, paymentLabel } from "utils/paymentStatus";
 import PaymentDialog, { paymentMethodLabel } from "./PaymentDialog";
 import StaffAvatar from "pages/Settings/Staff/StaffAvatar";
 import { COOK_CONFIG, SERVER_CONFIG } from "pages/Settings/Staff/staffConfig";
@@ -68,7 +69,7 @@ const SERVER_EDITABLE = [SERVED];
 const STAFF = { cook: COOK_CONFIG, server: SERVER_CONFIG };
 const COMPLETED = 6; // legacy; not shown as a column
 const CANCELLED = 7;
-const PAYMENT_LABELS = { 0: "Payment pending", 1: "Paid", 2: "Refunded" };
+// Payment labels / colours come from Settings → Payment status (utils/paymentStatus).
 const PAYMENT_PENDING = 0;
 const PAID = 1;
 // reservation_order_items.item_status
@@ -98,7 +99,13 @@ const VISIBLE_ITEMS = 3;
 
 const OrderBoard = () => {
   const { showToast } = useToast();
-  const { orderStatusList, getOrderStatus } = useGlobalMaster();
+  const { orderStatusList, getOrderStatus, paymentStatusList, getPaymentStatus } =
+    useGlobalMaster();
+  // Badge tint in the payment status's colour (Settings → Payment status).
+  const paymentBadgeStyle = (statusId) => {
+    const color = paymentColor(statusId, paymentStatusList?.data);
+    return { background: `color-mix(in srgb, ${color} 14%, #fff)`, color };
+  };
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pendingCancel, setPendingCancel] = useState(null);
@@ -133,6 +140,9 @@ const OrderBoard = () => {
   useEffect(() => {
     if (orderStatusList.data.length === 0) {
       getOrderStatus().catch(() => {});
+    }
+    if (!paymentStatusList?.data?.length) {
+      getPaymentStatus().catch(() => {});
     }
     fetchOrders();
   }, []);
@@ -853,16 +863,18 @@ const OrderBoard = () => {
               type="button"
               data-no-drag
               className="kanban-card__badge kanban-card__badge--payment-0 kanban-card__badge--button"
+              style={paymentBadgeStyle(PAYMENT_PENDING)}
               title="Collect payment"
               onClick={() => setPaymentRequest({ order, deliver: false })}
             >
-              {PAYMENT_LABELS[PAYMENT_PENDING]}
+              {paymentLabel(PAYMENT_PENDING, paymentStatusList.data)}
             </button>
           ) : (
             <span
               className={`kanban-card__badge kanban-card__badge--payment-${order.payment_status}`}
+              style={paymentBadgeStyle(order.payment_status)}
             >
-              {PAYMENT_LABELS[order.payment_status] || "-"}
+              {paymentLabel(order.payment_status, paymentStatusList.data)}
               {order.payment_status === PAID && order.payment_method
                 ? ` · ${paymentMethodLabel(order.payment_method)}`
                 : ""}

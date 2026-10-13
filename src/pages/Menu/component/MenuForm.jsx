@@ -6,6 +6,7 @@ import {
   SearchRounded,
 } from "@mui/icons-material";
 import { getAllMenu, getAllMenuCategories, getCategorySideDishes } from "services";
+import AppSelect from "components/common/AppSelect";
 
 const defaultForm = {
   hotel_id: "",
@@ -49,10 +50,22 @@ const MenuForm = ({
   const [sideDishList, setSideDishList] = useState([]);
   const [selectedSideDishes, setSelectedSideDishes] = useState([]);
   const [dishSearch, setDishSearch] = useState("");
-  // Categories of the selected hotel. The API only accepts a category that
-  // belongs to the menu's hotel, and its list endpoint defaults to 10 rows,
-  // so the generic `categories` prop can't be trusted here.
-  const [hotelCategories, setHotelCategories] = useState(null);
+  // Menu categories are shared by every hotel (Settings → Menu categories).
+  // Loaded here because the list endpoint defaults to 10 rows, so the
+  // generic `categories` prop can't be trusted.
+  const [sharedCategories, setSharedCategories] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    getAllMenuCategories({ limit: 500 })
+      .then((res) => {
+        if (active) setSharedCategories(Array.isArray(res?.data) ? res.data : []);
+      })
+      .catch(() => active && setSharedCategories(null));
+    return () => {
+      active = false;
+    };
+  }, []);
   const [sideDishesLoading, setSideDishesLoading] = useState(false);
 
   // Side dishes come from the selected category (Settings → Menu categories).
@@ -85,18 +98,10 @@ const MenuForm = ({
 
   useEffect(() => {
     if (!form.hotel_id) {
-      setHotelCategories(null);
       setHotelMenus([]);
       return undefined;
     }
     let active = true;
-    getAllMenuCategories({ hotel_id: form.hotel_id, limit: 500 })
-      .then((res) => {
-        if (active) setHotelCategories(Array.isArray(res?.data) ? res.data : []);
-      })
-      .catch(() => {
-        if (active) setHotelCategories(null);
-      });
     getAllMenu({ hotel_id: form.hotel_id, limit: 500 })
       .then((res) => {
         const rows = res?.rows || res?.data || [];
@@ -128,16 +133,16 @@ const MenuForm = ({
     if (error) alertRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [error]);
 
+  // Active shared categories (plus this menu's own one, so editing an item
+  // whose category was made inactive still shows it).
   const categoryOptions = useMemo(() => {
-    if (hotelCategories) return hotelCategories;
-    // Fallback while loading / on error: whatever the parent passed, limited
-    // to this hotel when the rows say which hotel they belong to.
-    return categories.filter(
+    const list = sharedCategories || categories;
+    return list.filter(
       (category) =>
-        category.hotel_id == null ||
-        String(category.hotel_id) === String(form.hotel_id),
+        category.is_active !== false ||
+        String(category.id) === String(form.category_id),
     );
-  }, [hotelCategories, categories, form.hotel_id]);
+  }, [sharedCategories, categories, form.category_id]);
 
   useEffect(() => {
     if (selectedMenuSidedishes?.length) {
@@ -164,12 +169,10 @@ const MenuForm = ({
     setForm((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
-      // A category belongs to one hotel, so changing hotel clears it.
-      ...(name === "hotel_id" ? { category_id: "" } : {}),
     }));
 
     // Side dishes belong to a category; a new category starts with none.
-    if (name === "hotel_id" || name === "category_id") {
+    if (name === "category_id") {
       setSelectedSideDishes([]);
     }
 
@@ -284,21 +287,17 @@ const MenuForm = ({
                 <label className="hotel-form__label" htmlFor="menu-hotel">
                   Hotel <sup>*</sup>
                 </label>
-                <select
+                <AppSelect
                   id="menu-hotel"
                   name="hotel_id"
-                  className="hotel-form__input"
                   value={form.hotel_id}
                   onChange={handleChange}
-                  required
-                >
-                  <option value="">Select hotel</option>
-                  {hotels.map((hotel) => (
-                    <option key={hotel.id} value={hotel.id}>
-                      {hotel.hotel_name || hotel.name}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Select hotel"
+                  options={hotels.map((hotel) => ({
+                    value: hotel.id,
+                    label: hotel.hotel_name || hotel.name,
+                  }))}
+                />
               </div>
             )}
 
@@ -308,31 +307,23 @@ const MenuForm = ({
               <label className="hotel-form__label" htmlFor="menu-category">
                 Category <sup>*</sup>
               </label>
-              <select
+              <AppSelect
                 id="menu-category"
                 name="category_id"
-                className="hotel-form__input"
                 value={form.category_id}
                 onChange={handleChange}
-                required
-                disabled={!form.hotel_id}
-              >
-                <option value="">
-                  {!form.hotel_id
-                    ? "Select a hotel first"
-                    : categoryOptions.length === 0
-                      ? "No categories for this hotel"
-                      : "Select category"}
-                </option>
-                {categoryOptions.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.category_name}
-                  </option>
-                ))}
-              </select>
-              {form.hotel_id && hotelCategories?.length === 0 && (
+                placeholder={categoryOptions.length === 0 ? "No categories yet" : "Select category"}
+                disabled={categoryOptions.length === 0}
+                options={categoryOptions.map((category) => ({
+                  value: category.id,
+                  label: `${category.category_name}${
+                    category.is_active === false ? " (inactive)" : ""
+                  }`,
+                }))}
+              />
+              {sharedCategories?.length === 0 && (
                 <span className="hotel-form__hint">
-                  Add a category for this hotel under Menu Categories first.
+                  Add categories under Settings → Menu categories first.
                 </span>
               )}
             </div>
@@ -456,33 +447,26 @@ const MenuForm = ({
               <label className="hotel-form__label" htmlFor="menu-spice">
                 Spice level
               </label>
-              <select
+              <AppSelect
                 id="menu-spice"
                 name="spice_level"
-                className="hotel-form__input"
                 value={form.spice_level}
                 onChange={handleChange}
-                disabled={spiceLevelsLoading}
-              >
-                <option value="">
-                  {spiceLevelsLoading
+                disabled={spiceLevelsLoading || spiceLevels.length === 0}
+                placeholder={
+                  spiceLevelsLoading
                     ? "Loading…"
                     : spiceLevels.length === 0
                       ? "None available"
-                      : "Select level"}
-                </option>
-                {spiceLevels.map((spiceLevel) => {
-                  const id =
-                    spiceLevel?.id ??
-                    spiceLevel?.spice_level_id ??
-                    spiceLevel?.value;
-                  return id !== undefined && id !== null ? (
-                    <option key={id} value={String(id)}>
-                      {spiceLabel(spiceLevel)}
-                    </option>
-                  ) : null;
-                })}
-              </select>
+                      : "Select level"
+                }
+                options={spiceLevels
+                  .map((spiceLevel) => ({
+                    value: spiceLevel?.id ?? spiceLevel?.spice_level_id ?? spiceLevel?.value,
+                    label: spiceLabel(spiceLevel),
+                  }))
+                  .filter((option) => option.value !== undefined && option.value !== null)}
+              />
             </div>
           </div>
         </section>

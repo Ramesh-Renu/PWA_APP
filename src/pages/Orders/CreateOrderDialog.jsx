@@ -141,8 +141,8 @@ const CreateOrderDialog = ({
               onChange={(selected) =>
                 setHotelId(selected?.[0] ? String(selected[0].id) : "")
               }
-              dropdownPosition="bottom"
               dropdownHeight="240px"
+              dropdownPosition="bottom"
               optionType="radio"
             />
           </div>

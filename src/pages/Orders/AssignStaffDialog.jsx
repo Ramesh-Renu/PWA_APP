@@ -30,8 +30,16 @@ const AssignStaffDialog = ({
     setSelectedId(order[config.orderField] ?? order[config.orderRelation]?.id ?? null);
     setSearch("");
     setLoading(true);
+    // Only staff relevant to this hotel (its own + all-hotel staff whose
+    // location / area fit). Servers and cleaners also by the booking's floor;
+    // cooks work in the kitchen, so no floor for them.
+    const floorId = kind === "cook" ? null : order.floor_id ?? order.reservation?.floor_id;
     config.api
-      .list({ hotel_id: order.hotel_id, is_active: true })
+      .list({
+        hotel_id: order.hotel_id,
+        is_active: true,
+        ...(floorId ? { floor_id: floorId } : {}),
+      })
       .then((response) => {
         if (active) setPeople(Array.isArray(response?.data) ? response.data : []);
       })

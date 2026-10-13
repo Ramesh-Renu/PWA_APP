@@ -29,6 +29,8 @@ const OrderBoard = lazy(() => import("pages/Orders/OrderBoard"));
 const Cooks = lazy(() => import("pages/Settings/Cooks/Cooks"));
 const Servers = lazy(() => import("pages/Settings/Servers/Servers"));
 const Cleaners = lazy(() => import("pages/Settings/Cleaners/Cleaners"));
+const Areas = lazy(() => import("pages/Settings/Areas/Areas"));
+const MasterPage = lazy(() => import("pages/Settings/Masters/MasterPage"));
 const SettingsHome = lazy(() => import("pages/Settings/SettingsHome"));
 const MenuCategories = lazy(
   () => import("pages/Settings/MenuCategories/MenuCategories"),
@@ -103,6 +105,19 @@ const App = () => {
             path="/settings/cleaners"
             element={
               isAdminUser ? <Cleaners /> : <Navigate to="/book-table" replace />
+            }
+          />
+          <Route
+            path="/settings/areas"
+            element={
+              isAdminUser ? <Areas /> : <Navigate to="/book-table" replace />
+            }
+          />
+          {/* Locations, statuses, spice levels (pages/Settings/Masters). */}
+          <Route
+            path="/settings/masters/:master"
+            element={
+              isAdminUser ? <MasterPage /> : <Navigate to="/book-table" replace />
             }
           />
           <Route

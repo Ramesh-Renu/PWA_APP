@@ -27,6 +27,7 @@ export const API = {
   CREATE_SEATS_STATUS_MASTER: "/api/seat-status",
   GETALL_SEATS_STATUS_MASTER: "/api/seat-status",
   GETALL_ORDER_STATUS_API: "/api/order-status",
+  PAYMENT_STATUS_API: "/api/payment-status",
   MENU_API: "/api/menu",
   MENU_IMAGE_UPLOAD_API: "/api/upload",
   COOK_API: "/api/cooks",
@@ -36,6 +37,7 @@ export const API = {
   MENU_CATEGORY_API: "/api/menu-categories",
   SIDE_DISH_API: "/api/menu-side-dishes",
   CATEGORY_SIDE_DISH_API: "/api/side-dishes",
+  PWA_INSTALL_API: "/api/pwa/installs",
   /** NOTIFICATION */
   GET_RECENT_NOTIFICATION: "/master/TicketManagement/getnotification",
 };

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import SkeletonLoading from "components/common/SkeletonLoading";
+import AppSelect from "components/common/AppSelect";
 
 /**
  * Generic Kanban board. Each column is a status; cards move between columns
@@ -403,10 +404,12 @@ const KanbanBoard = ({
                         {renderCard(item)}
 
                         {movable && (
-                          <select
-                            className="kanban-card__move"
+                          <AppSelect
+                            variant="compact"
+                            className="kanban-card__move-select"
                             value={String(column.id)}
                             aria-label="Move to status"
+                            searchable={false}
                             onChange={(event) =>
                               moveItem(
                                 item,
@@ -416,15 +419,14 @@ const KanbanBoard = ({
                                 ),
                               )
                             }
-                          >
-                            {columns.map((target) => (
-                              <option key={target.id} value={String(target.id)}>
-                                {String(target.id) === String(column.id)
-                                  ? `Move to…`
-                                  : target.name}
-                              </option>
-                            ))}
-                          </select>
+                            options={columns.map((target) => ({
+                              value: target.id,
+                              label:
+                                String(target.id) === String(column.id)
+                                  ? "Move to…"
+                                  : target.name,
+                            }))}
+                          />
                         )}
                       </article>
                     );

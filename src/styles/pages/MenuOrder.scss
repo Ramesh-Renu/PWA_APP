@@ -25,7 +25,12 @@ $brand-soft: #e7f4f1;
   }
 }
 
+// Shown until a hotel is picked: tall enough for the open hotel list
+// (dropdown ~240px) so the popup body never clips it.
 .order-create__hint {
+  display: grid;
+  place-items: start center;
+  min-height: 300px;
   padding: 24px;
   text-align: center;
 }

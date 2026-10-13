@@ -29,6 +29,10 @@ import MenuOrderPopup from "pages/MenuOrderPopup/MenuOrderPopup";
 
 // Used when the seat status master has no row/colour for a status
 // (matches SEAT_STATUS in the API: utils/seatStatus.js).
+// Guest mode: a table may have at most this many spare seats for the party
+// (unless no closer table exists).
+const GUEST_SLACK = 1;
+
 const SEAT_FALLBACK = {
   1: { name: "Booked", color: "#f43f5e" },
   2: { name: "Cancelled", color: "#94a3b8" },
@@ -44,7 +48,9 @@ const tableLabel = (table) =>
 
 // slot (booking mode): { date: "YYYY-MM-DD", time: "HH:mm", guests } from
 // SlotPicker; seats are shown and booked for that slot.
-const TableDetails = ({ data, onChange, isEditable, isBooking, slot }) => {
+// onFloorFreeSeats(n): told the free seats of the floor on show (booking
+// mode), so the Guests picker can offer up to that many.
+const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFreeSeats }) => {
   const slotActive = Boolean(isBooking && slot?.date && slot?.time);
   const [{ data: auth }, { setAuth }] = useAuth();
   const { reservationData, dispatch } = useGlobalContext();
@@ -723,6 +729,104 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot }) => {
         : s.status === 4 || (s.status === 1 && s.user_id === auth?.details?.id),
     ) || [];
 
+  /* ------------------------------------------------------------------
+   * Guest mode (anyone booking a slot for N guests): the party is
+   * seated at one table that fits — enough free seats, but not a much
+   * bigger table. A table with only some seats free (e.g. 2 of 4) is fine
+   * when the party fits them. People pick a table, not seats.
+   * ------------------------------------------------------------------ */
+  const guests = Number(slot?.guests) || 0;
+  // Everyone booking a slot here (admins too) books by party size.
+  const guestMode = slotActive && guests > 0 && !isEditable;
+  const freeSeatsOf = (table) =>
+    (table.seats || []).filter((seat) => seat.status === 4 && !seat.is_new);
+
+  // Per floor: "single" (one table; free seats between guests and
+  // maxFree) or "combine" (no table is big enough: join tables).
+  const guestPlan = useMemo(() => {
+    if (!guestMode) return null;
+    const tables = floorToShow?.tables || [];
+    const fits = tables.map((table) => freeSeatsOf(table).length).filter((n) => n >= guests);
+    if (!fits.length) return { mode: "combine" };
+    // Up to one spare seat; if no table is that close, the smallest that fits.
+    return { mode: "single", maxFree: Math.max(Math.min(...fits), guests + GUEST_SLACK) };
+  }, [guestMode, floorToShow, guests]);
+
+  // Other floors with a table for this party (hint when this floor has none).
+  const floorsWithFit = useMemo(() => {
+    if (!guestMode) return [];
+    return floors
+      .map((floor, index) => ({ floor, index }))
+      .filter(
+        ({ floor, index }) =>
+          index !== selectedFloorIndex &&
+          (floor.tables || []).some((table) => freeSeatsOf(table).length >= guests),
+      );
+  }, [guestMode, floors, guests, selectedFloorIndex]);
+
+  const tableFit = (table) => {
+    if (!guestPlan) return { ok: true };
+    const free = freeSeatsOf(table).length;
+    if (free === 0) return { ok: false, reason: "Full" };
+    if (guestPlan.mode === "combine") return { ok: true };
+    if (free < guests) {
+      return { ok: false, reason: `Only ${free} free — not enough for ${guests}` };
+    }
+    if (free > guestPlan.maxFree) {
+      return { ok: false, reason: `${free} seats — too big for ${guests}` };
+    }
+    return { ok: true };
+  };
+
+  // Choose a table for the party: its first free seats, one per guest.
+  // Picking it again clears it. "combine" mode adds tables until everyone
+  // has a seat.
+  const pickTableForGuests = (table) => {
+    if (!tableFit(table).ok) return;
+    updateFloors((prev) => {
+      const selectedNow = prev
+        .flatMap((floor) => floor.tables || [])
+        .flatMap((t) => t.seats || [])
+        .filter((seat) => seat.is_booking).length;
+      const thisSelected = (table.seats || []).some((seat) => seat.is_booking);
+      const combine = guestPlan?.mode === "combine";
+      const needed = combine ? guests - selectedNow : guests;
+      if (!thisSelected && combine && needed <= 0) return prev;
+
+      const takeIds = thisSelected
+        ? new Set()
+        : new Set(
+            freeSeatsOf(table)
+              .sort((a, b) => Number(a.seat_number) - Number(b.seat_number))
+              .slice(0, needed)
+              .map((seat) => seat.seat_id),
+          );
+
+      return prev.map((floor) => ({
+        ...floor,
+        tables: (floor.tables || []).map((t) => {
+          const isThis = t.table_id === table.table_id;
+          // One table per party (unless combining): others are cleared.
+          if (!isThis && combine) return t;
+          return {
+            ...t,
+            seats: (t.seats || []).map((seat) => ({
+              ...seat,
+              is_booking: isThis ? takeIds.has(seat.seat_id) : false,
+              notAccess: false,
+            })),
+          };
+        }),
+      }));
+    });
+  };
+
+  // A new party size makes the old selection meaningless.
+  useEffect(() => {
+    if (guestMode) clearSelection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guests]);
+
   const floorStats = useMemo(
     () =>
       floors.map((floor) => {
@@ -734,6 +838,14 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot }) => {
       }),
     [floors],
   );
+
+  // Booking: tell the page how many seats are free on this floor at the
+  // chosen time (the Guests picker offers up to that many).
+  useEffect(() => {
+    if (!slotActive || !onFloorFreeSeats) return;
+    const stats = floorStats[selectedFloorIndex];
+    onFloorFreeSeats(floors.length ? stats?.free ?? 0 : null);
+  }, [slotActive, floorStats, selectedFloorIndex, floors.length, onFloorFreeSeats]);
 
   const selectedTables = useMemo(
     () =>
@@ -777,6 +889,11 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot }) => {
   }, [openAdminPopupTableId]);
 
   const handleSeatClick = (table, chair) => {
+    // Guest mode: tapping a free seat chooses its table for the party.
+    if (guestMode && chair.status === 4) {
+      pickTableForGuests(table);
+      return;
+    }
     if (isEditable) {
       handleRemoveThisSeat(table, chair);
     } else if (chair.status === 1 && chair.user_id === auth?.details?.id) {
@@ -812,7 +929,10 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot }) => {
 
   const renderSeat = (table, chair) => {
     const isMine = chair.status === 1 && chair.user_id === auth?.details?.id;
-    const canAccessEdit = isAdminView || isMine || chair.status === 4;
+    // Guest mode: only free seats of a table that fits the party.
+    const canAccessEdit = guestMode
+      ? isMine || (chair.status === 4 && tableFit(table).ok)
+      : isAdminView || isMine || chair.status === 4;
     const meta = seatMeta(chair.status);
     const state = chair.is_new
       ? "new"
@@ -860,9 +980,13 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot }) => {
 
   const modeHint = isEditable
     ? "Edit mode — add seats to a table, or click a saved seat to remove it."
-    : isBooking
-      ? "Tap seats, or use Select to book a whole table."
-      : "View only — open this hotel from Book Table to reserve seats.";
+    : guestMode
+      ? guestPlan?.mode === "combine"
+        ? `No single table seats ${guests} — choose tables one by one until everyone has a seat.`
+        : `Showing tables that fit ${guests} ${guests === 1 ? "guest" : "guests"}. Choose a table; we seat you together.`
+      : isBooking
+        ? "Tap seats, or use Select to book a whole table."
+        : "View only — open this hotel from Book Table to reserve seats.";
 
   return (
     <Fragment>
@@ -918,6 +1042,33 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot }) => {
           </div>
         </div>
 
+        {/* Guest mode: nothing on this floor fits — point to floors that do. */}
+        {guestMode &&
+          floorToShow &&
+          (floorToShow.tables || []).length > 0 &&
+          !(floorToShow.tables || []).some((table) => tableFit(table).ok) && (
+            <div className="fp-guest-note" role="status">
+              <span>
+                No table on this floor is free for {guests} {guests === 1 ? "guest" : "guests"} at
+                this time.
+              </span>
+              {floorsWithFit.length > 0 && (
+                <span className="fp-guest-note__floors">
+                  Try:
+                  {floorsWithFit.map(({ floor, index }) => (
+                    <button
+                      key={floor.floor_id ?? index}
+                      type="button"
+                      onClick={() => setSelectedFloorIndex(index)}
+                    >
+                      Floor {floor.floor_number ?? index + 1}
+                    </button>
+                  ))}
+                </span>
+              )}
+            </div>
+          )}
+
         {floorToShow && (floorToShow.tables || []).length === 0 && (
           <div className="fp-empty">
             <TableRestaurantOutlined />
@@ -926,7 +1077,18 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot }) => {
           </div>
         )}
 
-        {floorToShow && (floorToShow.tables || []).length > 0 && (
+        {/* Booking: tables appear once the party size is chosen. */}
+        {slotActive && !guests && floorToShow && (floorToShow.tables || []).length > 0 && (
+          <div className="fp-guest-wait">
+            <p>
+              <strong>{floorStats[selectedFloorIndex]?.free ?? 0} seats free</strong> on this
+              floor at this time.
+            </p>
+            <span>Choose the number of guests above to see the tables that fit.</span>
+          </div>
+        )}
+
+        {floorToShow && (floorToShow.tables || []).length > 0 && !(slotActive && !guests) && (
           <div className="fp-grid">
             {floorToShow.tables.map((table, tIndex) => {
               const chairs = table.seats || [];
@@ -956,19 +1118,51 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot }) => {
                       : `${free} of ${total} free`;
               const showSeatEditor =
                 isEditable || (isAdminView && (chairs.length === 0 || hasNewSeats));
+              // Guest mode: tables that don't fit the party are greyed out.
+              const fit = tableFit(table);
+              const blocked = guestMode && !fit.ok;
+              const pickedForGuests = guestMode && selectedCount > 0;
 
               return (
                 <article
                   key={table.table_id || tIndex}
-                  className={`fp-table fp-table--${tone}${selectedCount ? " is-selected" : ""}`}
+                  className={`fp-table fp-table--${tone}${selectedCount ? " is-selected" : ""}${
+                    blocked ? " is-blocked" : ""
+                  }${guestMode && !blocked ? " is-fit" : ""}`}
+                  title={blocked ? fit.reason : undefined}
                 >
                   <header className="fp-table__head">
                     <div className="fp-table__title">
                       <h3>{tableLabel(table)}</h3>
-                      <span className={`fp-chip fp-chip--${tone}`}>{chipText}</span>
+                      <span className={`fp-chip fp-chip--${blocked ? "muted" : tone}`}>
+                        {blocked ? fit.reason : chipText}
+                      </span>
                     </div>
 
-                    {chairs.length > 0 && (isBooking || isAdminView) && (
+                    {chairs.length > 0 && guestMode ? (
+                      // Customers choose a table for the whole party.
+                      <div className="fp-table__select-wrap">
+                        <button
+                          type="button"
+                          className={`fp-select${pickedForGuests ? " is-checked" : ""}`}
+                          disabled={blocked}
+                          aria-pressed={pickedForGuests}
+                          onClick={() => pickTableForGuests(table)}
+                          title={
+                            blocked
+                              ? fit.reason
+                              : pickedForGuests
+                                ? "Click to choose another table"
+                                : `Seat ${guests} ${guests === 1 ? "guest" : "guests"} here`
+                          }
+                        >
+                          <span className="fp-select__box" aria-hidden>
+                            {pickedForGuests && <CheckRounded />}
+                          </span>
+                          {pickedForGuests ? "Chosen" : "Choose"}
+                        </button>
+                      </div>
+                    ) : chairs.length > 0 && (isBooking || isAdminView) && (
                       <div className="fp-table__select-wrap">
                         <button
                           type="button"

@@ -1251,3 +1251,186 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
     padding: 0 8px;
   }
 }
+
+/* ---------------- Guest mode (booking for N guests) ---------------- */
+// Tables that don't fit the party: visible for orientation, not choosable.
+.fp-table.is-blocked {
+  opacity: 0.45;
+  filter: grayscale(0.6);
+
+  .fp-seat {
+    cursor: not-allowed;
+  }
+}
+
+// Tables that fit: a soft brand outline invites a tap.
+.fp-table.is-fit:not(.is-selected) {
+  border-color: rgba(15, 118, 110, 0.45);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.08);
+}
+
+.fp-guest-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  background: #fffbeb;
+  font-size: 13px;
+  color: #92400e;
+}
+
+.fp-guest-note__floors {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+
+  button {
+    padding: 3px 12px;
+    border: 1px solid #f59e0b;
+    border-radius: 999px;
+    background: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    color: #92400e;
+    cursor: pointer;
+
+    &:hover {
+      background: #f59e0b;
+      color: #fff;
+    }
+  }
+}
+
+/* ---------------- Booking: Guests (step 1) ---------------- */
+.slot-guests {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 12px;
+  border: 1px solid $line;
+  border-radius: 14px;
+  background: $surface;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+
+  // Nothing chosen yet: brand outline + gentle pulse so it is noticed.
+  &.is-empty {
+    border-color: $brand;
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+    animation: slot-guests-pulse 2s ease-in-out infinite;
+  }
+}
+
+@keyframes slot-guests-pulse {
+  50% {
+    box-shadow: 0 0 0 6px rgba(15, 118, 110, 0.16);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slot-guests.is-empty {
+    animation: none;
+  }
+}
+
+.slot-guests__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: $ink;
+
+  svg {
+    font-size: 20px;
+    color: $brand;
+  }
+
+  em {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: $brand;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 700;
+    color: #fff;
+  }
+}
+
+.slot-guests .app-select.slot-guests__select {
+  width: 150px;
+  min-width: 150px;
+
+  .react-dropdown-select.app-select__control {
+    min-height: 40px;
+    font-weight: 600;
+  }
+
+  // Wider list, opening under the field's right edge.
+  .react-dropdown-select-dropdown {
+    left: auto !important;
+    right: 0;
+    min-width: 180px;
+  }
+}
+
+@media (max-width: 640px) {
+  .slot-guests {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+// "Up to 18 on this floor" under the Guests field.
+.slot-guests {
+  flex-wrap: wrap;
+}
+
+.slot-guests__cap {
+  flex-basis: 100%;
+  padding: 0 2px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: right;
+  color: $ink-soft;
+
+  &.is-warning {
+    color: #b45309;
+  }
+}
+
+// Floor plan before the party size is chosen.
+.fp-guest-wait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 28px 16px;
+  border: 1px dashed rgba(15, 118, 110, 0.4);
+  border-radius: 14px;
+  background: #f4fbf9;
+  text-align: center;
+  color: $ink-soft;
+
+  p {
+    margin: 0;
+    font-size: 14px;
+  }
+
+  strong {
+    color: $brand;
+  }
+
+  span {
+    font-size: 13px;
+  }
+}

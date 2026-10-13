@@ -108,6 +108,9 @@ export const updateOrderItemStatus = (orderId, itemId, itemStatus) =>
 /** Masters */
 export const createArea = (params) => baseAPI.POST(API.CREATE_AREA_API, params);
 export const getAllArea = (params) => baseAPI.GET(API.GETALL_AREA_API, params);
+export const updateArea = (areaId, body) =>
+  baseAPI.PUT(`${API.CREATE_AREA_API}/${areaId}`, body);
+export const deleteArea = (areaId) => baseAPI.DELETE(`${API.CREATE_AREA_API}/${areaId}`);
 export const createLocation = (params) => baseAPI.POST(API.CREATE_LOCATION_API, params);
 export const getAllLocation = (params) => baseAPI.GET(API.GETALL_LOCATION_API, params);
 export const getDiningStatus = (params) => baseAPI.GET(API.GETALL_DINING_STATUS_API, params);
@@ -174,3 +177,31 @@ export const updateCategorySideDish = (id, body) =>
 
 export const deleteCategorySideDish = (id) =>
   baseAPI.DELETE(`${API.CATEGORY_SIDE_DISH_API}/${id}`);
+
+/** Installed app (PWA) */
+export const reportPwaInstall = (body) => baseAPI.POST(API.PWA_INSTALL_API, body);
+
+export const getPwaInstallSummary = () =>
+  baseAPI.GET(`${API.PWA_INSTALL_API}/summary`);
+
+/** Settings masters (admin) */
+export const updateLocation = (id, body) =>
+  baseAPI.PUT(`${API.GETALL_LOCATION_API}/${id}`, body);
+export const deleteLocation = (id) => baseAPI.DELETE(`${API.GETALL_LOCATION_API}/${id}`);
+
+export const getPaymentStatuses = (params) => baseAPI.GET(API.PAYMENT_STATUS_API, params);
+
+// Status masters: only the display name and colour can change.
+export const updateDiningStatusMaster = (id, body) =>
+  baseAPI.PUT(`${API.GETALL_DINING_STATUS_API}/${id}`, body);
+export const updateOrderStatusMaster = (id, body) =>
+  baseAPI.PUT(`${API.GETALL_ORDER_STATUS_API}/${id}`, body);
+export const updatePaymentStatusMaster = (id, body) =>
+  baseAPI.PUT(`${API.PAYMENT_STATUS_API}/${id}`, body);
+export const updateSeatStatusMaster = (id, body) =>
+  baseAPI.PUT(`${API.GETALL_SEATS_STATUS_MASTER}/${id}`, body);
+
+export const createSpiceLevel = (body) => baseAPI.POST(API.SPICE_LEVEL_API, body);
+export const updateSpiceLevel = (id, body) =>
+  baseAPI.PUT(`${API.SPICE_LEVEL_API}/${id}`, body);
+export const deleteSpiceLevel = (id) => baseAPI.DELETE(`${API.SPICE_LEVEL_API}/${id}`);

@@ -6,6 +6,7 @@ import ConfirmDialog from "components/common/ConfirmDialog";
 import OrderTracker from "./OrderTracker";
 import { cancelOrder } from "services";
 import { getApiErrorMessage } from "utils/apiError";
+import { paymentLabel } from "utils/paymentStatus";
 
 const ORDERED = 1; // customers can cancel until the kitchen accepts
 
@@ -31,7 +32,7 @@ const STATUS_COLORS = {
   7: "#ef4444",
   8: "#0ea5e9",
 };
-const PAYMENT_LABELS = { 0: "Payment pending", 1: "Paid", 2: "Refunded" };
+// Payment wording comes from Settings → Payment status (utils/paymentStatus).
 const VISIBLE_ITEMS = 4;
 
 const titleCase = (value = "") =>
@@ -41,7 +42,8 @@ const titleCase = (value = "") =>
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 const OrderHistoryCard = ({ order, onChanged }) => {
-  const { orderStatusList, getOrderStatus } = useGlobalMaster();
+  const { orderStatusList, getOrderStatus, paymentStatusList, getPaymentStatus } =
+    useGlobalMaster();
   const { showToast } = useToast();
   const [confirming, setConfirming] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -68,6 +70,9 @@ const OrderHistoryCard = ({ order, onChanged }) => {
   useEffect(() => {
     if (!orderStatusList?.data?.length && !orderStatusList?.loading) {
       getOrderStatus();
+    }
+    if (!paymentStatusList?.data?.length && !paymentStatusList?.loading) {
+      getPaymentStatus().catch(() => {});
     }
   }, []);
 
@@ -169,7 +174,7 @@ const OrderHistoryCard = ({ order, onChanged }) => {
       )}
 
       <div className="cx-order__foot">
-        <span>{PAYMENT_LABELS[order.payment_status] || ""}</span>
+        <span>{paymentLabel(order.payment_status, paymentStatusList?.data)}</span>
         <strong>₹{total.toFixed(2)}</strong>
       </div>
 

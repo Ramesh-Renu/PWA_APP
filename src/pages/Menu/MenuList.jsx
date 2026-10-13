@@ -16,6 +16,7 @@ import { Fragment } from "react";
 import PopupModal from "components/common/PopupModal";
 import ConfirmDialog from "components/common/ConfirmDialog";
 import AddMenu from "./AddMenu";
+import AppSelect from "components/common/AppSelect";
 
 const extractList = (response) => {
   const candidates = [
@@ -176,20 +177,20 @@ const MenuList = ({ hotelId }) => {
                 aria-label="Search menu items"
               />
             </label>
-            <select
-              className="ui-select"
+            <AppSelect
+              variant="toolbar"
               name="category_id"
               value={filters.category_id}
               onChange={handleFilterChange}
               aria-label="Filter by category"
-            >
-              <option value="">All categories</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.category_name}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: "", label: "All categories" },
+                ...categories.map((category) => ({
+                  value: category.id,
+                  label: category.category_name,
+                })),
+              ]}
+            />
           </div>
           <span className="ui-toolbar__count">
             {menus.length} {menus.length === 1 ? "item" : "items"}

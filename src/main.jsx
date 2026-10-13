@@ -8,6 +8,8 @@ import reportWebVitals from "./reportWebVitals";
 import { GlobalProvider } from "./store/context/GlobalProvider";
 import { AppThemeProvider } from "theme/ThemeProvider";
 import ToastDialog from "./components/common/ToastDialog";
+// Listen for the browser's install offer from the very start.
+import "utils/pwaInstall";
 
 registerSW({
   onOfflineReady() {

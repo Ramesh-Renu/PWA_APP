@@ -75,6 +75,8 @@ const CreateHotel = () => {
   const [selectedArea, setSelectedArea] = useState([]);
   const [showCreateHotelForm, setShowCreateHotelForm] = useState(false);
   const [loadingHotelListApp, setLoadingHotelListApp] = useState(true);
+  // Create / update request in flight (button spinner, form locked).
+  const [savingHotel, setSavingHotel] = useState(false);
   const [{ data: auth }] = useAuth();
   const isAdminUser = auth?.details?.role === "Admin";
   // Hotel an admin is placing an order for (no table booking).
@@ -162,6 +164,7 @@ const CreateHotel = () => {
   }, [hotelName, selectedLocation, selectedArea, prefixEdited]);
 
   const fetchCreateHotel = async (hotelData) => {
+    setSavingHotel(true);
     try {
       const response = await createHotelAPi(hotelData);
       showToast({
@@ -178,9 +181,12 @@ const CreateHotel = () => {
         message: apiErrorMessage(error, "Failed to create hotel"),
         variant: "danger",
       });
+    } finally {
+      setSavingHotel(false);
     }
   };
   const fetchUpdateHotel = async (hotelData, hotelId) => {
+    setSavingHotel(true);
     try {
       const response = await updateHotelbyid(hotelData, hotelId);
       showToast({
@@ -195,6 +201,8 @@ const CreateHotel = () => {
         message: apiErrorMessage(error, "Failed to update hotel"),
         variant: "danger",
       });
+    } finally {
+      setSavingHotel(false);
     }
   };
 
@@ -210,6 +218,7 @@ const CreateHotel = () => {
   };
 
   const closeShowPopup = () => {
+    if (savingHotel) return; // wait for the create / update to finish
     setShowCreateHotelForm(false);
     setShowCreateHotelForm(false);
     setErrorMessage({
@@ -929,6 +938,7 @@ const CreateHotel = () => {
               type="button"
               className="hotel-form__btn hotel-form__btn--ghost"
               onClick={handleCancel}
+              disabled={savingHotel}
             >
               Cancel
             </button>
@@ -938,12 +948,21 @@ const CreateHotel = () => {
               onClick={() =>
                 handleCreateHotelSubmit(updateHotel ? "Update" : "Create")
               }
-              disabled={updateHotel && !hasChanges}
+              // Locked while saving so a second click can't create a duplicate.
+              disabled={savingHotel || (updateHotel && !hasChanges)}
+              aria-busy={savingHotel}
               title={
                 updateHotel && !hasChanges ? "Change something to save" : undefined
               }
             >
-              {updateHotel ? "Save changes" : "Create hotel"}
+              {savingHotel && <span className="btn-spinner" aria-hidden />}
+              {savingHotel
+                ? updateHotel
+                  ? "Saving…"
+                  : "Creating hotel…"
+                : updateHotel
+                  ? "Save changes"
+                  : "Create hotel"}
             </button>
           </div>
         </PopupModal>

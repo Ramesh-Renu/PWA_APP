@@ -20,6 +20,7 @@ import {
   getReservationByUser,
 } from "services";
 import { getApiErrorMessage } from "utils/apiError";
+import AppSelect from "components/common/AppSelect";
 
 const TAX_RATE = 0.05; // same as the API (reservationOrder.controller.js)
 const CART_KEY = "customerCart";
@@ -616,21 +617,22 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
                 without a table.
               </p>
             ) : (
-              <select
-                className="hotel-form__input"
+              <AppSelect
                 value={reservationId}
                 onChange={(event) => setReservationId(event.target.value)}
                 aria-label="Table booking for this order"
-              >
-                <option value="">No table — order without a booking</option>
-                {hotelBookings.map((row) => (
-                  <option key={row.id} value={String(row.id)}>
-                    Booking #{row.id}
-                    {row.dining_date &&
-                      ` · ${dayjs(row.dining_date).format("ddd, D MMM, h:mm A")}`}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: "", label: "No table — order without a booking" },
+                  ...hotelBookings.map((row) => ({
+                    value: row.id,
+                    label: `Booking #${row.id}${
+                      row.dining_date
+                        ? ` · ${dayjs(row.dining_date).format("ddd, D MMM, h:mm A")}`
+                        : ""
+                    }`,
+                  })),
+                ]}
+              />
             )}
           </section>
         </div>

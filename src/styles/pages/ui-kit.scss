@@ -648,3 +648,449 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
     flex-basis: auto;
   }
 }
+
+/* ---------------- Installed app (PWA) ---------------- */
+// Admin bar with the install count pill, right aligned above the page header.
+// (Not ".app-topbar": that is the phone header in AppShell.scss.)
+.admin-installs-bar {
+  display: flex;
+  justify-content: flex-end;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 12px clamp(16px, 3vw, 32px) 0;
+}
+
+.installs-badge {
+  position: relative;
+}
+
+.installs-badge__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #b7e1d9;
+  border-radius: 999px;
+  background: $brand-soft;
+  font-size: 12px;
+  font-weight: 600;
+  color: $brand;
+  cursor: pointer;
+
+  strong {
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  &:hover {
+    border-color: $brand;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(15, 118, 110, 0.45);
+    outline-offset: 2px;
+  }
+}
+
+.installs-badge__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  width: 260px;
+  padding: 14px;
+  border: 1px solid $line;
+  border-radius: $radius-md;
+  background: $surface;
+  box-shadow: $shadow-md;
+
+  dl {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin: 0 0 10px;
+    text-align: center;
+
+    dt {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: $ink-faint;
+    }
+
+    dd {
+      margin: 2px 0 0;
+      font-size: 18px;
+      font-weight: 800;
+      color: $ink;
+    }
+  }
+}
+
+.installs-badge__platforms {
+  margin: 0 0 10px;
+  padding: 8px 0 0;
+  border-top: 1px solid $line;
+  list-style: none;
+  font-size: 13px;
+  color: $ink-soft;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+  }
+}
+
+.installs-badge__steps {
+  width: 100%;
+}
+
+// Install banner (all users, until installed or dismissed).
+.install-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 1440px;
+  margin: 12px auto 0;
+  padding: 10px 14px;
+  border: 1px solid #b7e1d9;
+  border-radius: $radius-md;
+  background: linear-gradient(90deg, $brand-soft, $surface);
+  box-shadow: $shadow-sm;
+  width: calc(100% - 2 * clamp(16px, 3vw, 32px));
+}
+
+.install-banner__icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, $brand, $brand-strong);
+  color: #fff;
+}
+
+.install-banner__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+
+  strong {
+    font-size: 14px;
+    color: $ink;
+  }
+
+  small {
+    font-size: 12px;
+    color: $ink-soft;
+  }
+}
+
+.install-banner__actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.install-banner__link {
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  font-weight: 700;
+  color: $brand;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.install-banner__close {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: $ink-faint;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(15, 23, 42, 0.06);
+    color: $ink;
+  }
+}
+
+@media (max-width: 640px) {
+  .install-banner {
+    flex-wrap: wrap;
+  }
+
+  .install-banner__text {
+    flex-basis: calc(100% - 60px);
+  }
+
+  .install-banner__actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+// Install steps popup.
+.modal-dialog.install-dialog {
+  max-width: 520px;
+}
+
+.install-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 24px;
+}
+
+.install-dialog__intro {
+  margin: 0;
+  font-size: 14px;
+  color: $ink-soft;
+}
+
+.install-dialog__one-click {
+  align-self: flex-start;
+}
+
+.install-dialog__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.install-dialog__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 12px 12px 32px;
+  border-radius: $radius-md;
+  background: $field;
+  font-size: 14px;
+  color: $ink;
+
+  li::marker {
+    font-weight: 800;
+    color: $brand;
+  }
+}
+
+/* ---------------- Settings masters (pages/Settings/Masters) ---------------- */
+// "System statuses: …" note above status tables.
+.ui-alert.master-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d7dbe8;
+  background: #f4f6fb;
+  color: $ink-soft;
+}
+
+// Colour column: swatch + hex code.
+.master-swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: $ink-soft;
+
+  > span {
+    width: 18px;
+    height: 18px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 5px;
+  }
+}
+
+// Colour field: picker next to the hex input.
+.master-color {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  input[type="color"] {
+    flex-shrink: 0;
+    width: 46px;
+    height: 46px;
+    padding: 3px;
+    border: 1px solid $line;
+    border-radius: 11px;
+    background: $surface;
+    cursor: pointer;
+  }
+
+  .hotel-form__input {
+    flex: 1;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    text-transform: uppercase;
+  }
+}
+
+.master-edit-hint {
+  margin: 0 0 4px;
+}
+
+.master-swatch em {
+  font-family: inherit;
+  font-style: normal;
+  font-size: 11px;
+  color: $ink-faint;
+}
+
+// "← All settings" above the header of every Settings sub-page.
+.settings-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  margin-bottom: 10px;
+  padding: 4px 10px 4px 6px;
+  border: 1px solid $line;
+  border-radius: 999px;
+  background: $surface;
+  font-size: 13px;
+  font-weight: 700;
+  color: $ink-soft;
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+
+  &:hover {
+    border-color: $brand;
+    color: $brand;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(15, 118, 110, 0.45);
+    outline-offset: 2px;
+  }
+}
+
+// Info note: icon and text start on the left (the alert base spreads them).
+.ui-alert.master-note {
+  justify-content: flex-start;
+}
+
+
+/* ---------------- AppSelect (components/common/AppSelect.jsx) ----------------
+   Every dropdown in the app: SelectDropDown with three sizes.            */
+.app-select {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+
+  &.is-disabled {
+    opacity: 0.6;
+  }
+
+  .react-dropdown-select.app-select__control {
+    width: 100%;
+    min-height: 46px;
+    padding: 4px 12px;
+    border: 1px solid $line !important;
+    border-radius: 11px !important;
+    background: $field !important;
+    font-size: 14px;
+    color: $ink;
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
+
+    &:focus-within {
+      border-color: $brand !important;
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+    }
+
+    .react-dropdown-select-input {
+      border: 0 !important;
+      font-size: 14px;
+    }
+
+    .react-dropdown-select-content span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: $ink;
+    }
+  }
+
+  // Above popups (Bootstrap modal 1055) and neighbouring cards.
+  .react-dropdown-select-dropdown {
+    z-index: 1065;
+    min-width: 100%;
+  }
+}
+
+// Filter bars (e.g. "Every location", "All categories").
+.app-select--toolbar {
+  width: auto;
+  min-width: 200px;
+
+  .react-dropdown-select.app-select__control {
+    min-height: 42px;
+    background: $surface !important;
+  }
+}
+
+// Small inline pickers (card "Move to…", dish cook, guests, search field).
+.app-select--compact {
+  .react-dropdown-select.app-select__control {
+    min-height: 32px;
+    padding: 2px 8px;
+    border-radius: 8px !important;
+    background: $surface !important;
+    font-size: 12px;
+
+    .react-dropdown-select-input,
+    .react-dropdown-select-content span {
+      font-size: 12px;
+    }
+  }
+}
+
+.kanban-card__move-select {
+  width: 100%;
+}
+
+.order-lines__cook-select {
+  flex-shrink: 0;
+  width: 180px;
+}
+
+// The search bar's "Search in" picker sits inside the search box.
+.ui-search .app-select--compact {
+  width: auto;
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .app-select--toolbar {
+    width: 100%;
+  }
+
+  .order-lines__cook-select {
+    width: 100%;
+    order: 2;
+  }
+}
+
+// AppSelect options never wrap mid-word ("2 guests", hotel names).
+.app-select .dropdwonLists p label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}

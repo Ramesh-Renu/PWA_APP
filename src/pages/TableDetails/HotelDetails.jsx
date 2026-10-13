@@ -9,7 +9,7 @@ import {
   TableRestaurantOutlined,
 } from "@mui/icons-material";
 import TableDetails from "pages/TableDetails/TableDetails";
-import SlotPicker, { defaultMeal, SHOW_GUESTS } from "pages/TableDetails/SlotPicker";
+import SlotPicker, { defaultMeal } from "pages/TableDetails/SlotPicker";
 import dayjs from "dayjs";
 import { renderLocation } from "utils/common";
 import useGlobalMaster from "hooks/useGlobalMaster";
@@ -30,10 +30,13 @@ const HotelDetails = () => {
     const given = location.state?.slot;
     if (given?.date && !dayjs(given.date).isBefore(dayjs(), "day")) return given;
     const date = dayjs().format("YYYY-MM-DD");
-    return { date, guests: SHOW_GUESTS ? 2 : null, meal: defaultMeal(date), time: "" };
+    // Guests start empty: the party size is chosen before tables are shown.
+    return { date, guests: null, meal: defaultMeal(date), time: "" };
   });
 
   const [showMenuList, setShowMenuList] = useState(false);
+  // Free seats on the floor shown in the plan at the chosen time.
+  const [floorFreeSeats, setFloorFreeSeats] = useState(null);
   const [{ data: auth }] = useAuth();
   const isAdmin = auth?.details?.role === "Admin";
   // Breadcrumb points back to the page this hotel was opened from (callers
@@ -189,7 +192,15 @@ const HotelDetails = () => {
 
       {!showMenuList && (
         <>
-          {isBooking && !isEditable && <SlotPicker value={slot} onChange={setSlot} />}
+          {isBooking && !isEditable && (
+            <SlotPicker
+              value={slot}
+              onChange={setSlot}
+              // Guests offered up to the free seats of the floor shown below
+              // (known once a time is picked).
+              maxGuests={slot.time ? floorFreeSeats : null}
+            />
+          )}
           {isBooking && !isEditable && !slot.time ? (
             <p className="slot-picker__prompt">
               Pick a time slot above to see the tables available then.
@@ -199,7 +210,16 @@ const HotelDetails = () => {
               data={hotelData || { id }}
               isEditable={isEditable}
               isBooking={isBooking}
-              slot={isBooking && !isEditable ? slot : null}
+              // A party bigger than this floor's free seats counts as "not
+              // chosen yet" here (the Guests field says why).
+              slot={
+                isBooking && !isEditable
+                  ? floorFreeSeats !== null && slot.guests > floorFreeSeats
+                    ? { ...slot, guests: null }
+                    : slot
+                  : null
+              }
+              onFloorFreeSeats={setFloorFreeSeats}
             />
           )}
         </>

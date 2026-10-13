@@ -39,6 +39,7 @@ import {
   deleteReservation,
 } from "services";
 import { notifyOrdersChanged, onOrdersChanged } from "utils/orderEvents";
+import AppSelect from "components/common/AppSelect";
 
 // Order / order item statuses (utils/orderStatus.js, item_status comment).
 const ORDER_READY = 4;
@@ -929,17 +930,14 @@ const ReservationBoard = () => {
         <div className="ui-toolbar" role="search">
           <label className="ui-search">
             <SearchRounded fontSize="small" aria-hidden />
-            <select
+            <AppSelect
+              variant="compact"
               value={searchField}
               onChange={(event) => setSearchField(event.target.value)}
               aria-label="Search in"
-            >
-              {SEARCH_FIELDS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              searchable={false}
+              options={SEARCH_FIELDS.map(({ value, label }) => ({ value, label }))}
+            />
             <input
               type="search"
               value={searchText}

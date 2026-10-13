@@ -3,6 +3,13 @@ import {
   CategoryOutlined,
   CleaningServicesOutlined,
   ChevronRightRounded,
+  EventNoteOutlined,
+  EventSeatOutlined,
+  LocalFireDepartmentOutlined,
+  LocationCityOutlined,
+  PaymentsOutlined,
+  PlaceOutlined,
+  ReceiptLongOutlined,
   RoomServiceOutlined,
   SoupKitchenOutlined,
 } from "@mui/icons-material";
@@ -31,6 +38,48 @@ export const SETTINGS_SECTIONS = [
     label: "Cleaners",
     description: "Housekeeping staff assigned when a table goes to Cleaning.",
     icon: CleaningServicesOutlined,
+  },
+  {
+    to: "/settings/masters/locations",
+    label: "Locations",
+    description: "Cities / locations hotels are in (e.g. Chennai, Madurai).",
+    icon: LocationCityOutlined,
+  },
+  {
+    to: "/settings/areas",
+    label: "Areas",
+    description: "Areas inside each location (e.g. T Nagar, Adyar) used to place hotels.",
+    icon: PlaceOutlined,
+  },
+  {
+    to: "/settings/masters/spice-levels",
+    label: "Spice levels",
+    description: "Spice levels a menu item can have (No Spice, Mild, Hot…).",
+    icon: LocalFireDepartmentOutlined,
+  },
+  {
+    to: "/settings/masters/dining-status",
+    label: "Dining status",
+    description: "Names and colours of the booking stages (Reservations board).",
+    icon: EventNoteOutlined,
+  },
+  {
+    to: "/settings/masters/order-status",
+    label: "Order status",
+    description: "Names and colours of the order stages (Orders board).",
+    icon: ReceiptLongOutlined,
+  },
+  {
+    to: "/settings/masters/payment-status",
+    label: "Payment status",
+    description: "Names and colours of Pending, Paid and Refunded.",
+    icon: PaymentsOutlined,
+  },
+  {
+    to: "/settings/masters/seat-status",
+    label: "Seat status",
+    description: "Names and colours of seat states on the floor plan.",
+    icon: EventSeatOutlined,
   },
 ];
 
