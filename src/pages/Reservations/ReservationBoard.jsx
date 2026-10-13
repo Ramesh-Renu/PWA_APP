@@ -12,21 +12,101 @@ import {
   LayersOutlined,
   TableRestaurantOutlined,
   EventSeatOutlined,
+  ReceiptLongOutlined,
+  AddRounded,
+  EditRounded,
   RefreshRounded,
+  RoomServiceOutlined,
   SearchRounded,
 } from "@mui/icons-material";
 import KanbanBoard from "components/common/KanbanBoard";
 import ConfirmDialog from "components/common/ConfirmDialog";
 import AssignStaffDialog from "pages/Orders/AssignStaffDialog";
+import OrderDetailsDialog from "pages/Orders/OrderDetailsDialog";
+import CreateOrderDialog from "pages/Orders/CreateOrderDialog";
+import BookingDetailsDialog from "./BookingDetailsDialog";
+import PaymentDialog, { paymentMethodLabel } from "pages/Orders/PaymentDialog";
 import StaffAvatar from "pages/Settings/Staff/StaffAvatar";
 import { CLEANER_CONFIG, SERVER_CONFIG } from "pages/Settings/Staff/staffConfig";
 import useToast from "hooks/useToast";
 import useGlobalMaster from "hooks/useGlobalMaster";
 import {
+  getAllOrders,
+  updateOrderPayment,
+  cancelOrder,
   getReservationByUser,
   updateDiningStatus,
   deleteReservation,
 } from "services";
+import { notifyOrdersChanged, onOrdersChanged } from "utils/orderEvents";
+
+// Order / order item statuses (utils/orderStatus.js, item_status comment).
+const ORDER_READY = 4;
+const COOKING_ORDER_STATUSES = [2, 3]; // Accepted, Preparing
+const ITEM_READY = 3;
+const ITEM_CANCELLED = 5;
+const ORDER_CANCELLED = 7;
+const PAYMENT_PENDING = 0;
+const PAID = 1;
+// Served, Completed, Cancelled, Delivered: the order can no longer change.
+const FINISHED_ORDER_STATUSES = [5, 6, 7, 8];
+// Fallback refresh; changes made on the Orders board arrive instantly
+// through utils/orderEvents.
+const ORDERS_POLL_MS = 15000;
+
+// Stage label + colour for the orders listed on a booking card
+// (same colours as the Orders board columns).
+const ORDER_STAGES = {
+  1: { name: "Ordered", color: "#6366f1" },
+  2: { name: "Accepted", color: "#0ea5e9" },
+  3: { name: "Preparing", color: "#f59e0b" },
+  4: { name: "Food prepared", color: "#14b8a6" },
+  5: { name: "Served", color: "#8b5cf6" },
+  6: { name: "Completed", color: "#22c55e" },
+  8: { name: "Delivered", color: "#0ea5e9" },
+};
+
+// Every (not cancelled) order of each booking, oldest first.
+const ordersByReservation = (orders) => {
+  const byReservation = new Map();
+  orders.forEach((order) => {
+    if (!order.reservation_id || order.order_status === ORDER_CANCELLED) return;
+    const list = byReservation.get(order.reservation_id) || [];
+    list.push(order);
+    byReservation.set(order.reservation_id, list);
+  });
+  byReservation.forEach((list) =>
+    list.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
+  );
+  return byReservation;
+};
+
+// Dishes waiting to be served, per booking: every dish of a Ready order, and
+// the ticked (prepared) dishes of orders still cooking.
+const readyDishesByReservation = (orders) => {
+  const byReservation = new Map();
+  orders.forEach((order) => {
+    if (!order.reservation_id) return;
+    const isReady = order.order_status === ORDER_READY;
+    if (!isReady && !COOKING_ORDER_STATUSES.includes(order.order_status)) return;
+    const dishes = (order.items || []).filter(
+      (item) =>
+        item.item_status !== ITEM_CANCELLED &&
+        (isReady || item.item_status === ITEM_READY),
+    );
+    if (!dishes.length) return;
+    const list = byReservation.get(order.reservation_id) || [];
+    dishes.forEach((item) =>
+      list.push({
+        ...item,
+        orderId: order.id,
+        orderNumber: order.order_number || `#${order.id}`,
+      }),
+    );
+    byReservation.set(order.reservation_id, list);
+  });
+  return byReservation;
+};
 
 // Matches RESERVATION_STATUS in the API (utils/reservationStatus.js).
 const STATUS = {
@@ -48,6 +128,22 @@ const FLOW_ORDER = [
   STATUS.CANCELLED,
 ];
 const LOCKED_STATUSES = [STATUS.COMPLETED, STATUS.CANCELLED];
+// Columns whose cards are listed by dining time (earliest first).
+const TIME_SORTED_STATUSES = [
+  STATUS.CONFIRMED,
+  STATUS.SEATED,
+  STATUS.SERVING,
+  STATUS.CLEANING,
+];
+// Food is ordered only while guests are at the table: not before they arrive
+// (Pending, Confirmed), nor once they have left (Cleaning, Completed, Cancelled).
+const NO_ORDER_STATUSES = [
+  STATUS.PENDING,
+  STATUS.CONFIRMED,
+  STATUS.CLEANING,
+  STATUS.COMPLETED,
+  STATUS.CANCELLED,
+];
 // Guests can only be seated / served once their booking time has come
 // (up to 15 minutes early). The API applies the same rule.
 const ARRIVAL_STATUSES = [STATUS.SEATED, STATUS.SERVING];
@@ -149,13 +245,21 @@ const ReservationBoard = () => {
   const [searchText, setSearchText] = useState("");
 
   const searchQuery = normalizeSearch(searchText);
-  const visibleReservations = useMemo(
-    () =>
-      reservations.filter((row) =>
-        matchesSearch(row, searchField, searchQuery),
-      ),
-    [reservations, searchField, searchQuery],
-  );
+  const visibleReservations = useMemo(() => {
+    const matching = reservations.filter((row) =>
+      matchesSearch(row, searchField, searchQuery),
+    );
+    // Active columns run by dining time: the next table due is on top.
+    // Other columns keep the API's order.
+    const byDiningTime = (a, b) =>
+      new Date(a.dining_date || 0) - new Date(b.dining_date || 0) || a.id - b.id;
+    return [
+      ...matching
+        .filter((row) => TIME_SORTED_STATUSES.includes(row.dining_status))
+        .sort(byDiningTime),
+      ...matching.filter((row) => !TIME_SORTED_STATUSES.includes(row.dining_status)),
+    ];
+  }, [reservations, searchField, searchQuery]);
   const activeSearchField = SEARCH_FIELDS.find(
     (option) => option.value === searchField,
   );
@@ -176,12 +280,84 @@ const ReservationBoard = () => {
     }
   }, []);
 
+  // Open orders, only to show which bookings have food ready to serve.
+  const [orders, setOrders] = useState([]);
+  const fetchOrders = useCallback(async () => {
+    try {
+      const response = await getAllOrders({ limit: 500 });
+      if (response.success) setOrders(response.rows || []);
+    } catch {
+      // The board still works without the indicator.
+    }
+  }, []);
+  const readyDishes = useMemo(() => readyDishesByReservation(orders), [orders]);
+  const bookingOrders = useMemo(() => ordersByReservation(orders), [orders]);
+  // Order shown in the details popup (looked up live so refreshes show).
+  const [openOrderId, setOpenOrderId] = useState(null);
+  // Booking a new order (or extra dishes) is being placed for.
+  const [newOrderFor, setNewOrderFor] = useState(null);
+  // Booking whose full details popup is open (looked up live).
+  const [detailsId, setDetailsId] = useState(null);
+  // Order waiting for "Cancel order?" confirmation.
+  const [orderToCancel, setOrderToCancel] = useState(null);
+  const [cancellingOrder, setCancellingOrder] = useState(false);
+
+  const confirmCancelOrder = async () => {
+    const order = orderToCancel;
+    if (!order) return;
+    setCancellingOrder(true);
+    try {
+      const response = await cancelOrder(order.id);
+      if (response?.success === false) throw response.message;
+      setOrderToCancel(null);
+      setOpenOrderId(null);
+      // The Orders board (other tabs) moves it to Cancelled right away.
+      notifyOrdersChanged();
+      fetchOrders();
+      showToast({
+        message: `Order ${order.order_number || `#${order.id}`} cancelled`,
+        variant: "success",
+      });
+    } catch (error) {
+      setOrderToCancel(null);
+      showToast({
+        title: `Couldn't cancel order ${order.order_number || `#${order.id}`}`,
+        message: error?.response?.data?.message || error,
+        variant: "danger",
+      });
+    } finally {
+      setCancellingOrder(false);
+    }
+  };
+  // { reservation, unpaid, bill }: payment asked before completing a booking.
+  const [completeRequest, setCompleteRequest] = useState(null);
+  const openOrder = orders.find((order) => order.id === openOrderId) || null;
+
   useEffect(() => {
     if (diningStatusList.data.length === 0) {
       getDiningStatus();
     }
     fetchReservations();
+    fetchOrders();
   }, []);
+
+  // Keep order info current: instantly when the Orders board (another tab)
+  // changes something, when this tab comes back into view, and on a timer.
+  useEffect(() => {
+    const unsubscribe = onOrdersChanged(fetchOrders);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") fetchOrders();
+    };
+    const timer = setInterval(onVisible, ORDERS_POLL_MS);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      unsubscribe();
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, [fetchOrders]);
 
   const columns = useMemo(() => {
     const rank = (id) => {
@@ -338,10 +514,110 @@ const ReservationBoard = () => {
       return;
     }
     if (column.id === STATUS.CLEANING) {
+      // Ask for a cleaner only when none is assigned yet; an assigned one can
+      // still be changed with "Change" on the card.
+      if (reservation.cleaner_id || reservation.cleaner) {
+        changeStatus(reservation, STATUS.CLEANING);
+        return;
+      }
       setStaffRequest({ kind: "cleaner", reservation, status: STATUS.CLEANING });
       return;
     }
+    // Completing the booking: collect payment for its unpaid orders first.
+    if (column.id === STATUS.COMPLETED) {
+      // Every order must be served (or cancelled) before the booking ends.
+      const open = (bookingOrders.get(reservation.id) || []).filter(
+        (order) => !FINISHED_ORDER_STATUSES.includes(order.order_status),
+      );
+      if (open.length) {
+        showToast({
+          title: `Booking #${reservation.id} still has food in progress`,
+          message: `${open
+            .map(
+              (order) =>
+                `${order.order_number || `#${order.id}`} (${
+                  ORDER_STAGES[order.order_status]?.name || "open"
+                })`,
+            )
+            .join(", ")} — serve or cancel ${
+            open.length === 1 ? "it" : "them"
+          } first. Only bookings whose orders are all Served can be completed.`,
+          variant: "warning",
+        });
+        return;
+      }
+      const request = paymentRequestFor(reservation, true);
+      if (request) {
+        setCompleteRequest(request);
+        return;
+      }
+    }
     changeStatus(reservation, column.id);
+  };
+
+  // One bill for a booking's unpaid orders, or null when nothing is owed.
+  // complete = true: asked while moving to Completed (also moves the card);
+  // false: collecting later from a Completed card.
+  const paymentRequestFor = (reservation, complete) => {
+    const unpaid = (bookingOrders.get(reservation.id) || []).filter(
+      (order) => order.payment_status === PAYMENT_PENDING,
+    );
+    if (!unpaid.length) return null;
+    return {
+      reservation,
+      unpaid,
+      complete,
+      bill: {
+        id: reservation.id,
+        order_number: `Booking #${reservation.id}`,
+        total_amount: unpaid.reduce((sum, order) => sum + Number(order.total_amount || 0), 0),
+        items: unpaid.flatMap((order) =>
+          (order.items || []).filter((item) => item.item_status !== ITEM_CANCELLED),
+        ),
+      },
+    };
+  };
+
+  const settleAndComplete = async ({ paid, method }) => {
+    const { reservation, unpaid, complete } = completeRequest;
+    setCompleteRequest(null);
+    // "Cancel" while only collecting: nothing to do.
+    if (!complete && !paid) return;
+    if (paid) {
+      try {
+        const results = await Promise.all(
+          unpaid.map((order) =>
+            updateOrderPayment(order.id, {
+              payment_status: PAID,
+              payment_method: method,
+            }),
+          ),
+        );
+        const failed = results.find((response) => !response?.success);
+        if (failed) throw failed.message;
+        setOrders((current) =>
+          current.map((order) =>
+            unpaid.some((row) => row.id === order.id)
+              ? { ...order, payment_status: PAID, payment_method: method }
+              : order,
+          ),
+        );
+        notifyOrdersChanged();
+        showToast({
+          message: `Booking #${reservation.id} paid by ${paymentMethodLabel(method)}`,
+          variant: "success",
+        });
+      } catch (error) {
+        fetchOrders();
+        showToast({
+          title: `Couldn't record payment for booking #${reservation.id}`,
+          message: error?.response?.data?.message || error,
+          variant: "danger",
+        });
+        return; // stay open so payment can be retried
+      }
+    }
+    if (complete) changeStatus(reservation, STATUS.COMPLETED);
   };
 
   // Server / cleaner on a card, with Add / Change only in the columns where
@@ -365,31 +641,36 @@ const ReservationBoard = () => {
       ) : null;
     }
 
+    const avatar = (
+      <StaffAvatar
+        name={person[config.nameField]}
+        photo={person.photo_url}
+        size={26}
+        tone={kind}
+      />
+    );
     return (
-      <div className={`kanban-card__cook kanban-card__cook--${kind}`}>
-        <StaffAvatar
-          name={person[config.nameField]}
-          photo={person.photo_url}
-          size={26}
-          tone={kind}
-        />
-        <span>
-          <strong>{person[config.nameField]}</strong>
-          <small>
-            {config.singular}
-            {person[config.detailField] ? ` · ${person[config.detailField]}` : ""}
-          </small>
-        </span>
-        {editable && (
+      <div className={`kanban-card__cook kanban-card__cook--${kind} kanban-card__staff-person`}>
+        {/* Click the photo to change the person (where it can still change). */}
+        {editable ? (
           <button
             type="button"
             data-no-drag
-            className="kanban-card__cook-change"
+            className="kanban-card__staff-avatar"
+            title={`Change ${config.singular.toLowerCase()}`}
+            aria-label={`Change ${config.singular.toLowerCase()} (${person[config.nameField]})`}
             onClick={ask}
           >
-            Change
+            {avatar}
+            <EditRounded className="kanban-card__staff-edit" aria-hidden />
           </button>
+        ) : (
+          avatar
         )}
+        <span>
+          <strong>{person[config.nameField]}</strong>
+          <small>{config.singular}</small>
+        </span>
       </div>
     );
   };
@@ -397,7 +678,16 @@ const ReservationBoard = () => {
   const renderCard = (row) => (
     <Fragment>
       <div className="kanban-card__head">
-        <span className="kanban-card__title">Booking #{row.id}</span>
+        {/* Opens the full booking details. */}
+        <button
+          type="button"
+          data-no-drag
+          className="kanban-card__title kanban-card__title--link"
+          title="View booking details"
+          onClick={() => setDetailsId(row.id)}
+        >
+          Booking #{row.id}
+        </button>
         <button
           type="button"
           className="kanban-card__ref kanban-card__ref--link"
@@ -423,12 +713,22 @@ const ReservationBoard = () => {
           <LayersOutlined sx={{ fontSize: 16, color: "#8b5cf6" }} />
           Floor {row.floor?.floor_number ?? "-"}
         </span>
-        <span>
+        {/* Several tables: the row spans the card and the codes wrap. */}
+        <span
+          className={`kanban-card__tables${
+            getTableLabels(row.seat_status).length > 1 ? " is-many" : ""
+          }`}
+        >
           <TableRestaurantOutlined sx={{ fontSize: 16, color: "#f59e0b" }} />
+          {/* Table codes stand out so staff can find the table quickly. */}
           {(() => {
             const labels = getTableLabels(row.seat_status);
             if (!labels.length) return "No table";
-            return labels.join(", ");
+            return labels.map((label) => (
+              <span key={label} className="kanban-card__table">
+                {label}
+              </span>
+            ));
           })()}
         </span>
         <span>
@@ -436,10 +736,171 @@ const ReservationBoard = () => {
           {countSeats(row.seat_status)} Seats
         </span>
       </div>
-      {renderStaff(row, "server")}
-      {renderStaff(row, "cleaner")}
+      {renderReady(row)}
+      {renderOrders(row)}
+      {row.dining_status === STATUS.COMPLETED && renderPayment(row)}
+      {/* Server and cleaner side by side. */}
+      <div className="kanban-card__staff">
+        {renderStaff(row, "server")}
+        {renderStaff(row, "cleaner")}
+      </div>
     </Fragment>
   );
+
+  // Completed booking: what was paid, and a way to collect what is still due.
+  const renderPayment = (row) => {
+    const live = bookingOrders.get(row.id) || [];
+    if (!live.length) return null;
+    const total = live.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
+    const pending = live
+      .filter((order) => order.payment_status === PAYMENT_PENDING)
+      .reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
+    const methods = [
+      ...new Set(
+        live
+          .filter((order) => order.payment_status === PAID && order.payment_method)
+          .map((order) => paymentMethodLabel(order.payment_method)),
+      ),
+    ];
+
+    if (pending <= 0) {
+      return (
+        <div className="kanban-card__payment is-paid">
+          <span>
+            Paid{methods.length ? ` · ${methods.join(", ")}` : ""}
+          </span>
+          <strong>₹{total.toFixed(2)}</strong>
+        </div>
+      );
+    }
+    return (
+      <div className="kanban-card__payment is-pending">
+        <span>
+          Payment pending
+          <small>
+            ₹{pending.toFixed(2)} of ₹{total.toFixed(2)}
+          </small>
+        </span>
+        <button
+          type="button"
+          data-no-drag
+          className="kanban-card__payment-btn"
+          onClick={() => setCompleteRequest(paymentRequestFor(row, false))}
+        >
+          Collect
+        </button>
+      </div>
+    );
+  };
+
+  // The booking's food orders and where each one is.
+  const renderOrders = (row) => {
+    const list = bookingOrders.get(row.id) || [];
+    const canOrder = !NO_ORDER_STATUSES.includes(row.dining_status);
+    if (!list.length) {
+      return canOrder ? (
+        <button
+          type="button"
+          data-no-drag
+          className="kanban-card__new-order"
+          onClick={() => setNewOrderFor(row)}
+        >
+          <AddRounded fontSize="small" /> Create order
+        </button>
+      ) : null;
+    }
+    return (
+      <div className="kanban-card__orders">
+        <span className="kanban-card__orders-title">
+          <ReceiptLongOutlined sx={{ fontSize: 15 }} aria-hidden />
+          Orders ({list.length})
+          {canOrder && (
+            <button
+              type="button"
+              data-no-drag
+              className="kanban-card__orders-add"
+              onClick={() => setNewOrderFor(row)}
+            >
+              <AddRounded sx={{ fontSize: 14 }} />
+            </button>
+          )}
+        </span>
+        <ul>
+          {list.map((order) => {
+            const stage = ORDER_STAGES[order.order_status] || {
+              name: "-",
+              color: "#64748b",
+            };
+            const dishCount = (order.items || [])
+              .filter((item) => item.item_status !== ITEM_CANCELLED)
+              .reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+            return (
+              <li key={order.id}>
+                <button
+                  type="button"
+                  data-no-drag
+                  className="kanban-card__order"
+                  title={`View ${order.order_number || `order #${order.id}`}`}
+                  onClick={() => setOpenOrderId(order.id)}
+                >
+                  <span className="kanban-card__order-no">
+                    {order.order_number || `#${order.id}`}
+                  </span>
+                  <span
+                    className="kanban-card__order-stage"
+                    style={{ "--stage-color": stage.color }}
+                  >
+                    {stage.name}
+                  </span>
+                  <span className="kanban-card__order-sum">
+                    {dishCount} {dishCount === 1 ? "item" : "items"} · ₹
+                    {Number(order.total_amount || 0).toFixed(0)}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  };
+
+  // Highlight for the server: food for this table is ready at the pass.
+  const renderReady = (row) => {
+    const dishes = readyDishes.get(row.id);
+    if (!dishes?.length) return null;
+    const count = dishes.reduce((sum, dish) => sum + Number(dish.quantity || 0), 0);
+    return (
+      <div className="kanban-card__ready" role="status">
+        <div className="kanban-card__ready-head">
+          <span className="kanban-card__ready-dot" aria-hidden />
+          <RoomServiceOutlined className="kanban-card__ready-bell" sx={{ fontSize: 16 }} aria-hidden />
+          <strong>Ready to serve</strong>
+          <span className="kanban-card__ready-count">
+            {count} {count === 1 ? "dish" : "dishes"}
+          </span>
+        </div>
+        <ul>
+          {dishes.map((dish) => (
+            <li key={dish.id}>
+              <span>
+                {dish.quantity} × {dish.menu_name}
+              </span>
+              <button
+                type="button"
+                data-no-drag
+                className="kanban-card__ready-order"
+                title={`View ${dish.orderNumber}`}
+                onClick={() => setOpenOrderId(dish.orderId)}
+              >
+                {dish.orderNumber}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
 
   return (
     <Fragment>
@@ -454,7 +915,10 @@ const ReservationBoard = () => {
             <button
               type="button"
               className="ui-btn ui-btn--ghost"
-              onClick={fetchReservations}
+              onClick={() => {
+                fetchReservations();
+                fetchOrders();
+              }}
               disabled={loading}
             >
               <RefreshRounded fontSize="small" /> Refresh
@@ -521,6 +985,106 @@ const ReservationBoard = () => {
         }
         onAssign={assignStaff}
         onCancel={() => setStaffRequest(null)}
+      />
+
+      {(() => {
+        const booking = reservations.find((row) => row.id === detailsId) || null;
+        return (
+          <BookingDetailsDialog
+            reservation={booking}
+            // Every order of the booking, cancelled ones too, oldest first.
+            orders={orders
+              .filter((order) => order.reservation_id === detailsId)
+              .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))}
+            statusName={booking ? statusName(booking.dining_status) : ""}
+            statusColor={columns.find((column) => column.id === booking?.dining_status)?.color}
+            tables={booking ? getTableLabels(booking.seat_status) : []}
+            seats={booking ? countSeats(booking.seat_status) : 0}
+            orderStages={ORDER_STAGES}
+            onOpenOrder={(order) => {
+              setDetailsId(null);
+              setOpenOrderId(order.id);
+            }}
+            onClose={() => setDetailsId(null)}
+          />
+        );
+      })()}
+
+      <OrderDetailsDialog
+        order={openOrder}
+        statusName={ORDER_STAGES[openOrder?.order_status]?.name || ""}
+        statusColor={ORDER_STAGES[openOrder?.order_status]?.color}
+        // Front desk: dishes can be reduced / removed or the order cancelled
+        // until it is served; extra dishes go to the kitchen as a new order
+        // ticket (only the new dishes).
+        readOnly={FINISHED_ORDER_STATUSES.includes(openOrder?.order_status)}
+        reduceOnly
+        onClose={() => setOpenOrderId(null)}
+        onSaved={() => {
+          setOpenOrderId(null);
+          notifyOrdersChanged();
+          fetchOrders();
+          showToast({ message: "Order updated", variant: "success" });
+        }}
+        onCancelOrder={
+          FINISHED_ORDER_STATUSES.includes(openOrder?.order_status)
+            ? undefined
+            : (order) => setOrderToCancel(order)
+        }
+        onAddItems={
+          NO_ORDER_STATUSES.includes(
+            reservations.find((row) => row.id === openOrder?.reservation_id)
+              ?.dining_status,
+          )
+            ? undefined
+            : (order) => {
+                setOpenOrderId(null);
+                setNewOrderFor(
+                  reservations.find((row) => row.id === order.reservation_id) || {
+                    id: order.reservation_id,
+                    hotel_id: order.hotel_id,
+                  },
+                );
+              }
+        }
+      />
+
+      <ConfirmDialog
+        show={Boolean(orderToCancel)}
+        tone="warning"
+        title={`Cancel order ${orderToCancel?.order_number || ""}?`}
+        message="The kitchen stops this order and it moves to Cancelled on the Orders board."
+        confirmLabel="Cancel order"
+        cancelLabel="Keep order"
+        loading={cancellingOrder}
+        onConfirm={confirmCancelOrder}
+        onCancel={() => setOrderToCancel(null)}
+      />
+
+      <CreateOrderDialog
+        show={Boolean(newOrderFor)}
+        hotelId={newOrderFor?.hotel_id ?? ""}
+        hotelName={newOrderFor?.hotel?.hotel_name ?? ""}
+        reservationId={newOrderFor?.id ?? null}
+        onClose={() => setNewOrderFor(null)}
+        onCreated={fetchOrders}
+      />
+
+      <PaymentDialog
+        order={completeRequest?.bill ?? null}
+        // deliver = the left button answers "pay later" instead of cancelling.
+        deliver={Boolean(completeRequest?.complete)}
+        title={
+          completeRequest?.complete
+            ? `Complete booking #${completeRequest?.reservation.id ?? ""}`
+            : `Collect payment · Booking #${completeRequest?.reservation.id ?? ""}`
+        }
+        laterLabel={completeRequest?.complete ? "Complete · pay later" : "Cancel"}
+        payLabel={(method) =>
+          completeRequest?.complete ? `Paid by ${method} & complete` : `Mark paid · ${method}`
+        }
+        onConfirm={settleAndComplete}
+        onCancel={() => setCompleteRequest(null)}
       />
 
       <ConfirmDialog

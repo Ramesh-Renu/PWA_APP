@@ -94,6 +94,16 @@ export const deleteCleaner = (cleanerId) => baseAPI.DELETE(`${API.CLEANER_API}/$
 export const updateOrderItems = (orderId, items) =>
   baseAPI.PUT(`${API.ORDERS_API}/${orderId}/items`, { items });
 
+// payment_method: "cash" | "card" | "upi" (with payment_status 1 = Paid).
+export const updateOrderPayment = (orderId, body) =>
+  baseAPI.PATCH(`${API.ORDERS_API}/${orderId}/payment`, body);
+
+// item_status: 1 = Ordered, 3 = Ready (prepared).
+export const updateOrderItemStatus = (orderId, itemId, itemStatus) =>
+  baseAPI.PATCH(`${API.ORDERS_API}/${orderId}/items/${itemId}/status`, {
+    item_status: itemStatus,
+  });
+
 
 /** Masters */
 export const createArea = (params) => baseAPI.POST(API.CREATE_AREA_API, params);
@@ -151,3 +161,16 @@ export const updateMenuCategory = (categoryId, body) =>
 
 export const deleteMenuCategory = (categoryId) =>
   baseAPI.DELETE(`${API.MENU_CATEGORY_API}/${categoryId}`);
+
+/** Side dishes per menu category */
+export const getCategorySideDishes = (params) =>
+  baseAPI.GET(API.CATEGORY_SIDE_DISH_API, params);
+
+export const createCategorySideDish = (body) =>
+  baseAPI.POST(API.CATEGORY_SIDE_DISH_API, body);
+
+export const updateCategorySideDish = (id, body) =>
+  baseAPI.PUT(`${API.CATEGORY_SIDE_DISH_API}/${id}`, body);
+
+export const deleteCategorySideDish = (id) =>
+  baseAPI.DELETE(`${API.CATEGORY_SIDE_DISH_API}/${id}`);

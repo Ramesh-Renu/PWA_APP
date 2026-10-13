@@ -11,7 +11,38 @@ import ConfirmDialog from "components/common/ConfirmDialog";
 import useToast from "hooks/useToast";
 import { getAllHotel, uploadMenuImage } from "services";
 import { getApiErrorMessage } from "utils/apiError";
-import StaffAvatar, { initialsOf } from "./StaffAvatar";
+import StaffAvatar, { avatarColorOf, initialsOf } from "./StaffAvatar";
+
+// Optional personal details + working hours (API: staffPersonalFields.js).
+const PERSONAL_FIELDS = [
+  "phone",
+  "email",
+  "gender",
+  "date_of_birth",
+  "address",
+  "emergency_contact",
+  "joined_on",
+  "shift_start",
+  "shift_end",
+];
+const TIME_FIELDS = ["shift_start", "shift_end"];
+const EMPTY_PERSONAL = Object.fromEntries(PERSONAL_FIELDS.map((field) => [field, ""]));
+const GENDERS = ["Male", "Female", "Other"];
+
+// "17:30" / "17:30:00" → "5:30 PM".
+const formatClock = (value) => {
+  const [hours, minutes] = String(value || "").split(":").map(Number);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return "";
+  const suffix = hours >= 12 ? "PM" : "AM";
+  return `${hours % 12 || 12}:${String(minutes).padStart(2, "0")} ${suffix}`;
+};
+
+export const shiftLabel = (row) =>
+  row?.shift_start && row?.shift_end
+    ? `${formatClock(row.shift_start)} – ${formatClock(row.shift_end)}`
+    : row?.shift_start
+      ? `From ${formatClock(row.shift_start)}`
+      : "";
 
 /**
  * Settings page for staff master data (cooks, servers). `config` comes from
@@ -41,6 +72,7 @@ const StaffPage = ({ config }) => {
     is_active: true,
     photo_url: "",
     photo_file_id: "",
+    ...EMPTY_PERSONAL,
   };
 
   const { showToast } = useToast();
@@ -121,6 +153,15 @@ const StaffPage = ({ config }) => {
       is_active: Boolean(row.is_active),
       photo_url: row.photo_url || "",
       photo_file_id: row.photo_file_id || "",
+      // Optional personal details; API times come as "09:30:00".
+      ...Object.fromEntries(
+        PERSONAL_FIELDS.map((field) => [
+          field,
+          TIME_FIELDS.includes(field)
+            ? String(row[field] || "").slice(0, 5)
+            : row[field] || "",
+        ]),
+      ),
     });
     setPhotoFile(null);
     setPhotoPreview(row.photo_url || "");
@@ -163,6 +204,10 @@ const StaffPage = ({ config }) => {
         is_active: form.is_active,
         photo_url: form.photo_url,
         photo_file_id: form.photo_file_id,
+        // "" clears an optional detail on the API.
+        ...Object.fromEntries(
+          PERSONAL_FIELDS.map((field) => [field, String(form[field] || "").trim()]),
+        ),
       };
 
       // The photo is optional; upload only when a new one was picked.
@@ -302,6 +347,12 @@ const StaffPage = ({ config }) => {
               <div className="cook-card__body">
                 <h3>{row[nameField]}</h3>
                 <p>{row[detailField] || `No ${detailLabel.toLowerCase()} set`}</p>
+                {(shiftLabel(row) || row.phone) && (
+                  <p className="cook-card__extra">
+                    {shiftLabel(row) && <span>🕘 {shiftLabel(row)}</span>}
+                    {row.phone && <span>📞 {row.phone}</span>}
+                  </p>
+                )}
                 <div className="cook-card__chips">
                   <span className="ui-chip ui-chip--brand">
                     {row.hotel?.hotel_name || "All hotels"}
@@ -353,7 +404,17 @@ const StaffPage = ({ config }) => {
             )}
 
             <section className="hotel-form__section cook-form__photo-row">
-              <div className={`cook-form__photo cook-form__photo--${kind}`}>
+              <div
+                className={`cook-form__photo cook-form__photo--${kind}${
+                  !photoPreview && form.name.trim() ? " has-initials" : ""
+                }`}
+                // Same colour the person gets everywhere once named.
+                style={
+                  !photoPreview && form.name.trim()
+                    ? { background: avatarColorOf(form.name), color: "#fff" }
+                    : undefined
+                }
+              >
                 {photoPreview ? (
                   <img src={photoPreview} alt={singular} />
                 ) : (
@@ -456,6 +517,151 @@ const StaffPage = ({ config }) => {
                     <small>Only active {title.toLowerCase()} can be assigned</small>
                   </span>
                 </label>
+              </div>
+            </section>
+
+            <section className="hotel-form__section">
+              <h3 className="hotel-form__section-title">Shift timing</h3>
+              <div className="hotel-form__grid">
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor={`${kind}-shift-start`}>
+                    Starts at
+                  </label>
+                  <input
+                    id={`${kind}-shift-start`}
+                    type="time"
+                    name="shift_start"
+                    className="hotel-form__input"
+                    value={form.shift_start}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor={`${kind}-shift-end`}>
+                    Ends at
+                  </label>
+                  <input
+                    id={`${kind}-shift-end`}
+                    type="time"
+                    name="shift_end"
+                    className="hotel-form__input"
+                    value={form.shift_end}
+                    onChange={handleChange}
+                  />
+                  {form.shift_start && form.shift_end && form.shift_end < form.shift_start && (
+                    <span className="hotel-form__hint">Overnight shift (ends next day)</span>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            <section className="hotel-form__section">
+              <h3 className="hotel-form__section-title">Personal details (optional)</h3>
+              <div className="hotel-form__grid">
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor={`${kind}-phone`}>
+                    Phone
+                  </label>
+                  <input
+                    id={`${kind}-phone`}
+                    type="tel"
+                    name="phone"
+                    className="hotel-form__input"
+                    value={form.phone}
+                    onChange={handleChange}
+                    placeholder="e.g. 98765 43210"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor={`${kind}-email`}>
+                    Email
+                  </label>
+                  <input
+                    id={`${kind}-email`}
+                    type="email"
+                    name="email"
+                    className="hotel-form__input"
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder="e.g. priya@example.com"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor={`${kind}-gender`}>
+                    Gender
+                  </label>
+                  <select
+                    id={`${kind}-gender`}
+                    name="gender"
+                    className="hotel-form__input"
+                    value={form.gender}
+                    onChange={handleChange}
+                  >
+                    <option value="">Not specified</option>
+                    {GENDERS.map((gender) => (
+                      <option key={gender} value={gender}>
+                        {gender}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor={`${kind}-dob`}>
+                    Date of birth
+                  </label>
+                  <input
+                    id={`${kind}-dob`}
+                    type="date"
+                    name="date_of_birth"
+                    className="hotel-form__input"
+                    value={form.date_of_birth}
+                    onChange={handleChange}
+                    max={new Date().toISOString().slice(0, 10)}
+                  />
+                </div>
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor={`${kind}-joined`}>
+                    Joined on
+                  </label>
+                  <input
+                    id={`${kind}-joined`}
+                    type="date"
+                    name="joined_on"
+                    className="hotel-form__input"
+                    value={form.joined_on}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="hotel-form__field">
+                  <label className="hotel-form__label" htmlFor={`${kind}-emergency`}>
+                    Emergency contact
+                  </label>
+                  <input
+                    id={`${kind}-emergency`}
+                    name="emergency_contact"
+                    className="hotel-form__input"
+                    value={form.emergency_contact}
+                    onChange={handleChange}
+                    placeholder="e.g. Ravi (brother) 98765 43210"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="hotel-form__field hotel-form__field--full">
+                  <label className="hotel-form__label" htmlFor={`${kind}-address`}>
+                    Address
+                  </label>
+                  <textarea
+                    id={`${kind}-address`}
+                    name="address"
+                    className="hotel-form__input menu-editor__textarea"
+                    value={form.address}
+                    onChange={handleChange}
+                    rows={2}
+                    placeholder="House no, street, area, city"
+                  />
+                </div>
               </div>
             </section>
           </div>

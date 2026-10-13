@@ -18,7 +18,21 @@ const money = (value) => `₹${Number(value || 0).toFixed(2)}`;
  * Admin order popup: ordered items (change quantity / remove) and the hotel's
  * menu to add more. Saves through PUT /api/orders/:id/items.
  */
-const OrderDetailsDialog = ({ order, statusName, statusColor, readOnly, onClose, onSaved }) => {
+// onAddItems (optional): shows "Add more items", used where extra dishes go to
+// the kitchen as a new order ticket instead of changing this order.
+const OrderDetailsDialog = ({
+  order,
+  statusName,
+  statusColor,
+  readOnly,
+  onClose,
+  onSaved,
+  onAddItems,
+  // reduceOnly: quantities can only go down / dishes be removed (no adding).
+  reduceOnly = false,
+  // onCancelOrder (optional): shows a "Cancel order" button.
+  onCancelOrder,
+}) => {
   const [lines, setLines] = useState([]);
   const [menus, setMenus] = useState([]);
   const [cooks, setCooks] = useState([]);
@@ -39,6 +53,7 @@ const OrderDetailsDialog = ({ order, statusName, statusColor, readOnly, onClose,
         quantity: Number(item.quantity),
         cook_id: item.cook_id ?? item.cook?.id ?? null,
         cook_name: item.cook?.cook_name || null,
+        cook_photo: item.cook?.photo_url || null,
       })),
     );
     setSearch("");
@@ -68,6 +83,13 @@ const OrderDetailsDialog = ({ order, statusName, statusColor, readOnly, onClose,
   const quantityOf = (menuId) =>
     lines.find((line) => line.menu_id === Number(menuId))?.quantity || 0;
 
+  // Quantity as ordered (reduceOnly caps each dish at this).
+  const originalQuantity = (menuId) =>
+    Number(
+      (order?.items || []).find((item) => Number(item.menu_id) === Number(menuId))
+        ?.quantity || 0,
+    );
+
   const setQuantity = (menuId, quantity, menu) =>
     setLines((current) => {
       const id = Number(menuId);
@@ -92,7 +114,14 @@ const OrderDetailsDialog = ({ order, statusName, statusColor, readOnly, onClose,
     setLines((current) =>
       current.map((line) =>
         line.menu_id === Number(menuId)
-          ? { ...line, cook_id: cookId ? Number(cookId) : null }
+          ? {
+              ...line,
+              cook_id: cookId ? Number(cookId) : null,
+              cook_name:
+                cooks.find((cook) => cook.id === Number(cookId))?.cook_name || null,
+              cook_photo:
+                cooks.find((cook) => cook.id === Number(cookId))?.photo_url || null,
+            }
           : line,
       ),
     );
@@ -190,12 +219,7 @@ const OrderDetailsDialog = ({ order, statusName, statusColor, readOnly, onClose,
               : "No table booking"}
           </span>
           <span>{dayjs(order.createdAt).format("D MMM, h:mm A")}</span>
-          {order.cook && (
-            <span className="order-details__staff">
-              <StaffAvatar name={order.cook.cook_name} photo={order.cook.photo_url} size={22} tone="cook" />
-              Cook: {order.cook.cook_name}
-            </span>
-          )}
+          {/* Cooks are shown per dish below. */}
           {order.server && (
             <span className="order-details__staff">
               <StaffAvatar name={order.server.server_name} photo={order.server.photo_url} size={22} tone="server" />
@@ -220,11 +244,36 @@ const OrderDetailsDialog = ({ order, statusName, statusColor, readOnly, onClose,
                     <strong>{line.name}</strong>
                     <small>{money(line.unit_price)} each</small>
                   </span>
-                  {readOnly ? (
+                  {readOnly || reduceOnly ? (
                     line.cook_name && (
-                      <span className="order-lines__cook-read">{line.cook_name}</span>
+                      <span className="order-lines__cook-read">
+                        <StaffAvatar
+                          name={line.cook_name}
+                          photo={line.cook_photo}
+                          size={20}
+                          tone="cook"
+                        />
+                        {line.cook_name}
+                      </span>
                     )
                   ) : (
+                    <span className="order-lines__cook-wrap">
+                    {(() => {
+                      // Photo (or initials) of the chosen cook before the picker.
+                      const cook =
+                        cooks.find((row) => row.id === line.cook_id) ||
+                        (line.cook_name
+                          ? { cook_name: line.cook_name, photo_url: line.cook_photo }
+                          : null);
+                      return cook ? (
+                        <StaffAvatar
+                          name={cook.cook_name}
+                          photo={cook.photo_url}
+                          size={26}
+                          tone="cook"
+                        />
+                      ) : null;
+                    })()}
                     <select
                       className="order-lines__cook"
                       value={line.cook_id ?? ""}
@@ -246,6 +295,7 @@ const OrderDetailsDialog = ({ order, statusName, statusColor, readOnly, onClose,
                         </option>
                       ))}
                     </select>
+                    </span>
                   )}
                   {readOnly ? (
                     <span className="order-lines__qty-read">× {line.quantity}</span>
@@ -263,6 +313,12 @@ const OrderDetailsDialog = ({ order, statusName, statusColor, readOnly, onClose,
                         type="button"
                         aria-label={`One more ${line.name}`}
                         onClick={() => setQuantity(line.menu_id, line.quantity + 1)}
+                        disabled={reduceOnly && line.quantity >= originalQuantity(line.menu_id)}
+                        title={
+                          reduceOnly && line.quantity >= originalQuantity(line.menu_id)
+                            ? "To add more, place a new order"
+                            : undefined
+                        }
                       >
                         <AddRounded fontSize="small" />
                       </button>
@@ -303,9 +359,15 @@ const OrderDetailsDialog = ({ order, statusName, statusColor, readOnly, onClose,
           </dl>
         </section>
 
-        {readOnly ? (
+        {readOnly || reduceOnly ? (
           <p className="hotel-form__hint">
-            {statusName} orders can't be changed.
+            {reduceOnly
+              ? lines.length === 0
+                ? "Every dish is removed. To drop the whole order, use “Cancel order”."
+                : "Reduce or remove dishes here. Extra dishes go to the kitchen as a new order ticket (“Add more items”)."
+              : onAddItems
+                ? "Extra dishes go to the kitchen as a new order ticket. Use “Add more items”."
+                : `${statusName} orders can't be changed.`}
           </p>
         ) : (
           <section className="hotel-form__section">
@@ -402,14 +464,35 @@ const OrderDetailsDialog = ({ order, statusName, statusColor, readOnly, onClose,
       </div>
 
       <div className="hotel-form__actions">
+        {onCancelOrder && (
+          <button
+            type="button"
+            className="hotel-form__btn order-details__cancel-order"
+            onClick={() => onCancelOrder(order)}
+            disabled={saving}
+          >
+            Cancel order
+          </button>
+        )}
         <button
           type="button"
           className="hotel-form__btn hotel-form__btn--ghost"
           onClick={onClose}
           disabled={saving}
         >
-          {readOnly ? "Close" : "Cancel"}
+          {readOnly || reduceOnly ? "Close" : "Cancel"}
         </button>
+        {onAddItems && (
+          <button
+            type="button"
+            // Secondary when "Save changes" is also shown.
+            className={`hotel-form__btn ${readOnly ? "hotel-form__btn--primary" : "hotel-form__btn--ghost"}`}
+            onClick={() => onAddItems(order)}
+            disabled={saving}
+          >
+            <AddRounded fontSize="small" /> Add more items
+          </button>
+        )}
         {!readOnly && (
           <button
             type="button"

@@ -15,6 +15,21 @@ $brand-soft: #e7f4f1;
   max-width: 960px;
 }
 
+// Admin "Create order": hotel + notes above the menu.
+// Same side padding as the menu filters below.
+.order-create__fields {
+  padding: 16px 24px 0;
+
+  &.is-single {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.order-create__hint {
+  padding: 24px;
+  text-align: center;
+}
+
 .order-popup {
   display: flex;
   flex-direction: column;

@@ -100,10 +100,22 @@ const OrderHistoryCard = ({ order, onChanged }) => {
   );
 
   return (
-    <article className="cx-card cx-order">
+    // Finished orders are dimmed; orders still in progress stand out.
+    <article
+      className={`cx-card cx-order ${finished ? "is-finished" : "is-live"}`}
+      style={{ "--status-color": statusColor }}
+      aria-disabled={finished || undefined}
+    >
       <div className="cx-order__head">
         <div>
-          <h3>{order.order_number || `Order #${order.id}`}</h3>
+          <h3>
+            {order.order_number || `Order #${order.id}`}
+            {!finished && (
+              <span className="cx-order__live">
+                <span className="cx-order__live-dot" aria-hidden /> Live
+              </span>
+            )}
+          </h3>
           <p>
             {orderedAt && dayjs(orderedAt).format("D MMM, h:mm A")}
             {!order.reservation_id && " · No table"}

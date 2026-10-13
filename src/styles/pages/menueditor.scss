@@ -516,6 +516,119 @@ select.hotel-form__input {
   color: $ink-faint;
 }
 
+/* ---------------- Category side dishes ---------------- */
+// Table cell: first few side dishes plus a Manage / Add link.
+.category-sides {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 140px;
+}
+
+.category-sides__manage {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 8px;
+  border: 1px dashed $brand;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  color: $brand;
+
+  &:hover {
+    background: rgba($brand, 0.08);
+  }
+}
+
+.side-dish-form {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.side-dish-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+
+  .hotel-form__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+.side-dish-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 280px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.side-dish-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid $line;
+  border-radius: 10px;
+  background: $surface;
+
+  &.is-editing {
+    border-color: $brand;
+  }
+}
+
+.side-dish-row__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  strong {
+    font-size: 14px;
+    color: $ink-soft;
+  }
+
+  small {
+    overflow: hidden;
+    font-size: 12px;
+    color: $ink-faint;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.side-dish-row__price {
+  font-size: 13px;
+  font-weight: 600;
+  color: $ink-soft;
+}
+
+.side-dish-row__actions {
+  display: inline-flex;
+}
+
+@media (max-width: 640px) {
+  .side-dish-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    .hotel-form__field:first-child {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .side-dish-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
 @media (max-width: 640px) {
   .menu-editor__grid--four {
     grid-template-columns: repeat(2, minmax(0, 1fr));

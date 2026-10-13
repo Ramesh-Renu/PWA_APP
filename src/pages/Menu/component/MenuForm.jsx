@@ -5,7 +5,7 @@ import {
   CloseRounded,
   SearchRounded,
 } from "@mui/icons-material";
-import { getAllMenu, getAllMenuCategories, getAllSideDishes } from "services";
+import { getAllMenu, getAllMenuCategories, getCategorySideDishes } from "services";
 
 const defaultForm = {
   hotel_id: "",
@@ -53,10 +53,31 @@ const MenuForm = ({
   // belongs to the menu's hotel, and its list endpoint defaults to 10 rows,
   // so the generic `categories` prop can't be trusted here.
   const [hotelCategories, setHotelCategories] = useState(null);
+  const [sideDishesLoading, setSideDishesLoading] = useState(false);
 
+  // Side dishes come from the selected category (Settings → Menu categories).
   useEffect(() => {
-    loadSideDishes();
-  }, []);
+    setDishSearch("");
+    if (!form.category_id) {
+      setSideDishList([]);
+      return undefined;
+    }
+    let active = true;
+    setSideDishesLoading(true);
+    getCategorySideDishes({
+      category_id: form.category_id,
+      is_active: true,
+      limit: 1000,
+    })
+      .then((res) => {
+        if (active) setSideDishList(Array.isArray(res?.data) ? res.data : []);
+      })
+      .catch(() => active && setSideDishList([]))
+      .finally(() => active && setSideDishesLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [form.category_id]);
 
   // The hotel's other dishes, to catch a duplicate menu code before saving.
   const [hotelMenus, setHotelMenus] = useState([]);
@@ -118,14 +139,6 @@ const MenuForm = ({
     );
   }, [hotelCategories, categories, form.hotel_id]);
 
-  const loadSideDishes = async () => {
-    const res = await getAllSideDishes();
-
-    if (res.success) {
-      setSideDishList(res.data);
-    }
-  };
-
   useEffect(() => {
     if (selectedMenuSidedishes?.length) {
       setSelectedSideDishes(selectedMenuSidedishes.map((id) => Number(id)));
@@ -154,6 +167,11 @@ const MenuForm = ({
       // A category belongs to one hotel, so changing hotel clears it.
       ...(name === "hotel_id" ? { category_id: "" } : {}),
     }));
+
+    // Side dishes belong to a category; a new category starts with none.
+    if (name === "hotel_id" || name === "category_id") {
+      setSelectedSideDishes([]);
+    }
 
     if (name === "hotel_id" && onHotelChange) {
       onHotelChange(value);
@@ -193,7 +211,10 @@ const MenuForm = ({
       is_veg: Boolean(form.is_veg),
       is_available: Boolean(form.is_available),
       display_order: Number(form.display_order) || 0,
-      side_dishes: selectedSideDishes,
+      // Only dishes of the chosen category (an inactive one is dropped).
+      side_dishes: selectedSideDishes.filter((id) =>
+        sideDishList.some((dish) => Number(dish.id) === id),
+      ),
     };
 
     const optionalTextFields = ["menu_code", "description"];
@@ -471,7 +492,8 @@ const MenuForm = ({
             <h3 className="hotel-form__section-title">
               Side dishes
               <span className="menu-dishes__count">
-                {selectedSideDishes.length} of {sideDishList.length} selected
+                {sideDishList.filter((dish) => isDishSelected(dish.id)).length} of{" "}
+                {sideDishList.length} selected
               </span>
             </h3>
             <div className="menu-dishes__bulk">
@@ -509,8 +531,17 @@ const MenuForm = ({
             </label>
           )}
 
-          {sideDishList.length === 0 ? (
-            <p className="menu-dishes__empty">No side dishes added yet.</p>
+          {!form.category_id ? (
+            <p className="menu-dishes__empty">
+              Select a category to see its side dishes.
+            </p>
+          ) : sideDishesLoading ? (
+            <p className="menu-dishes__empty">Loading side dishes…</p>
+          ) : sideDishList.length === 0 ? (
+            <p className="menu-dishes__empty">
+              This category has no side dishes yet. Add them in Settings → Menu
+              categories.
+            </p>
           ) : visibleDishes.length === 0 ? (
             <p className="menu-dishes__empty">No side dishes match “{dishSearch}”.</p>
           ) : (

@@ -1,6 +1,13 @@
 import React from "react";
 
-const OrderSummary = ({ totalItems = 0, totalAmount = 0, onSkip, onPlaceOrder }) => {
+const OrderSummary = ({
+  totalItems = 0,
+  totalAmount = 0,
+  onSkip,
+  onPlaceOrder,
+  skipLabel = "Skip",
+  placing = false,
+}) => {
   return (
     <div className="hotel-form__actions order-summary">
       <div className="order-summary__total">
@@ -15,15 +22,15 @@ const OrderSummary = ({ totalItems = 0, totalAmount = 0, onSkip, onPlaceOrder })
         className="hotel-form__btn hotel-form__btn--ghost"
         onClick={onSkip}
       >
-        Skip
+        {skipLabel}
       </button>
       <button
         type="button"
         className="hotel-form__btn hotel-form__btn--primary"
         onClick={onPlaceOrder}
-        disabled={totalItems === 0}
+        disabled={totalItems === 0 || placing}
       >
-        Place order
+        {placing ? "Placing…" : "Place order"}
       </button>
     </div>
   );

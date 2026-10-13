@@ -1,10 +1,20 @@
 import React, { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
-import { RefreshRounded } from "@mui/icons-material";
+import {
+  AddRounded,
+  CheckCircleOutlineRounded,
+  EditRounded,
+  RefreshRounded,
+  TimerOutlined,
+} from "@mui/icons-material";
 import KanbanBoard from "components/common/KanbanBoard";
 import ConfirmDialog from "components/common/ConfirmDialog";
 import AssignStaffDialog from "./AssignStaffDialog";
 import OrderDetailsDialog from "./OrderDetailsDialog";
+import CreateOrderDialog from "./CreateOrderDialog";
+import PrepTimer, { ItemTimer, formatElapsed } from "./PrepTimer";
+import { notifyOrdersChanged, onOrdersChanged } from "utils/orderEvents";
+import PaymentDialog, { paymentMethodLabel } from "./PaymentDialog";
 import StaffAvatar from "pages/Settings/Staff/StaffAvatar";
 import { COOK_CONFIG, SERVER_CONFIG } from "pages/Settings/Staff/staffConfig";
 import useToast from "hooks/useToast";
@@ -14,6 +24,8 @@ import {
   updateOrderStatus,
   cancelOrder,
   updateOrderItems,
+  updateOrderPayment,
+  updateOrderItemStatus,
 } from "services";
 
 // Matches ORDER_STATUS in the API (utils/orderStatus.js). Used when the
@@ -57,6 +69,30 @@ const STAFF = { cook: COOK_CONFIG, server: SERVER_CONFIG };
 const COMPLETED = 6; // legacy; not shown as a column
 const CANCELLED = 7;
 const PAYMENT_LABELS = { 0: "Payment pending", 1: "Paid", 2: "Refunded" };
+const PAYMENT_PENDING = 0;
+const PAID = 1;
+// reservation_order_items.item_status
+const ITEM_ORDERED = 1;
+const ITEM_READY = 3;
+// The kitchen ticks dishes as prepared while it works on the order.
+const READY = 4;
+// Dishes can be ticked once cooking starts (Accepted shows them locked).
+const PREPARED_EDITABLE = [PREPARING, READY];
+// While some (not all) dishes are prepared, a ticket with just those dishes
+// shows in Ready; the order itself moves there once every dish is done.
+const TICKET_SOURCE = [ACCEPTED, PREPARING];
+const isTicket = (card) => Boolean(card.ticketOf);
+// Cook of one dish (cook_id, or the joined cook row).
+const itemCookId = (item) => item.cook_id ?? item.cook?.id ?? null;
+// When the last dish was ticked prepared (null until every dish has a time).
+const preparedAt = (order) => {
+  const dishes = (order.items || []).filter((item) => item.item_status !== 5);
+  if (!dishes.length || dishes.some((item) => !item.ready_at)) return null;
+  return dishes.reduce(
+    (latest, item) => (new Date(item.ready_at) > new Date(latest) ? item.ready_at : latest),
+    dishes[0].ready_at,
+  );
+};
 const ORDERS_PAGE_LIMIT = 500;
 const VISIBLE_ITEMS = 3;
 
@@ -72,21 +108,25 @@ const OrderBoard = () => {
   const [itemCookRequest, setItemCookRequest] = useState(null);
   // Order whose details popup is open (looked up live so edits show at once).
   const [openOrderId, setOpenOrderId] = useState(null);
+  const [createOrderOpen, setCreateOrderOpen] = useState(false);
+  // { order, deliver }: payment popup (on drop to Delivered, or badge click).
+  const [paymentRequest, setPaymentRequest] = useState(null);
   const openOrder = orders.find((order) => order.id === openOrderId) || null;
 
-  const fetchOrders = useCallback(async () => {
-    setLoading(true);
+  // silent: background reload (no skeleton, no error toast).
+  const fetchOrders = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
     try {
       const response = await getAllOrders({ limit: ORDERS_PAGE_LIMIT });
       if (response.success) {
         setOrders(response.rows || []);
-      } else {
+      } else if (!silent) {
         showToast({ message: response.message, variant: "danger" });
       }
     } catch (error) {
-      showToast({ message: error, variant: "danger" });
+      if (!silent) showToast({ message: error, variant: "danger" });
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
@@ -96,6 +136,10 @@ const OrderBoard = () => {
     }
     fetchOrders();
   }, []);
+
+  // Orders changed elsewhere (e.g. cancelled from the Reservations page in
+  // another tab): reload quietly so the card moves at once.
+  useEffect(() => onOrdersChanged(() => fetchOrders({ silent: true })), [fetchOrders]);
 
   const columns = useMemo(() => {
     // DB rows win; any status missing from the master table still gets a column.
@@ -133,7 +177,16 @@ const OrderBoard = () => {
   const setLocalStatus = (orderId, statusId) =>
     setOrders((current) =>
       current.map((order) =>
-        order.id === orderId ? { ...order, order_status: statusId } : order,
+        order.id === orderId
+          ? {
+              ...order,
+              order_status: statusId,
+              // Start the Preparing timer now; the API's time replaces it.
+              ...(statusId === PREPARING && !order.preparing_at
+                ? { preparing_at: new Date().toISOString() }
+                : {}),
+            }
+          : order,
       ),
     );
 
@@ -146,16 +199,51 @@ const OrderBoard = () => {
     columns.find((column) => column.id === statusId)?.name || "this status";
   const orderLabel = (order) => order.order_number || `#${order.id}`;
 
+  // The API stamps served_at / delivered_at / completed_at when an order
+  // reaches its end stage; copy them so the card shows the time at once.
+  const patchStageTimes = (orderId, saved) => {
+    if (!saved) return;
+    const times = {};
+    ["preparing_at", "served_at", "delivered_at", "completed_at"].forEach((field) => {
+      if (saved[field] !== undefined) times[field] = saved[field];
+    });
+    if (Object.keys(times).length) patchOrder(orderId, times);
+  };
+
   const changeStatus = async (order, statusId, request) => {
     const previousStatus = order.order_status;
     setLocalStatus(order.id, statusId);
     try {
       const response = await request();
       if (!response.success) throw response.message;
+      patchStageTimes(order.id, response.data);
+      // The API ticks every dish as prepared when an order reaches Ready.
+      if (statusId === READY) {
+        setOrders((current) =>
+          current.map((row) =>
+            row.id === order.id
+              ? {
+                  ...row,
+                  items: (row.items || []).map((item) =>
+                    item.item_status === 5
+                      ? item
+                      : {
+                          ...item,
+                          item_status: ITEM_READY,
+                          ready_at: item.ready_at || new Date().toISOString(),
+                        },
+                  ),
+                }
+              : row,
+          ),
+        );
+      }
+      notifyOrdersChanged();
       showToast({
         message: response.message || "Order status updated successfully",
         variant: "success",
       });
+      return true;
     } catch (error) {
       setLocalStatus(order.id, previousStatus);
       showToast({
@@ -166,10 +254,112 @@ const OrderBoard = () => {
         message: error,
         variant: "danger",
       });
+      return false;
+    }
+  };
+
+  // Payment dialog answer: deliver the order first (when it was dropped on
+  // Delivered), then record the payment.
+  const settlePayment = async ({ paid, method }) => {
+    const { order, deliver } = paymentRequest;
+    setPaymentRequest(null);
+
+    if (deliver) {
+      const moved = await changeStatus(order, DELIVERED, () =>
+        updateOrderStatus(order.id, { order_status: DELIVERED }),
+      );
+      if (!moved || !paid) return;
+    }
+
+    const previous = {
+      payment_status: order.payment_status,
+      payment_method: order.payment_method ?? null,
+    };
+    patchOrder(order.id, { payment_status: PAID, payment_method: method });
+    try {
+      const response = await updateOrderPayment(order.id, {
+        payment_status: PAID,
+        payment_method: method,
+      });
+      if (!response.success) throw response.message;
+      notifyOrdersChanged();
+      showToast({
+        message: `Order ${orderLabel(order)} paid by ${paymentMethodLabel(method)}`,
+        variant: "success",
+      });
+    } catch (error) {
+      patchOrder(order.id, previous);
+      showToast({
+        title: `Couldn't record payment for order ${orderLabel(order)}`,
+        message: error?.response?.data?.message || error,
+        variant: "danger",
+      });
+    }
+  };
+
+  // "Prepared" tick per dish (item_status 3 = Ready, back to 1 = Ordered).
+  const toggleItemPrepared = async (order, item) => {
+    const nextStatus = item.item_status === ITEM_READY ? ITEM_ORDERED : ITEM_READY;
+    // ready_at freezes the dish's own cooking time (cleared when un-ticked).
+    const setItemStatus = (status, readyAt) =>
+      setOrders((current) =>
+        current.map((row) =>
+          row.id === order.id
+            ? {
+                ...row,
+                items: (row.items || []).map((line) =>
+                  line.id === item.id
+                    ? { ...line, item_status: status, ready_at: readyAt }
+                    : line,
+                ),
+              }
+            : row,
+        ),
+      );
+    setItemStatus(
+      nextStatus,
+      nextStatus === ITEM_READY ? new Date().toISOString() : null,
+    );
+    try {
+      const response = await updateOrderItemStatus(order.id, item.id, nextStatus);
+      if (!response.success) throw response.message;
+      // Use the API's time so every screen shows the same dish time.
+      if (response.data) setItemStatus(nextStatus, response.data.ready_at ?? null);
+      notifyOrdersChanged();
+      // The API moves the order to Ready once every dish is prepared (and
+      // back to Preparing when one is un-ticked).
+      const movedTo = Number(response.order_status);
+      if (movedTo && movedTo !== order.order_status) {
+        setLocalStatus(order.id, movedTo);
+        if (response.preparing_at) patchOrder(order.id, { preparing_at: response.preparing_at });
+        showToast({
+          message:
+            movedTo === READY
+              ? `Order ${orderLabel(order)} is ready · every dish is prepared`
+              : `Order ${orderLabel(order)} is back in ${statusName(movedTo)}`,
+          variant: "success",
+        });
+      }
+    } catch (error) {
+      setItemStatus(item.item_status, item.ready_at ?? null);
+      showToast({
+        title: `Couldn't update ${item.menu_name}`,
+        message: error?.response?.data?.message || error,
+        variant: "danger",
+      });
     }
   };
 
   const handleBlocked = (order, column, reason) => {
+    if (isTicket(order)) {
+      showToast({
+        title: "Ready ticket",
+        message:
+          "This ticket lists the dishes prepared so far. The order moves to Ready when every dish is ticked.",
+        variant: "info",
+      });
+      return;
+    }
     if (reason === "outside") {
       showToast({
         title: "Order not moved",
@@ -187,8 +377,10 @@ const OrderBoard = () => {
 
   // Accepting (cook) or serving (server) saves the status and the person
   // together; the same call re-assigns without changing the status.
-  const assignStaff = async (person) => {
-    const { kind, order, status } = staffRequest;
+  // request defaults to the open picker; passed directly when no picker is
+  // needed (e.g. serving with the booking's own server).
+  const assignStaff = async (person, request = staffRequest) => {
+    const { kind, order, status } = request;
     const config = STAFF[kind];
     const name = person[config.nameField];
     setStaffRequest(null);
@@ -196,11 +388,25 @@ const OrderBoard = () => {
       order_status: order.order_status,
       [config.orderField]: order[config.orderField] ?? null,
       [config.orderRelation]: order[config.orderRelation] ?? null,
+      items: order.items,
     };
+    // Same rule as the API: the order's cook also takes every dish that had
+    // no cook (or had the previous order cook).
+    const previousCookId = order.cook_id ?? order.cook?.id ?? null;
     patchOrder(order.id, {
       order_status: status,
+      ...(status === PREPARING &&
+        !order.preparing_at && { preparing_at: new Date().toISOString() }),
       [config.orderField]: person.id,
       [config.orderRelation]: person,
+      ...(kind === "cook" && {
+        items: (order.items || []).map((item) => {
+          const cookId = itemCookId(item);
+          return !cookId || cookId === previousCookId
+            ? { ...item, cook_id: person.id, cook: person }
+            : item;
+        }),
+      }),
     });
     try {
       const response = await updateOrderStatus(order.id, {
@@ -208,10 +414,14 @@ const OrderBoard = () => {
         [config.orderField]: person.id,
       });
       if (!response.success) throw response.message;
+      patchStageTimes(order.id, response.data);
+      notifyOrdersChanged();
       const moved = status !== order.order_status;
       showToast({
         message: moved
-          ? `Order ${orderLabel(order)} ${kind === "cook" ? "accepted" : "served"} · ${name}`
+          ? `Order ${orderLabel(order)} ${
+              kind === "server" ? "served" : status === PREPARING ? "is being prepared" : "accepted"
+            } · ${name}`
           : `${name} assigned to order ${orderLabel(order)}`,
         variant: "success",
       });
@@ -246,6 +456,7 @@ const OrderBoard = () => {
         })),
       );
       if (response?.success === false) throw response.message;
+      notifyOrdersChanged();
       if (response?.data?.items) patchOrder(order.id, { items: response.data.items });
       showToast({
         message: `${cook.cook_name} is cooking ${item.menu_name}`,
@@ -262,6 +473,7 @@ const OrderBoard = () => {
   };
 
   const handleItemsSaved = (updated) => {
+    notifyOrdersChanged();
     if (updated) {
       patchOrder(updated.id, {
         items: updated.items,
@@ -279,6 +491,15 @@ const OrderBoard = () => {
   const handleMove = (order, column) => {
     if (column.id === CANCELLED) {
       setPendingCancel(order);
+      return;
+    }
+    // Once cooking has started, the food is either finished or dropped.
+    if (order.order_status === PREPARING && column.id !== READY) {
+      showToast({
+        title: `Order ${orderLabel(order)} is being prepared`,
+        message: "It can only move to Ready (or be cancelled).",
+        variant: "warning",
+      });
       return;
     }
     // Accepting just changes the stage; cooks are chosen per dish afterwards
@@ -301,7 +522,40 @@ const OrderBoard = () => {
       return;
     }
     if (column.id === SERVED) {
-      setStaffRequest({ kind: "server", order, status: SERVED });
+      // Table orders are served by the table's own server (set on the
+      // Reservations page); ask only when the booking has none.
+      const serveWithBookingServer = (row) => {
+        const bookingServer = row?.reservation?.server;
+        if (!bookingServer || bookingServer.is_active === false) return false;
+        assignStaff(bookingServer, { kind: "server", order, status: SERVED });
+        return true;
+      };
+      if (serveWithBookingServer(order)) return;
+      // The board may hold data from before the server was set on the
+      // Reservations page: check the latest before asking.
+      getAllOrders({ reservation_id: order.reservation_id, limit: 50 })
+        .then((response) => {
+          const latest = (response?.rows || []).find((row) => row.id === order.id);
+          if (latest?.reservation) patchOrder(order.id, { reservation: latest.reservation });
+          if (!serveWithBookingServer(latest)) {
+            setStaffRequest({ kind: "server", order, status: SERVED });
+          }
+        })
+        .catch(() => setStaffRequest({ kind: "server", order, status: SERVED }));
+      return;
+    }
+    // Starting to cook: ask for the cook while any dish has none (the chosen
+    // cook takes those dishes; dishes with their own cook keep them).
+    if (
+      column.id === PREPARING &&
+      (order.items || []).some((item) => item.item_status !== 5 && !itemCookId(item))
+    ) {
+      setStaffRequest({ kind: "cook", order, status: PREPARING });
+      return;
+    }
+    // Delivering hands the food over: ask how it was paid (unless already).
+    if (column.id === DELIVERED && order.payment_status !== PAID) {
+      setPaymentRequest({ order, deliver: true });
       return;
     }
     changeStatus(order, column.id, () =>
@@ -317,77 +571,179 @@ const OrderBoard = () => {
     changeStatus(order, CANCELLED, () => cancelOrder(order.id));
   };
 
-  // Cook / server on a card: who it is, plus Change (or Assign) only in the
-  // columns where that person can still be changed.
-  const renderStaffRow = (order, kind, editableIn) => {
-    const config = STAFF[kind];
-    const person = order[config.orderRelation];
-    const editable = editableIn.includes(order.order_status);
-    const ask = () => setStaffRequest({ kind, order, status: order.order_status });
+  // One compact panel for what happened after cooking: total prep time,
+  // when it was served / delivered, and who served it (click the photo to
+  // change, while that is still allowed).
+  const renderSummary = (order) => {
+    const done = preparedAt(order);
+    const prepTime =
+      order.preparing_at && done && order.order_status !== CANCELLED
+        ? formatElapsed(new Date(done) - new Date(order.preparing_at))
+        : null;
+    const ended = order.served_at
+      ? { label: "Served", at: order.served_at }
+      : order.delivered_at
+        ? { label: "Delivered", at: order.delivered_at }
+        : null;
 
-    if (!person) {
-      return editable ? (
-        <button
-          type="button"
-          data-no-drag
-          className="kanban-card__cook-assign"
-          onClick={ask}
-        >
-          + Assign {config.singular.toLowerCase()}
-        </button>
-      ) : null;
-    }
+    const server = order.server;
+    const canChangeServer = SERVER_EDITABLE.includes(order.order_status);
+    const askServer = () =>
+      setStaffRequest({ kind: "server", order, status: order.order_status });
+
+    if (!prepTime && !ended && !server && !canChangeServer) return null;
 
     return (
-      <div className={`kanban-card__cook kanban-card__cook--${kind}`}>
-        <StaffAvatar
-          name={person[config.nameField]}
-          photo={person.photo_url}
-          size={26}
-          tone={kind}
-        />
-        <span>
-          <strong>{person[config.nameField]}</strong>
-          <small>
-            {config.singular}
-            {person[config.detailField] ? ` · ${person[config.detailField]}` : ""}
-          </small>
-        </span>
-        {editable && (
-          <button
-            type="button"
-            data-no-drag
-            className="kanban-card__cook-change"
-            onClick={ask}
-          >
-            Change
-          </button>
+      <div className="kanban-card__summary">
+        {(prepTime || ended) && (
+          <div className="kanban-card__summary-stats">
+            {prepTime && (
+              <span title="Time from start of cooking to the last dish ready">
+                <TimerOutlined aria-hidden />
+                <small>Prepared in</small>
+                <strong>{prepTime}</strong>
+              </span>
+            )}
+            {ended && (
+              <span title={dayjs(ended.at).format("D MMM YYYY, h:mm A")}>
+                <CheckCircleOutlineRounded aria-hidden />
+                <small>{ended.label}</small>
+                <strong>{dayjs(ended.at).format("h:mm A")}</strong>
+              </span>
+            )}
+          </div>
+        )}
+        {server ? (
+          <div className="kanban-card__summary-staff">
+            {canChangeServer ? (
+              <button
+                type="button"
+                data-no-drag
+                className="kanban-card__staff-avatar"
+                title="Change server"
+                aria-label={`Change server (${server.server_name})`}
+                onClick={askServer}
+              >
+                <StaffAvatar name={server.server_name} photo={server.photo_url} size={28} tone="server" />
+                <EditRounded className="kanban-card__staff-edit" aria-hidden />
+              </button>
+            ) : (
+              <StaffAvatar name={server.server_name} photo={server.photo_url} size={28} tone="server" />
+            )}
+            <span>
+              <strong>{server.server_name}</strong>
+              <small>Server{server.section ? ` · ${server.section}` : ""}</small>
+            </span>
+          </div>
+        ) : (
+          canChangeServer && (
+            <button
+              type="button"
+              data-no-drag
+              className="kanban-card__cook-assign"
+              onClick={askServer}
+            >
+              + Assign server
+            </button>
+          )
         )}
       </div>
     );
   };
 
-  // When the order reached its end stages.
-  const renderEndTimes = (order) => {
-    const stamps = [
-      { label: "Served", at: order.served_at },
-      { label: "Delivered", at: order.delivered_at },
-    ].filter((stamp) => stamp.at);
-    if (!stamps.length) return null;
-    return (
-      <ul className="kanban-card__times">
-        {stamps.map((stamp) => (
-          <li key={stamp.label}>
-            <span>{stamp.label}</span>
-            <strong>{dayjs(stamp.at).format("D MMM, h:mm A")}</strong>
+
+  // Orders, plus a Ready ticket for each order still cooking that has some
+  // (not all) dishes prepared.
+  const boardCards = useMemo(() => {
+    const tickets = orders
+      .filter((order) => TICKET_SOURCE.includes(order.order_status))
+      .map((order) => {
+        const dishes = (order.items || []).filter((item) => item.item_status !== 5);
+        const ready = dishes.filter((item) => item.item_status === ITEM_READY);
+        if (!ready.length || ready.length === dishes.length) return null;
+        return {
+          ...order,
+          id: `ticket-${order.id}`,
+          ticketOf: order.id,
+          order_status: READY,
+          items: ready,
+          dishCount: dishes.length,
+        };
+      })
+      .filter(Boolean);
+    return [...orders, ...tickets];
+  }, [orders]);
+
+  const renderTicket = (ticket) => (
+    <div className="kanban-ticket">
+      <div className="kanban-card__head">
+        <span className="kanban-card__title">
+          {ticket.order_number || `Order #${ticket.ticketOf}`}
+        </span>
+        <button
+          type="button"
+          data-no-drag
+          className="kanban-card__ref kanban-card__ref--open"
+          title="Open order"
+          onClick={() => setOpenOrderId(ticket.ticketOf)}
+        >
+          {ticket.reservation_id ? `Res #${ticket.reservation_id}` : "No booking"}
+        </button>
+      </div>
+      <div className="kanban-card__meta">
+        <span>{ticket.hotel?.hotel_name || "-"}</span>
+      </div>
+      <span className="kanban-ticket__tag">
+        Partly ready · {ticket.items.length} of {ticket.dishCount} dishes
+      </span>
+      <ul className="kanban-card__items">
+        {ticket.items.map((item) => (
+          <li key={item.id} className="is-ready">
+            <span className="kanban-card__item-name">
+              {item.quantity} × {item.menu_name}
+            </span>
+            {item.cook?.cook_name && (
+              <span className="kanban-card__item-cook" title={`Cook: ${item.cook.cook_name}`}>
+                <StaffAvatar name={item.cook.cook_name} photo={item.cook.photo_url} size={18} tone="cook" />{" "}
+                {item.cook.cook_name}
+              </span>
+            )}
+            {/* How long this dish took (frozen when it was ticked). */}
+            <ItemTimer since={ticket.preparing_at} readyAt={item.ready_at} />
+            {/* Prepared dishes live only on the ticket: untick here to undo. */}
+            <label
+              data-no-drag
+              className="kanban-card__prepared"
+              title="Prepared — click to undo"
+            >
+              <input
+                type="checkbox"
+                checked
+                onChange={() => {
+                  const source = orders.find((order) => order.id === ticket.ticketOf);
+                  if (source) toggleItemPrepared(source, item);
+                }}
+                aria-label={`${item.menu_name} prepared`}
+              />
+            </label>
           </li>
         ))}
       </ul>
-    );
-  };
+      {/* Whole order's cooking time, still running for the other dishes. */}
+      {ticket.preparing_at && <PrepTimer since={ticket.preparing_at} />}
+      <p className="kanban-ticket__note">
+        {ticket.dishCount - ticket.items.length} more still in{" "}
+        {statusName(orders.find((order) => order.id === ticket.ticketOf)?.order_status)}
+      </p>
+    </div>
+  );
 
   const renderCard = (order) => {
-    const items = order.items || [];
+    if (isTicket(order)) return renderTicket(order);
+    // While cooking, prepared dishes move to the Ready ticket.
+    const items = TICKET_SOURCE.includes(order.order_status)
+      ? (order.items || []).filter((item) => item.item_status !== ITEM_READY)
+      : order.items || [];
     return (
       <Fragment>
         <div className="kanban-card__head">
@@ -404,7 +760,7 @@ const OrderBoard = () => {
             {order.reservation_id ? `Res #${order.reservation_id}` : "No booking"}
           </button>
         </div>
-        <div className="kanban-card__meta">
+        <div className="kanban-card__meta kanban-card__meta--split">
           <span>{order.hotel?.hotel_name || "-"}</span>
           <span>{dayjs(order.createdAt).format("DD MMM, hh:mm A")}</span>
         </div>
@@ -414,9 +770,11 @@ const OrderBoard = () => {
               // Cook per dish: changeable while the kitchen is working on it.
               const editable = COOK_EDITABLE.includes(order.order_status);
               const name = item.cook?.cook_name;
+              const prepared = item.item_status === ITEM_READY;
+              const canTick = PREPARED_EDITABLE.includes(order.order_status);
               return (
-                <li key={item.id}>
-                  <span>
+                <li key={item.id} className={prepared ? "is-prepared" : ""}>
+                  <span className="kanban-card__item-name">
                     {item.quantity} × {item.menu_name}
                   </span>
                   {editable ? (
@@ -427,14 +785,48 @@ const OrderBoard = () => {
                       title={name ? `Change cook for ${item.menu_name}` : `Choose a cook for ${item.menu_name}`}
                       onClick={() => setItemCookRequest({ order, item })}
                     >
-                      {name || "+ Cook"}
+                      {name ? (
+                        <>
+                          <StaffAvatar name={name} photo={item.cook?.photo_url} size={18} tone="cook" /> {name}
+                        </>
+                      ) : (
+                        "+ Cook"
+                      )}
                     </button>
                   ) : (
                     name && (
                       <span className="kanban-card__item-cook" title={`Cook: ${name}`}>
-                        {name}
+                        <StaffAvatar name={name} photo={item.cook?.photo_url} size={18} tone="cook" /> {name}
                       </span>
                     )
+                  )}
+                  {/* Dish time: ticking while cooking, frozen once prepared. */}
+                  {order.preparing_at &&
+                    item.item_status !== 5 &&
+                    (order.order_status === PREPARING || item.ready_at) && (
+                      <ItemTimer since={order.preparing_at} readyAt={item.ready_at} />
+                    )}
+                  {/* Accepted: shown but locked until the kitchen starts. */}
+                  {(canTick || order.order_status === ACCEPTED) && (
+                    <label
+                      data-no-drag
+                      className={`kanban-card__prepared${canTick ? "" : " is-locked"}`}
+                      title={
+                        !canTick
+                          ? "Move the order to Preparing to tick dishes"
+                          : prepared
+                            ? "Prepared — click to undo"
+                            : "Mark as prepared"
+                      }
+                    >
+                      <input
+                        type="checkbox"
+                        checked={prepared}
+                        disabled={!canTick}
+                        onChange={() => toggleItemPrepared(order, item)}
+                        aria-label={`${item.menu_name} prepared`}
+                      />
+                    </label>
                   )}
                 </li>
               );
@@ -446,14 +838,36 @@ const OrderBoard = () => {
             )}
           </ul>
         )}
-        {renderStaffRow(order, "server", SERVER_EDITABLE)}
-        {renderEndTimes(order)}
+        {/* Live cooking timer while in Preparing; afterwards the total time
+            moves into the compact summary below. */}
+        {order.order_status === PREPARING && (
+          <PrepTimer since={order.preparing_at || order.updatedAt} />
+        )}
+        {renderSummary(order)}
         <div className="kanban-card__foot">
-          <span
-            className={`kanban-card__badge kanban-card__badge--payment-${order.payment_status}`}
-          >
-            {PAYMENT_LABELS[order.payment_status] || "-"}
-          </span>
+          {/* Collect from the card while the order is open or delivered;
+              table orders (Served) are paid when the booking completes. */}
+          {order.payment_status === PAYMENT_PENDING &&
+          ![CANCELLED, SERVED].includes(order.order_status) ? (
+            <button
+              type="button"
+              data-no-drag
+              className="kanban-card__badge kanban-card__badge--payment-0 kanban-card__badge--button"
+              title="Collect payment"
+              onClick={() => setPaymentRequest({ order, deliver: false })}
+            >
+              {PAYMENT_LABELS[PAYMENT_PENDING]}
+            </button>
+          ) : (
+            <span
+              className={`kanban-card__badge kanban-card__badge--payment-${order.payment_status}`}
+            >
+              {PAYMENT_LABELS[order.payment_status] || "-"}
+              {order.payment_status === PAID && order.payment_method
+                ? ` · ${paymentMethodLabel(order.payment_method)}`
+                : ""}
+            </span>
+          )}
           <strong>₹{Number(order.total_amount || 0).toFixed(2)}</strong>
         </div>
       </Fragment>
@@ -476,20 +890,26 @@ const OrderBoard = () => {
             <button
               type="button"
               className="ui-btn ui-btn--ghost"
-              onClick={fetchOrders}
+              onClick={() => fetchOrders()}
               disabled={loading}
             >
               <RefreshRounded fontSize="small" /> Refresh
+            </button>
+            <button
+              type="button"
+              className="ui-btn ui-btn--primary"
+              onClick={() => setCreateOrderOpen(true)}
+            >
+              <AddRounded fontSize="small" /> New order
             </button>
           </div>
         </header>
 
         <KanbanBoard
           columns={columns}
-          items={orders}
+          items={boardCards}
           getColumnId={(order) => order.order_status}
-          canMove={(order) => !FINISHED.includes(order.order_status)
-          }
+          canMove={(order) => !isTicket(order) && !FINISHED.includes(order.order_status)}
           onMove={handleMove}
           onBlocked={handleBlocked}
           renderCard={renderCard}
@@ -497,6 +917,19 @@ const OrderBoard = () => {
           emptyLabel="No orders"
         />
       </section>
+
+      <PaymentDialog
+        order={paymentRequest?.order ?? null}
+        deliver={Boolean(paymentRequest?.deliver)}
+        onConfirm={settlePayment}
+        onCancel={() => setPaymentRequest(null)}
+      />
+
+      <CreateOrderDialog
+        show={createOrderOpen}
+        onClose={() => setCreateOrderOpen(false)}
+        onCreated={() => fetchOrders()}
+      />
 
       <AssignStaffDialog
         config={STAFF[staffRequest?.kind || "cook"]}
@@ -510,7 +943,9 @@ const OrderBoard = () => {
           staffRequest && staffRequest.status !== staffRequest.order.order_status
             ? staffRequest.kind === "server"
               ? "Mark as served"
-              : "Accept order"
+              : staffRequest.status === PREPARING
+                ? "Start preparing"
+                : "Accept order"
             : `Assign ${staffRequest?.kind || "cook"}`
         }
         onAssign={assignStaff}

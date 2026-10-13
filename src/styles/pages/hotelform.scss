@@ -117,6 +117,11 @@ $danger: #c2410c;
   }
 }
 
+// A field that spans every column (e.g. address, description).
+.hotel-form__field--full {
+  grid-column: 1 / -1;
+}
+
 .hotel-form__field {
   display: flex;
   flex-direction: column;

@@ -49,9 +49,14 @@ const ReservationCard = ({ reservation, status, canCancel, isPast, onView, onCan
           <EventAvailableOutlined aria-hidden />
           <span>
             <strong>{dining.format("ddd, D MMM")}</strong>
-            {reservation.start_time
-              ? ` · ${reservation.start_time}`
-              : ` · ${dining.format("h:mm A")}`}
+            {/* start_time is "HH:mm[:ss]" (24h); show it as 7:00 PM. */}
+            {` · ${
+              reservation.start_time
+                ? dayjs(
+                    `${dining.format("YYYY-MM-DD")}T${String(reservation.start_time).slice(0, 5)}`,
+                  ).format("h:mm A")
+                : dining.format("h:mm A")
+            }`}
           </span>
         </p>
       )}

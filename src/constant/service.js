@@ -35,6 +35,7 @@ export const API = {
   SPICE_LEVEL_API: "/api/spice-levels",
   MENU_CATEGORY_API: "/api/menu-categories",
   SIDE_DISH_API: "/api/menu-side-dishes",
+  CATEGORY_SIDE_DISH_API: "/api/side-dishes",
   /** NOTIFICATION */
   GET_RECENT_NOTIFICATION: "/master/TicketManagement/getnotification",
 };

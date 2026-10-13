@@ -167,6 +167,35 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
   margin-top: auto;
 }
 
+// Admin-only "Create order": full width under Edit layout / Book table.
+// Warm accent so it reads apart from Edit layout (ghost) and Book table (brand).
+$order: #c2410c;
+$order-strong: #9a3412;
+$order-soft: #fff4ec;
+
+.hl-card__order {
+  grid-column: 1 / -1;
+  border: 1px solid rgba($order, 0.35);
+  color: $order-strong;
+  background: $order-soft;
+
+  &:hover:not(:disabled) {
+    border-color: $order;
+    color: #fff;
+    background: linear-gradient(135deg, #ea580c, $order);
+    box-shadow: 0 8px 20px rgba($order, 0.22);
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba($order, 0.35);
+    outline-offset: 2px;
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+}
+
 
 @media (max-width: 640px) {
   .hl-grid {

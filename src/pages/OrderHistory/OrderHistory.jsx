@@ -22,10 +22,13 @@ const OrderHistory = ({ orders = [], loading = false, onChanged }) => {
     );
   }
 
+  // Orders still in progress first, then finished ones; newest first in each.
+  const isFinished = (order) => [5, 6, 7, 8].includes(order.order_status);
   const sorted = [...orders].sort(
     (a, b) =>
+      Number(isFinished(a)) - Number(isFinished(b)) ||
       new Date(b.ordered_at || b.createdAt || 0) -
-      new Date(a.ordered_at || a.createdAt || 0),
+        new Date(a.ordered_at || a.createdAt || 0),
   );
 
   return (

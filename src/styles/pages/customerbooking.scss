@@ -1051,3 +1051,74 @@ $bottom-nav-height: 64px;
     border-color: $brand;
   }
 }
+
+/* ---------------- My orders: live vs finished ---------------- */
+// Orders still in the kitchen / on the way: bright brand highlight.
+.cx-order.is-live {
+  border: 1.5px solid $brand;
+  background: linear-gradient(180deg, $brand-soft 0, $surface 90px);
+  box-shadow:
+    0 0 0 3px rgba(15, 118, 110, 0.12),
+    0 10px 28px rgba(15, 118, 110, 0.16);
+}
+
+.cx-order__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: $brand;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+  color: #fff;
+}
+
+.cx-order__live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  animation: cx-live-blink 1.4s ease-in-out infinite;
+}
+
+@keyframes cx-live-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+// Served / Delivered / Cancelled: a calm "done" card in the stage colour —
+// soft tint, coloured left edge, quieter text — so live orders stand out.
+.cx-order.is-finished {
+  border: 1px solid color-mix(in srgb, var(--status-color) 22%, #fff);
+  border-left: 4px solid var(--status-color);
+  background: color-mix(in srgb, var(--status-color) 6%, #fff);
+  box-shadow: none;
+
+  .cx-order__head h3,
+  .cx-order__foot strong {
+    color: #4b4f66;
+  }
+
+  .cx-order__name,
+  .cx-order__price,
+  .cx-order__foot span {
+    color: #8a8fa6;
+  }
+
+  // Tick before the stage name: this order is done.
+  .cx-order__final .booking-status::before {
+    content: "✓ ";
+    font-weight: 800;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cx-order__live-dot {
+    animation: none;
+  }
+}

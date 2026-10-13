@@ -13,6 +13,9 @@ import { createHotelAPi } from "services";
 import useToast from "hooks/useToast";
 import { useNavigate } from "react-router-dom";
 import ToolTipPopup from "components/common/ToolTipPopup";
+import { getApiErrorMessage } from "utils/apiError";
+import useAuth from "hooks/useAuth";
+import CreateOrderDialog from "pages/Orders/CreateOrderDialog";
 import {
   LocationOnOutlined,
   AddRounded,
@@ -24,6 +27,7 @@ import {
   TableRestaurantOutlined,
   LayersOutlined,
   EventSeatOutlined,
+  ReceiptLongOutlined,
 } from "@mui/icons-material";
 import { renderArea, renderLocation } from "utils/common";
 import SkeletonLoading from "components/common/SkeletonLoading";
@@ -71,6 +75,10 @@ const CreateHotel = () => {
   const [selectedArea, setSelectedArea] = useState([]);
   const [showCreateHotelForm, setShowCreateHotelForm] = useState(false);
   const [loadingHotelListApp, setLoadingHotelListApp] = useState(true);
+  const [{ data: auth }] = useAuth();
+  const isAdminUser = auth?.details?.role === "Admin";
+  // Hotel an admin is placing an order for (no table booking).
+  const [orderHotel, setOrderHotel] = useState(null);
   const navigate = useNavigate();
   const { areaList, locationList, getAllArea, getAllLocation } =
     useGlobalMaster();
@@ -277,15 +285,15 @@ const CreateHotel = () => {
   /** HANDLE DELETE ORDER */
   const handleDeleteOrder = async (param) => {
     setShowDeleteHotel(false);
-    console.log("param", param);
 
     try {
+      // baseAPI resolves to the response body: { success, message }.
       const response = await deleteHotel({
         hotel_id: param,
       });
-      if (response?.status) {
+      if (response?.success) {
         showToast({
-          message: response.data.message,
+          message: response.message || "Hotel deleted successfully",
           variant: "success",
         });
         const hotels = await getAllHotel();
@@ -293,13 +301,14 @@ const CreateHotel = () => {
         setLoadingHotelListApp(false);
       } else {
         showToast({
-          message: response.data.message,
+          message: response?.message || "Unable to delete the hotel.",
           variant: "danger",
         });
       }
     } catch (error) {
+      // e.g. 409: the hotel still has active bookings or open orders.
       showToast({
-        message: error?.message || "Something went wrong",
+        message: getApiErrorMessage(error) || "Unable to delete the hotel.",
         variant: "danger",
       });
     }
@@ -651,6 +660,15 @@ const CreateHotel = () => {
                     >
                       <TableRestaurantOutlined fontSize="small" /> Book table
                     </button>
+                    {isAdminUser && (
+                      <button
+                        type="button"
+                        className="ui-btn hl-card__order"
+                        onClick={() => setOrderHotel(hotel)}
+                      >
+                        <ReceiptLongOutlined fontSize="small" /> Create order
+                      </button>
+                    )}
                   </div>
                 </article>
               );
@@ -943,6 +961,12 @@ const CreateHotel = () => {
           setShowDeleteHotel(false);
           setSeletedHotelId(null);
         }}
+      />
+      <CreateOrderDialog
+        show={orderHotel !== null}
+        hotelId={orderHotel?.id ?? ""}
+        hotelName={orderHotel?.hotel_name ?? ""}
+        onClose={() => setOrderHotel(null)}
       />
     </Fragment>
   );

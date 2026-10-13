@@ -423,6 +423,1148 @@ button.kanban-card__title:hover {
   }
 }
 
+// Pending payment badge opens the payment popup.
+.kanban-card__badge--button {
+  border: 1px solid transparent;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #d97706;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(217, 119, 6, 0.45);
+    outline-offset: 2px;
+  }
+}
+
+/* ---------------- Dish rows: name · cook · prepared ---------------- */
+ul.kanban-card__items > li {
+  align-items: center;
+
+  .kanban-card__item-name {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &.is-prepared .kanban-card__item-name {
+    color: #15803d;
+    text-decoration: line-through;
+    text-decoration-color: rgba(21, 128, 61, 0.5);
+  }
+}
+
+// Cook chip: round photo (or initials) then the name.
+.kanban-card__item-cook {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  &:has(.cook-avatar) {
+    padding: 1px 8px 1px 1px;
+  }
+
+  .cook-avatar {
+    box-shadow: 0 0 0 1.5px #fff;
+  }
+}
+
+.kanban-card__prepared {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  margin: 0;
+  cursor: pointer;
+
+  input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: #15803d;
+    cursor: pointer;
+  }
+}
+
+/* ---------------- Ready ticket (part of an order) ---------------- */
+.kanban-card:has(.kanban-ticket) {
+  border-style: dashed;
+  background: #f6fdfb;
+}
+
+.kanban-ticket {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+// Full-width strip so "Partly ready · 1 of 2 dishes" stays on one line.
+.kanban-ticket__tag {
+  display: block;
+  width: 100%;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #ccfbf1;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+  color: #0f766e;
+}
+
+/* ---------------- Order card: hotel left, date/time right ---------------- */
+.kanban-card__meta--split {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  span:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  span:last-child {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: #777b91;
+    white-space: nowrap;
+  }
+}
+
+/* ---------------- Dish rows with timer / tick: two tidy lines ----------------
+   1 × Veg Biryani                 [ ]
+   (cook)                         05:37                                    */
+ul.kanban-card__items > li:has(.kanban-card__item-time, .kanban-card__prepared) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 8px;
+
+  & + li {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed #e4e3ef;
+  }
+
+  .kanban-card__item-name {
+    grid-column: 1;
+    grid-row: 1;
+    font-weight: 600;
+  }
+
+  .kanban-card__prepared {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .kanban-card__item-cook {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+    max-width: 100%;
+  }
+
+  .kanban-card__item-time {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+  }
+}
+
+/* ---------------- Per-dish cooking time ---------------- */
+.kanban-card__item-time {
+  flex-shrink: 0;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+
+  &--ok {
+    background: #f0fdf4;
+    color: #166534;
+  }
+
+  &--warn {
+    background: #fffbeb;
+    color: #b45309;
+  }
+
+  &--late {
+    background: #fef2f2;
+    color: #b91c1c;
+  }
+
+  // Frozen: the dish is prepared.
+  &--done {
+    background: #e0f2fe;
+    color: #0369a1;
+
+    &::before {
+      content: "✓ ";
+    }
+  }
+}
+
+ul.kanban-card__items > li.is-ready .kanban-card__item-name {
+  color: #15803d;
+}
+
+
+.kanban-ticket__note {
+  margin: 0;
+  font-size: 11px;
+  font-style: italic;
+  color: #777b91;
+}
+
+/* ---------------- Reservation: its food orders ---------------- */
+.kanban-card__orders {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+}
+
+.kanban-card__orders-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #777b91;
+}
+
+.kanban-card__orders-title {
+  display: flex;
+}
+
+.kanban-card__orders-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  padding: 1px 8px;
+  border: 1px solid rgba(194, 65, 12, 0.35);
+  border-radius: 999px;
+  background: #fff4ec;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #9a3412;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #c2410c;
+  }
+}
+
+// Booking without food yet: same warm accent as "Create order" on hotels.
+.kanban-card__new-order {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 34px;
+  border: 1px dashed rgba(194, 65, 12, 0.45);
+  border-radius: 8px;
+  background: #fff4ec;
+  font-size: 12px;
+  font-weight: 700;
+  color: #9a3412;
+  cursor: pointer;
+
+  &:hover {
+    border-style: solid;
+    border-color: #c2410c;
+    color: #fff;
+    background: linear-gradient(135deg, #ea580c, #c2410c);
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(194, 65, 12, 0.35);
+    outline-offset: 2px;
+  }
+}
+
+.kanban-card__order {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ecebf3;
+  border-radius: 8px;
+  background: #f8f8fc;
+  font-size: 12px;
+  text-align: left;
+  color: #292d46;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #c9c7da;
+    background: #fff;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(15, 118, 110, 0.45);
+    outline-offset: 2px;
+  }
+}
+
+.kanban-card__order-no {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kanban-card__order-stage {
+  justify-self: end;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--stage-color) 14%, #fff);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--stage-color);
+}
+
+.kanban-card__order-sum {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: #777b91;
+}
+
+/* ---------------- Reservation: food ready to serve ---------------- */
+.kanban-card__ready {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid #86efac;
+  border-left: 4px solid #16a34a;
+  border-radius: 8px;
+  background: #f0fdf4;
+  font-size: 12px;
+  color: #166534;
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+
+    small {
+      flex-shrink: 0;
+      font-size: 10px;
+      color: #4d7c5f;
+    }
+  }
+}
+
+.kanban-card__ready-head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  strong {
+    font-size: 12px;
+  }
+}
+
+.kanban-card__ready-count {
+  margin-left: auto;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: #16a34a;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+}
+
+// Pulsing dot draws the server's eye to tables with food waiting.
+.kanban-card__ready-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16a34a;
+  animation: kanban-ready-pulse 1.6s ease-out infinite;
+}
+
+@keyframes kanban-ready-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(22, 163, 74, 0);
+  }
+}
+
+// The whole booking card glows green while food is waiting.
+.kanban-card:has(.kanban-card__ready) {
+  border-color: #4ade80;
+  animation: kanban-ready-glow 2s ease-in-out infinite;
+}
+
+@keyframes kanban-ready-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(22, 163, 74, 0),
+      0 2px 6px rgba(15, 75, 67, 0.05);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(22, 163, 74, 0.25),
+      0 6px 18px rgba(22, 163, 74, 0.25);
+  }
+}
+
+// Bell "rings" every few seconds.
+.kanban-card__ready-bell {
+  transform-origin: 50% 85%;
+  animation: kanban-ready-ring 2.4s ease-in-out infinite;
+}
+
+@keyframes kanban-ready-ring {
+  0%,
+  60%,
+  100% {
+    transform: rotate(0);
+  }
+  65% {
+    transform: rotate(-18deg);
+  }
+  72% {
+    transform: rotate(16deg);
+  }
+  79% {
+    transform: rotate(-12deg);
+  }
+  86% {
+    transform: rotate(8deg);
+  }
+  93% {
+    transform: rotate(-4deg);
+  }
+}
+
+// A light sweeps across the strip.
+.kanban-card__ready {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.7) 50%,
+      transparent 70%
+    );
+    transform: translateX(-100%);
+    animation: kanban-ready-shine 3s ease-in-out infinite;
+    pointer-events: none;
+  }
+}
+
+@keyframes kanban-ready-shine {
+  0%,
+  55% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kanban-card__ready-dot,
+  .kanban-card__ready-bell,
+  .kanban-card:has(.kanban-card__ready),
+  .kanban-card__ready::after {
+    animation: none;
+  }
+}
+
+.kanban-card__ready-order {
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 10px;
+  font-weight: 700;
+  color: #15803d;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ---------------- Preparing timer ---------------- */
+.kanban-card__timer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--timer-line);
+  border-radius: 8px;
+  background: var(--timer-bg);
+  font-size: 12px;
+  color: var(--timer-ink);
+
+  svg {
+    font-size: 16px;
+  }
+
+  strong {
+    margin-left: auto;
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+
+  // Under 15 min
+  &--ok {
+    --timer-bg: #f0fdf4;
+    --timer-line: #bbf7d0;
+    --timer-ink: #166534;
+  }
+
+  // 15–30 min
+  &--warn {
+    --timer-bg: #fffbeb;
+    --timer-line: #fde68a;
+    --timer-ink: #b45309;
+  }
+
+  // Stopped: total cooking time ("Prepared in").
+  &--done {
+    --timer-bg: #f0f9ff;
+    --timer-line: #bae6fd;
+    --timer-ink: #0369a1;
+  }
+
+  // Over 30 min: taking too long
+  &--late {
+    --timer-bg: #fef2f2;
+    --timer-line: #fecaca;
+    --timer-ink: #b91c1c;
+
+    strong {
+      animation: kanban-timer-late 1.2s ease-in-out infinite;
+    }
+  }
+}
+
+// "⚠ Delayed · over 30 min" label inside the timer bar.
+.kanban-card__timer-alert {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #dc2626;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+
+  svg {
+    font-size: 14px !important;
+  }
+}
+
+// The whole order card turns red and pulses while it is delayed.
+.kanban-card:has(.kanban-card__timer--late) {
+  border-color: #fca5a5;
+  border-left-color: #dc2626;
+  background: #fffafa;
+  animation: kanban-card-delayed 1.6s ease-in-out infinite;
+}
+
+@keyframes kanban-card-delayed {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(220, 38, 38, 0.22),
+      0 6px 18px rgba(220, 38, 38, 0.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kanban-card:has(.kanban-card__timer--late) {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25);
+  }
+}
+
+@keyframes kanban-timer-late {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kanban-card__timer--late strong {
+    animation: none;
+  }
+}
+
+/* ---------------- Reservation: "Booking #" opens details ---------------- */
+.kanban-card__title--link {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    color: #0f766e;
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(15, 118, 110, 0.45);
+    outline-offset: 2px;
+  }
+}
+
+/* ---------------- Booking details popup ---------------- */
+.booking-details__facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 16px;
+  margin: 0;
+
+  div {
+    min-width: 0;
+  }
+
+  dt {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #8a8fa6;
+  }
+
+  dd {
+    display: flex;
+    flex-direction: column;
+    margin: 2px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #292d46;
+
+    small {
+      font-size: 12px;
+      font-weight: 500;
+      color: #5b6078;
+      overflow-wrap: anywhere;
+    }
+  }
+}
+
+// "Admin" tag in place of contact details for staff-made bookings.
+.booking-details__admin-tag {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #e7f4f1;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0f766e;
+}
+
+.booking-details__people {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.booking-details__person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #eef0ff;
+
+  &--cleaner {
+    background: #e0f2fe;
+  }
+
+  span {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  strong {
+    font-size: 14px;
+    color: #292d46;
+  }
+
+  small {
+    font-size: 12px;
+    color: #5b6078;
+  }
+}
+
+.booking-details__none {
+  margin: 0;
+  font-size: 13px;
+  color: #8a8fa6;
+}
+
+.booking-details__order {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #ecebf3;
+  border-radius: 12px;
+  background: #fbfbfe;
+
+  & + & {
+    margin-top: 10px;
+  }
+
+  > header,
+  > footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  > footer strong {
+    font-size: 15px;
+    color: #292d46;
+  }
+}
+
+.booking-details__order-no {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f766e;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.booking-details__order-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  font-size: 12px;
+  color: #5b6078;
+}
+
+.booking-details__dishes {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th {
+    padding: 4px 6px;
+    border-bottom: 1px solid #ecebf3;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-align: left;
+    text-transform: uppercase;
+    color: #8a8fa6;
+  }
+
+  td {
+    padding: 6px;
+    border-bottom: 1px dashed #ecebf3;
+    color: #292d46;
+  }
+
+  .is-right {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  tr.is-cancelled td {
+    color: #a2a6b6;
+    text-decoration: line-through;
+  }
+}
+
+.booking-details__cook {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: #b45309;
+}
+
+@media (max-width: 640px) {
+  .booking-details__facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .booking-details__people {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .booking-details__dishes th:nth-child(2),
+  .booking-details__dishes td:nth-child(2) {
+    display: none;
+  }
+}
+
+/* ---------------- Reservation card: server + cleaner side by side ---------------- */
+.kanban-card__staff {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+
+  &:empty {
+    display: none;
+  }
+
+  // "+ Add server / cleaner" buttons fill their own cell.
+  > .kanban-card__cook-assign {
+    width: 100%;
+    margin: 0;
+  }
+}
+
+.kanban-card__staff-person {
+  min-width: 0;
+  gap: 6px !important;
+  padding: 6px 8px !important;
+
+  > span {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  strong,
+  small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// Photo is the "Change" control: small pencil badge, ring on hover.
+.kanban-card__staff-avatar {
+  position: relative;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+
+  &:hover .cook-avatar,
+  &:focus-visible .cook-avatar {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #0f766e;
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.kanban-card__staff-edit {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 14px !important;
+  height: 14px !important;
+  padding: 2px;
+  border-radius: 50%;
+  background: #0f766e;
+  color: #fff;
+  box-shadow: 0 0 0 1.5px #fff;
+}
+
+/* ---------------- Completed booking: payment ---------------- */
+.kanban-card__payment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+
+  > span {
+    display: flex;
+    flex-direction: column;
+
+    small {
+      font-size: 11px;
+      font-weight: 600;
+      opacity: 0.85;
+    }
+  }
+
+  &.is-paid {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  &.is-pending {
+    background: #fef3c7;
+    color: #92400e;
+  }
+}
+
+.kanban-card__payment-btn {
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #b45309;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+
+  &:hover {
+    background: #92400e;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(180, 83, 9, 0.45);
+    outline-offset: 2px;
+  }
+}
+
+// Accepted orders: tick boxes shown but locked until cooking starts.
+.kanban-card__prepared.is-locked {
+  cursor: not-allowed;
+  opacity: 0.45;
+
+  input {
+    cursor: not-allowed;
+  }
+}
+
+/* ---------------- Reservation card: table code chip ---------------- */
+// The table row: chips wrap instead of squeezing over each other; with
+// several tables the row takes the card's full width.
+.kanban-card__meta span.kanban-card__tables {
+  flex-wrap: wrap;
+  row-gap: 4px;
+
+  &.is-many {
+    grid-column: 1 / -1;
+  }
+}
+
+// Soft brand-teal tag: easy to spot without shouting.
+.kanban-card__meta span.kanban-card__table {
+  display: inline-block;
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 1px 8px;
+  border: 1px solid #b7e1d9;
+  border-radius: 999px;
+  background: #e7f4f1;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #0f766e;
+}
+
+/* ---------------- Order card: compact summary ----------------
+   ┌──────────────────────────────┐
+   │ ⏱ Prepared in │ ✓ Served     │
+   │   12:06       │   3:39 PM    │
+   ├──────────────────────────────┤
+   │ (B) Bala · Server · Floor 1  │
+   └──────────────────────────────┘                                  */
+.kanban-card__summary {
+  overflow: hidden;
+  border: 1px solid #ecebf3;
+  border-radius: 10px;
+  background: #fbfbfe;
+
+  > .kanban-card__cook-assign {
+    width: calc(100% - 16px);
+    margin: 8px;
+  }
+}
+
+.kanban-card__summary-stats {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+
+  > span {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 6px;
+    padding: 8px 10px;
+
+    & + span {
+      border-left: 1px solid #ecebf3;
+    }
+
+    svg {
+      grid-row: span 2;
+      font-size: 18px;
+      color: #0f766e;
+    }
+
+    small {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #8a8fa6;
+    }
+
+    strong {
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      color: #292d46;
+    }
+  }
+}
+
+.kanban-card__summary-staff {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+
+  .kanban-card__summary-stats + & {
+    border-top: 1px solid #ecebf3;
+  }
+
+  > span {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  strong {
+    overflow: hidden;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #292d46;
+  }
+
+  small {
+    font-size: 11px;
+    color: #777b91;
+  }
+}
+
+/* ---------------- Payment popup ---------------- */
+.modal-dialog.payment-dialog {
+  max-width: 440px;
+}
+
+.payment-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 24px;
+}
+
+.payment-dialog__total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #f0fdf4;
+  font-size: 13px;
+  color: #4f5368;
+
+  strong {
+    font-size: 24px;
+    color: #166534;
+  }
+}
+
+.payment-dialog__methods {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.payment-method {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border: 1.5px solid #e4e3ef;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4f5368;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s;
+
+  svg {
+    font-size: 26px;
+  }
+
+  &:hover {
+    border-color: #0f766e;
+  }
+
+  &.is-active {
+    border-color: #0f766e;
+    background: #e7f4f1;
+    color: #0f766e;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(15, 118, 110, 0.45);
+    outline-offset: 2px;
+  }
+}
+
 .kanban-card__move {
   width: 100%;
   padding: 5px 8px;

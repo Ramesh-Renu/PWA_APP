@@ -8,6 +8,8 @@ export default function MenuOrderPopup({
   categories = [],
   onPlaceOrder,
   onSkip,
+  skipLabel,
+  placing,
 }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
@@ -116,6 +118,8 @@ export default function MenuOrderPopup({
         totalItems={totalQuantity}
         totalAmount={total}
         onSkip={onSkip}
+        skipLabel={skipLabel}
+        placing={placing}
         onPlaceOrder={() => onPlaceOrder(items)}
       />
     </div>

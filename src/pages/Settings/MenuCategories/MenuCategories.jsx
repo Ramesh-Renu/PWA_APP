@@ -5,6 +5,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import PopupModal from "components/common/PopupModal";
 import ConfirmDialog from "components/common/ConfirmDialog";
+import SideDishesDialog from "./SideDishesDialog";
 
 import { getAllHotel } from "services";
 import { getApiErrorMessage } from "utils/apiError";
@@ -12,6 +13,7 @@ import {
   createMenuCategory,
   deleteMenuCategory,
   getAllMenuCategories,
+  getCategorySideDishes,
   updateMenuCategory,
 } from "services";
 
@@ -81,6 +83,31 @@ const MenuCategories = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [sideDishes, setSideDishes] = useState([]);
+  const [sideDishTarget, setSideDishTarget] = useState(null);
+
+  const loadSideDishes = useCallback(async () => {
+    try {
+      const response = await getCategorySideDishes({ limit: 1000 });
+      setSideDishes(unwrapList(response));
+    } catch {
+      setSideDishes([]);
+    }
+  }, []);
+
+  // Side dishes keyed by category id, already sorted by the API.
+  const sideDishesByCategory = useMemo(() => {
+    const grouped = new Map();
+    sideDishes.forEach((dish) => {
+      const key = String(dish?.category_id);
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key).push(dish);
+    });
+    return grouped;
+  }, [sideDishes]);
+
+  const categorySideDishes = (category) =>
+    sideDishesByCategory.get(String(categoryId(category))) ?? [];
 
   const loadCategories = useCallback(async () => {
     setLoading(true);
@@ -102,11 +129,12 @@ const MenuCategories = () => {
 
   useEffect(() => {
     loadCategories();
+    loadSideDishes();
 
     getAllHotel()
       .then((response) => setHotels(unwrapList(response)))
       .catch(() => setHotels([]));
-  }, [loadCategories]);
+  }, [loadCategories, loadSideDishes]);
 
   // Other categories of the hotel picked in the form (excluding the one being
   // edited). A hotel can't have two categories with the same name.
@@ -255,7 +283,7 @@ const MenuCategories = () => {
       await deleteMenuCategory(categoryId(deleteTarget));
       setDeleteTarget(null);
       setNotice("Menu category deleted successfully.");
-      await loadCategories();
+      await Promise.all([loadCategories(), loadSideDishes()]);
     } catch (requestError) {
       setError(
         getApiErrorMessage(requestError) ||
@@ -340,6 +368,7 @@ const MenuCategories = () => {
               <th>Category</th>
               <th>Description</th>
               <th>Hotel</th>
+              <th>Side dishes</th>
               <th className="is-center">Order</th>
               <th>Status</th>
               <th className="is-right">Actions</th>
@@ -348,23 +377,56 @@ const MenuCategories = () => {
           <tbody>
             {loading ? (
               <tr className="ui-table__state">
-                <td colSpan={6}>Loading categories…</td>
+                <td colSpan={7}>Loading categories…</td>
               </tr>
             ) : filteredCategories.length === 0 ? (
               <tr className="ui-table__state">
-                <td colSpan={6}>
+                <td colSpan={7}>
                   No menu categories found. Add one or adjust your search.
                 </td>
               </tr>
             ) : (
               filteredCategories.map((category) => {
                 const active = isActive(category?.is_active);
+                const dishes = categorySideDishes(category);
 
                 return (
                   <tr key={categoryId(category)}>
                     <td className="is-strong">{category?.category_name || "—"}</td>
                     <td className="is-muted">{category?.description || "—"}</td>
                     <td>{hotelName(category, hotels)}</td>
+                    <td>
+                      <div className="category-sides">
+                        {dishes.slice(0, 3).map((dish) => (
+                          <span key={dish.id} className="ui-chip">
+                            {dish.side_dish_name}
+                          </span>
+                        ))}
+                        {dishes.length > 3 && (
+                          <span
+                            className="ui-chip ui-chip--brand"
+                            title={dishes
+                              .slice(3)
+                              .map((dish) => dish.side_dish_name)
+                              .join(", ")}
+                          >
+                            +{dishes.length - 3}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          className="category-sides__manage"
+                          aria-label={`Manage side dishes of ${category?.category_name}`}
+                          onClick={() => setSideDishTarget(category)}
+                        >
+                          {dishes.length ? "Manage" : (
+                            <>
+                              <AddRoundedIcon fontSize="inherit" /> Add
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </td>
                     <td className="is-center">{category?.display_order ?? 0}</td>
                     <td>
                       <span className={`ui-chip ${active ? "ui-chip--success" : ""}`}>
@@ -592,11 +654,18 @@ const MenuCategories = () => {
       <ConfirmDialog
         show={Boolean(deleteTarget)}
         title={`Delete “${deleteTarget?.category_name || "this category"}”?`}
-        message="It will be removed from the menu categories."
+        message="It will be removed from the menu categories, along with its side dishes."
         confirmLabel="Delete category"
         loading={deleting}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <SideDishesDialog
+        category={sideDishTarget}
+        sideDishes={sideDishTarget ? categorySideDishes(sideDishTarget) : []}
+        onClose={() => setSideDishTarget(null)}
+        onChanged={loadSideDishes}
       />
     </section>
   );
