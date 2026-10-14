@@ -1,23 +1,32 @@
-// Dashboard (pages/Dashboard). Shell, header, segment, panel, table and chips
-// come from ui-kit.scss; this adds KPIs, chart, occupancy and status cards.
+// Dashboard (pages/Dashboard). Shell, header, segment, table and chips come
+// from ui-kit.scss; this adds the KPI tiles, cards, charts (@chartkitjs/chartlib),
+// status donut and occupancy.
 
 $ink: #1f2337;
 $ink-soft: #5b6078;
 $ink-faint: #8a8fa6;
-$line: #e6e4f0;
+$line: #e9e8f1;
+$hairline: #f1f0f6;
 $surface: #ffffff;
 $brand: #0f766e;
 $brand-soft: #e7f4f1;
-$radius-lg: 18px;
-$shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+$radius-xl: 20px;
+$radius-md: 12px;
+$shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.04);
 
 .dash {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 
   .ui-header {
-    margin-bottom: 4px;
+    margin-bottom: 2px;
+  }
+
+  // First load: everything waits quietly.
+  &.is-loading .dash-kpi,
+  &.is-loading .dash-card {
+    opacity: 0.6;
   }
 }
 
@@ -52,86 +61,121 @@ $shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
 .dash__kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-
-  &.is-loading .dash-kpi {
-    opacity: 0.55;
-  }
+  gap: 14px;
 }
 
 .dash-kpi {
-  --tone: #{$brand};
-  --tone-soft: #{$brand-soft};
+  --tone: #2a78d6;
+  --tone-soft: #e8f1fc;
+  position: relative;
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 16px;
+  flex-direction: column;
+  min-width: 0;
+  padding: 16px 18px;
+  overflow: hidden;
   border: 1px solid $line;
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   background: $surface;
-  box-shadow: $shadow-sm;
+  box-shadow: $shadow-card;
+
+  // Thin tone accent along the top edge.
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: var(--tone);
+    opacity: 0.85;
+  }
+
+  &--green {
+    --tone: #15803d;
+    --tone-soft: #e9f7ee;
+  }
 
   &--violet {
-    --tone: #7c3aed;
-    --tone-soft: #f1ebfe;
+    --tone: #6d4fd8;
+    --tone-soft: #f0ecfd;
   }
 
-  &--blue {
-    --tone: #2563eb;
-    --tone-soft: #e8effd;
-  }
-
-  &--amber {
-    --tone: #d97706;
-    --tone-soft: #fef3e2;
+  &--red {
+    --tone: #d03b3b;
+    --tone-soft: #fdeceb;
   }
 }
 
+.dash-kpi__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dash-kpi__label {
+  font-size: 13px;
+  font-weight: 700;
+  color: $ink-soft;
+}
+
 .dash-kpi__icon {
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
   display: grid;
+  flex-shrink: 0;
   place-items: center;
-  border-radius: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
   background: var(--tone-soft);
   color: var(--tone);
 }
 
-.dash-kpi__label,
+.dash-kpi__value {
+  margin: 6px 0 2px;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: $ink;
+}
+
 .dash-kpi__note {
-  display: block;
   font-size: 12px;
   color: $ink-faint;
 }
 
-.dash-kpi__label {
-  font-weight: 600;
-  color: $ink-soft;
+.dash-kpi__spark {
+  height: 44px;
+  margin: 8px -18px -16px;
 }
 
-.dash-kpi__value {
-  display: block;
-  margin: 2px 0;
-  font-size: 26px;
-  font-weight: 800;
-  line-height: 1.15;
-  color: $ink;
-}
-
-/* ---------------- Cards ---------------- */
-.dash__row {
+/* ---------------- Card grid ---------------- */
+.dash__grid {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
-  gap: 16px;
+  grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+  gap: 18px;
+
+  // Second row: narrow card first, wide card second.
+  &--flip {
+    grid-template-columns: minmax(300px, 1fr) minmax(0, 2fr);
+  }
+
+  // Guests: no occupancy card, the bookings table takes the row.
+  &--single {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .dash-card {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
-  padding: 18px 20px;
+  padding: 18px 20px 20px;
+  border: 1px solid $line;
+  border-radius: $radius-xl;
+  background: $surface;
+  box-shadow: $shadow-card;
 
   &--table {
-    padding: 18px 0 4px;
+    padding: 18px 0 6px;
 
     .dash-card__head {
       padding: 0 20px;
@@ -171,38 +215,143 @@ $shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
 
 .dash-card__empty {
   display: grid;
+  flex: 1;
   place-items: center;
-  min-height: 240px;
+  min-height: 220px;
   margin: 0;
+  border: 1px dashed $line;
+  border-radius: $radius-md;
   font-size: 13px;
   color: $ink-faint;
 }
 
+/* ---------------- Trend chart ---------------- */
+// Legend with each series' total (text ink; the swatch carries identity).
 .dash-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 6px;
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 12px;
-  color: $ink-soft;
 
   li {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid $hairline;
+    border-radius: 999px;
+    background: #fafafd;
+    font-size: 12px;
+    font-weight: 600;
+    color: $ink-soft;
   }
 
-  span {
-    width: 10px;
-    height: 10px;
-    border-radius: 3px;
+  strong {
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: $ink;
   }
 }
 
+.dash-legend__swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
 .dash-chart {
-  height: 260px;
+  flex: 1;
+  min-height: 260px;
+  height: 280px;
+}
+
+/* ---------------- Status donut ---------------- */
+.dash-status {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dash-donut {
+  position: relative;
+  height: 200px;
+}
+
+// Total in the hole of the donut.
+.dash-donut__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+
+  strong {
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1;
+    color: $ink;
+  }
+
+  span {
+    margin-top: 4px;
+    font-size: 12px;
+    color: $ink-faint;
+  }
+}
+
+.dash-status__list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid $hairline;
+    font-size: 13px;
+
+    &.is-zero {
+      opacity: 0.5;
+    }
+  }
+
+  strong {
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: $ink;
+  }
+
+  small {
+    min-width: 34px;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: $ink-faint;
+  }
+}
+
+.dash-status__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dash-status__label {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: $ink-soft;
 }
 
 /* ---------------- Occupancy ---------------- */
@@ -210,30 +359,31 @@ $shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 20px;
 }
 
+// One value: a ring, not a chart.
 .dash-occupancy__ring {
-  width: 148px;
-  height: 148px;
   display: grid;
   place-items: center;
+  width: 156px;
+  height: 156px;
   border-radius: 50%;
   background: conic-gradient($brand var(--value), #eef0f5 0);
 
   > div {
-    width: 112px;
-    height: 112px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
     background: $surface;
   }
 
   strong {
-    font-size: 28px;
+    font-size: 30px;
     font-weight: 800;
     line-height: 1;
     color: $ink;
@@ -247,30 +397,28 @@ $shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
 }
 
 .dash-occupancy__facts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   width: 100%;
   margin: 0;
+  padding: 0;
+  list-style: none;
 
-  > div {
+  li > div {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    padding: 8px 0;
-
-    & + div {
-      border-top: 1px solid #f0eff6;
-    }
-  }
-
-  dt {
+    margin-bottom: 6px;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     color: $ink-soft;
   }
 
-  dd {
-    margin: 0;
+  strong {
     font-size: 15px;
     font-weight: 800;
+    font-variant-numeric: tabular-nums;
     color: $ink;
 
     small {
@@ -280,72 +428,30 @@ $shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
   }
 }
 
-/* ---------------- Status breakdown ---------------- */
-.dash-status__bar {
-  display: flex;
-  gap: 3px;
-  height: 14px;
+.dash-occupancy__meter {
+  display: block;
+  height: 6px;
   overflow: hidden;
   border-radius: 999px;
   background: #eef0f5;
 
-  span {
-    min-width: 6px;
+  &::before {
+    content: "";
+    display: block;
+    width: var(--fill);
     height: 100%;
+    border-radius: inherit;
+    background: $brand;
   }
-}
-
-.dash-status__empty {
-  flex: 1;
-}
-
-.dash-status__list {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 10px;
-  margin: 16px 0 0;
-  padding: 0;
-  list-style: none;
-
-  li {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    align-items: center;
-    column-gap: 8px;
-    padding: 10px 12px;
-    border: 1px solid #f0eff6;
-    border-radius: 12px;
-  }
-
-  strong {
-    grid-column: 2;
-    font-size: 20px;
-    font-weight: 800;
-    color: $ink;
-  }
-
-  small {
-    grid-column: 2;
-    font-size: 11px;
-    color: $ink-faint;
-  }
-}
-
-.dash-status__dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.dash-status__label {
-  font-size: 12px;
-  font-weight: 600;
-  color: $ink-soft;
 }
 
 /* ---------------- Recent table ---------------- */
 .dash-row {
   cursor: pointer;
+
+  &:hover td {
+    background: #fafafd;
+  }
 
   &:focus-visible td {
     background: $brand-soft;
@@ -367,17 +473,14 @@ $shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
 
 /* ---------------- Responsive ---------------- */
 @media (max-width: 1200px) {
-  .dash-status__list {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .dash__kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 1024px) {
-  .dash__kpis {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .dash__row {
+  .dash__grid,
+  .dash__grid--flip {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -389,32 +492,62 @@ $shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
 
 @media (max-width: 640px) {
   .dash__range {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    width: 100%;
+    min-width: 0;
 
+    // Range options stay one line each and scroll sideways inside the space
+    // left beside the refresh button.
     .ui-segment {
-      flex: 1;
+      flex: 1 1 auto;
+      width: auto;
+      min-width: 0;
+      max-width: calc(100% - 52px);
       overflow-x: auto;
+      scrollbar-width: none;
+
+      button {
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
     }
   }
 
+  // Two compact tiles per row instead of one tall column.
   .dash__kpis {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .dash-kpi {
+    padding: 12px 14px;
+  }
+
+  .dash-kpi__icon {
+    width: 28px;
+    height: 28px;
   }
 
   .dash-kpi__value {
-    font-size: 22px;
+    margin-top: 4px;
+    font-size: 24px;
+  }
+
+  .dash-kpi__note {
+    font-size: 11px;
+  }
+
+  .dash-kpi__spark {
+    margin: 6px -14px -12px;
   }
 
   .dash-occupancy {
     flex-direction: column;
   }
 
-  .dash-status__list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .dash-chart {
-    height: 220px;
+    height: 230px;
+    min-height: 230px;
   }
 
   .dash__calendar {

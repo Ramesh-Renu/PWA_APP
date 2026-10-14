@@ -61,8 +61,10 @@ const SETTINGS_GROUP = {
   ],
 };
 
-// Customers' sections are tabs of /book-table (see pages/BookTables).
+// Customers' sections are tabs of /book-table (see pages/BookTables), plus
+// their own Dashboard (their bookings only; the API scopes it).
 const CUSTOMER_LINKS = [
+  { label: "Dashboard", to: "/dashboard", icon: SpaceDashboardOutlined, match: /^\/dashboard/ },
   { label: "Book a table", to: "/book-table", icon: StorefrontOutlined, tab: null },
   { label: "Menu", to: "/book-table?tab=menu", icon: RestaurantMenuOutlined, tab: "menu" },
   { label: "My bookings", to: "/book-table?tab=reservations", icon: EventNoteOutlined, tab: "reservations" },
@@ -240,7 +242,7 @@ const SideNav = () => {
     new URLSearchParams(location.search).get("tab") ||
     new URLSearchParams(fromSearch).get("tab");
   const isActive = (link) =>
-    isAdmin
+    isAdmin || link.match
       ? link.match.test(location.pathname)
       : location.pathname.startsWith("/book-table") &&
         (link.tab ? currentTab === link.tab : !currentTab);

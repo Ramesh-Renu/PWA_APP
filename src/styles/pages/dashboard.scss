@@ -1253,28 +1253,6 @@
   &__donut-wrap {
     position: relative;
     min-height: 220px;
-
-    .recharts-responsive-container,
-    .recharts-wrapper {
-      animation: dashboard-chart-skeleton-fade-in 220ms ease;
-    }
-
-    .recharts-wrapper,
-    .recharts-surface {
-      outline: none;
-      overflow: visible;
-    }
-
-    .recharts-wrapper:focus,
-    .recharts-wrapper:focus-visible,
-    .recharts-surface:focus,
-    .recharts-surface:focus-visible,
-    .recharts-surface *:focus,
-    .recharts-surface *:focus-visible,
-    .recharts-tooltip-wrapper:focus,
-    .recharts-tooltip-wrapper:focus-visible {
-      outline: none;
-    }
   }
 
   &__donut-center {

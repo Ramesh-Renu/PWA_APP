@@ -781,18 +781,19 @@ const OrderBoard = () => {
   const renderTicket = (ticket) => (
     <div className="kanban-ticket">
       <div className="kanban-card__head">
-        <span className="kanban-card__title">
-          {ticket.order_number || `Order #${ticket.ticketOf}`}
-        </span>
+        {/* The order number opens the order; the booking tag is just a label. */}
         <button
           type="button"
           data-no-drag
-          className="kanban-card__ref kanban-card__ref--open"
+          className="kanban-card__title kanban-card__title--link"
           title="Open order"
           onClick={() => setOpenOrderId(ticket.ticketOf)}
         >
-          {ticket.reservation_id ? `Res #${ticket.reservation_id}` : "No booking"}
+          {ticket.order_number || `Order #${ticket.ticketOf}`}
         </button>
+        <span className="kanban-card__ref kanban-card__ref--tag">
+          {ticket.reservation_id ? `Res #${ticket.reservation_id}` : "No booking"}
+        </span>
       </div>
       <div className="kanban-card__meta">
         <span>{ticket.hotel?.hotel_name || "-"}</span>
@@ -852,18 +853,19 @@ const OrderBoard = () => {
     return (
       <Fragment>
         <div className="kanban-card__head">
-          <span className="kanban-card__title">
-            {order.order_number || `Order #${order.id}`}
-          </span>
+          {/* The order number opens the order; the booking tag is just a label. */}
           <button
             type="button"
             data-no-drag
-            className="kanban-card__ref kanban-card__ref--open"
+            className="kanban-card__title kanban-card__title--link"
             title="Open order"
             onClick={() => setOpenOrderId(order.id)}
           >
-            {order.reservation_id ? `Res #${order.reservation_id}` : "No booking"}
+            {order.order_number || `Order #${order.id}`}
           </button>
+          <span className="kanban-card__ref kanban-card__ref--tag">
+            {order.reservation_id ? `Res #${order.reservation_id}` : "No booking"}
+          </span>
         </div>
         <div className="kanban-card__meta kanban-card__meta--split">
           <span>{order.hotel?.hotel_name || "-"}</span>

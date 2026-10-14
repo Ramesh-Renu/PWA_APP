@@ -1,6 +1,10 @@
+// Full-page loader (route loading / sign-in check): fills the whole screen
+// in the app background, spinner centred. dvh follows mobile browser bars.
 .spinner{
-  height: 60vh;
+  height: 100vh;
+  height: 100dvh;
   width: 100%;
+  background: #f7f8ff;
   display: flex;
   justify-content: center;
   align-items: center;

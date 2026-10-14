@@ -15,7 +15,15 @@ export default defineConfig(({ mode }) => {
       : "http://localhost:5000");
 
   return {
+  // Pre-bundle the chart library with the rest at server start. Discovered
+  // later (first Dashboard visit), Vite re-optimises mid-session and the page
+  // can end up with two copies of React → "Invalid hook call" in charts.
+  optimizeDeps: {
+    include: ["react", "react-dom", "@chartkitjs/chartlib/react"],
+  },
   resolve: {
+    // One React for the app and every library that uses hooks.
+    dedupe: ["react", "react-dom"],
     alias: [
       {
         find: "components",
