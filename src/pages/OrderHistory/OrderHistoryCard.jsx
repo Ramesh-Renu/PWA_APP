@@ -2,13 +2,14 @@ import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import useGlobalMaster from "hooks/useGlobalMaster";
 import useToast from "hooks/useToast";
-import ConfirmDialog from "components/common/ConfirmDialog";
+import CancelOrderDialog from "components/common/CancelOrderDialog";
 import OrderTracker from "./OrderTracker";
 import { cancelOrder } from "services";
 import { getApiErrorMessage } from "utils/apiError";
 import { paymentLabel } from "utils/paymentStatus";
 
 const ORDERED = 1; // customers can cancel until the kitchen accepts
+const CANCELLED = 7;
 
 // Same fallbacks as the admin Orders board (pages/Orders/OrderBoard.jsx),
 // used until order_status_master has loaded.
@@ -48,10 +49,10 @@ const OrderHistoryCard = ({ order, onChanged }) => {
   const [confirming, setConfirming] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
-  const cancel = async () => {
+  const cancel = async (reason) => {
     setCancelling(true);
     try {
-      const response = await cancelOrder(order.id);
+      const response = await cancelOrder(order.id, reason);
       if (response?.success === false) throw new Error(response.message);
       showToast({ message: "Order cancelled", variant: "success" });
       setConfirming(false);
@@ -95,8 +96,13 @@ const OrderHistoryCard = ({ order, onChanged }) => {
   // Completed / cancelled orders show just their status and when it ended.
   // Served / Delivered finish an order (6 = old "Completed", 7 = Cancelled).
   const finished = [5, 6, 7, 8].includes(order.order_status);
+  const cancelled = order.order_status === CANCELLED;
   const finishedAt =
-    order.served_at || order.delivered_at || order.completed_at || order.updatedAt;
+    (cancelled && order.cancelled_at) ||
+    order.served_at ||
+    order.delivered_at ||
+    order.completed_at ||
+    order.updatedAt;
 
   const orderedAt = order.ordered_at || order.createdAt || order.booking_date;
   const items = order.items || [];
@@ -151,6 +157,21 @@ const OrderHistoryCard = ({ order, onChanged }) => {
         />
       )}
 
+      {/* Who cancelled ("Admin" = the restaurant, or the customer) and why. */}
+      {cancelled && (order.cancelled_by_name || order.cancel_reason) && (
+        <div className="cx-order__cancel-info">
+          {order.cancelled_by_name && (
+            <span>
+              Cancelled by{" "}
+              <strong>{order.cancelled_by_name}</strong>
+            </span>
+          )}
+          {order.cancel_reason && (
+            <span className="cx-order__cancel-reason">Reason: {order.cancel_reason}</span>
+          )}
+        </div>
+      )}
+
       {items.length > 0 && (
         <ul className="cx-order__items">
           {items.slice(0, VISIBLE_ITEMS).map((item, index) => (
@@ -158,6 +179,7 @@ const OrderHistoryCard = ({ order, onChanged }) => {
               <span className="cx-order__qty">{item.quantity ?? item.qty ?? 1}×</span>
               <span className="cx-order__name">
                 {item.menu_name || item.name || "Item"}
+                {item.notes && <small className="item-note">{item.notes}</small>}
               </span>
               <span className="cx-order__price">
                 ₹{Number(item.total_price ?? item.totalPrice ?? item.unit_price ?? item.price ?? 0)}
@@ -188,13 +210,11 @@ const OrderHistoryCard = ({ order, onChanged }) => {
         </button>
       )}
 
-      <ConfirmDialog
+      <CancelOrderDialog
         show={confirming}
-        tone="warning"
         title={`Cancel ${order.order_number ? `order ${order.order_number}` : "this order"}?`}
         message="The kitchen hasn't started it yet."
-        confirmLabel="Cancel order"
-        cancelLabel="Keep order"
+        audience="customer"
         loading={cancelling}
         onConfirm={cancel}
         onCancel={() => setConfirming(false)}

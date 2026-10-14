@@ -133,9 +133,11 @@ export default function Login() {
     setInProgress(true);
 
     try {
+      // Guest tab → signed in as a User (even Admins); Restaurant tab → Admins only.
       const response = await getAuth({
         mobilenumber: mobile,
         otp: getOTPnumber,
+        loginAs: role,
       });
 
       if (!response?.data?.success) {
@@ -156,7 +158,11 @@ export default function Login() {
       // navigate("/home", { replace: true });
       navigate(response.data.role =="Admin" ? "/dashboard" : "/book-table", { replace: true });
     } catch (error) {
-      showToast({ message: error, variant: "danger" });
+      showToast({
+        title: error?.response?.status === 403 ? "Not allowed" : undefined,
+        message: error?.response?.data?.message || "Unable to sign in.",
+        variant: "danger",
+      });
     } finally {
       setInProgress(false);
     }
@@ -222,14 +228,18 @@ export default function Login() {
     <div className="tableflow-login">
       <aside className="tableflow-login__brand">
         <Link to="/" className="tableflow-login__logo">
+          <span className="tableflow-login__logo-mark">
+            <MdOutlineRestaurant />
+          </span>
           Table Booking
         </Link>
 
         <div className="tableflow-login__brand-content">
-          <h1>Welcome Back to Table Booking</h1>
+          <span className="tableflow-login__eyebrow">Dine in, without the wait</span>
+          <h1>Reserve. Relax. Enjoy.</h1>
           <p>
-            Manage your restaurant or make your next reservation. Choose your
-            role and get started.
+            Sign in to reserve a seat in seconds, or run your floor, bookings
+            and guests from one place.
           </p>
 
           <div className="tableflow-login__features">
@@ -248,7 +258,7 @@ export default function Login() {
         </div>
 
         <p className="tableflow-login__copyright">
-          © 2026 TableFlow. All rights reserved.
+          © 2026 Table Booking. All rights reserved.
         </p>
       </aside>
 
@@ -256,10 +266,18 @@ export default function Login() {
         <div className="tableflow-login__card" id="get-started">
           <div className="tableflow-login__mobile-brand">
             <Link to="/" className="tableflow-login__logo">
-              TableFlow
+              Table Booking
             </Link>
             <p>Sign in to your account</p>
           </div>
+          <header className="tableflow-login__card-header">
+            <h2>{createForm ? "Create a Guest Account" : "Sign in"}</h2>
+            <p>
+              {createForm
+                ? "Sign up to book tables and order food. Restaurant accounts are set up by the admin."
+                : "Enter your mobile number to get a one-time code."}
+            </p>
+          </header>
           {!createForm && (
             <div
               className="tableflow-login__role-toggle"
@@ -481,7 +499,7 @@ export default function Login() {
           </p>
           {!createForm && (
             <div className="tableflow-login__tip">
-              <strong>Pro Tip:</strong> Add TableFlow to your home screen for
+              <strong>Pro Tip:</strong> Add Table Booking to your home screen for
               quick access. Look for "Install" or "Add to Home Screen" in your
               browser menu.
             </div>

@@ -50,7 +50,8 @@ const tableLabel = (table) =>
 // SlotPicker; seats are shown and booked for that slot.
 // onFloorFreeSeats(n): told the free seats of the floor on show (booking
 // mode), so the Guests picker can offer up to that many.
-const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFreeSeats }) => {
+// guest (optional): { name, mobile } when staff book for a phone / walk-in guest.
+const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFreeSeats, guest }) => {
   const slotActive = Boolean(isBooking && slot?.date && slot?.time);
   const [{ data: auth }, { setAuth }] = useAuth();
   const { reservationData, dispatch } = useGlobalContext();
@@ -58,6 +59,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
   const [selectedFloorIndex, setSelectedFloorIndex] = useState(0);
   const [floorsState, setFloorsState] = useState([]);
   const [getloading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { showToast } = useToast();
   const [showDeleteSeats, setshowDeleteSeats] = useState(false);
   const [tableToDelete, setTableToDelete] = useState(null);
@@ -86,7 +88,9 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
     }));
   }, [data]);
 
+  // Refreshes only the floor plan (shown as an overlay on that section).
   const fetchHotelbyId = async (hotelData) => {
+    setRefreshing(true);
     try {
       const response = await getTablebyid({
         hotel_id: hotelData.id,
@@ -104,6 +108,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
       });
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
   useEffect(() => {
@@ -359,8 +364,8 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
       hotel_id: hotelData.id,
       floor_id: floorToShow.floor_id,
       seat_status: bookingSeatsByTable,
-      customer_name: auth?.details?.name,
-      customer_mobile: auth?.details.mobilenumber,
+      customer_name: guest?.name || auth?.details?.name,
+      customer_mobile: guest ? guest.mobile || null : auth?.details?.mobilenumber,
       // The chosen slot, or "now" when booking without the slot picker.
       dining_date: slotActive ? slot.date : now.format("YYYY-MM-DD"),
       reservation_time: slotActive ? slot.time : now.format("HH:mm"),
@@ -375,10 +380,20 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
           response?.data?.reservation_id ||
           response?.id ||
           response?.reservation_id;
+        const bookedAt = dayjs(`${param.dining_date}T${param.reservation_time}`);
+        const seatsText = `${seletedSeatCount || ""} ${seletedSeatCount === 1 ? "seat" : "seats"}`;
         showToast({
           title: rid ? `Booking #${rid} confirmed` : "Booking confirmed",
-          message: `${dayjs(`${param.dining_date}T${param.reservation_time}`).format("ddd, D MMM [at] h:mm A")} · ${seletedSeatCount || ""} ${seletedSeatCount === 1 ? "seat" : "seats"}`,
+          // Users get the arrival rules with real clock times; admins a short summary.
+          message: isAdminView
+            ? `${guest?.name ? `For ${guest.name} · ` : ""}${bookedAt.format("ddd, D MMM [at] h:mm A")} · ${seatsText}`
+            : `Your reservation (${seatsText}) is confirmed for ${bookedAt.format("ddd, D MMM [at] h:mm A")}. ` +
+              `Please arrive between ${bookedAt.subtract(5, "minute").format("h:mm A")} and ${bookedAt.format("h:mm A")}. ` +
+              `A 15-minute grace period is allowed; if you haven't arrived by ${bookedAt.add(15, "minute").format("h:mm A")}, ` +
+              `your reservation will be automatically cancelled.`,
           variant: "success",
+          // Long enough to read the arrival rules.
+          showTime: isAdminView ? undefined : 12000,
         });
         fetchHotelbyId(hotelData);
         if (rid) setReservationId(rid);
@@ -391,6 +406,8 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
         message: error,
         variant: "danger",
       });
+      // Seats taken meanwhile: reload the plan so they show as booked.
+      if (error?.response?.status === 409) fetchHotelbyId(hotelData);
     } finally {
       setLoading(false);
     }
@@ -736,8 +753,22 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
    * when the party fits them. People pick a table, not seats.
    * ------------------------------------------------------------------ */
   const guests = Number(slot?.guests) || 0;
-  // Everyone booking a slot here (admins too) books by party size.
-  const guestMode = slotActive && guests > 0 && !isEditable;
+  // Users book by party size; admins can pick any free seat or table.
+  const guestMode = slotActive && guests > 0 && !isAdminView;
+  // Admins with a guest count pick up to that many seats (any table);
+  // with no guest count they pick freely.
+  const adminSeatCap = isAdminView && !isEditable && slotActive && guests > 0 ? guests : null;
+  const selectedOnFloor = () =>
+    (floorToShow?.tables || [])
+      .flatMap((table) => table.seats || [])
+      .filter((seat) => seat.is_booking).length;
+  const warnSeatCap = () =>
+    showToast({
+      message: `${guests} ${guests === 1 ? "seat" : "seats"} already selected for ${guests} ${
+        guests === 1 ? "guest" : "guests"
+      }. Unselect a seat or change the guest count.`,
+      variant: "warning",
+    });
   const freeSeatsOf = (table) =>
     (table.seats || []).filter((seat) => seat.status === 4 && !seat.is_new);
 
@@ -899,6 +930,10 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
     } else if (chair.status === 1 && chair.user_id === auth?.details?.id) {
       handleCancelThisSeat(table, chair);
     } else if (isBooking && chair.status === 4) {
+      if (adminSeatCap && !chair.is_booking && selectedOnFloor() >= adminSeatCap) {
+        warnSeatCap();
+        return;
+      }
       handleAddBookingSeat(selectedFloorIndex, table, chair);
     }
   };
@@ -919,6 +954,22 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
       });
       setShowCancelBookingSeats(true);
       return;
+    }
+
+    // Admin with a guest count: fill only the seats still needed.
+    if (adminSeatCap && willSelect && !hasBookedSeats) {
+      const remaining = adminSeatCap - selectedOnFloor();
+      if (remaining <= 0) {
+        warnSeatCap();
+        return;
+      }
+      const freeSeats = eligibleSeats.filter((s) => s.status === 4 && !s.is_booking);
+      if (freeSeats.length > remaining) {
+        freeSeats
+          .slice(0, remaining)
+          .forEach((seat) => handleAddBookingSeat(selectedFloorIndex, table, seat));
+        return;
+      }
     }
 
     handleSelectAllTable(selectedFloorIndex, table);
@@ -984,13 +1035,24 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
       ? guestPlan?.mode === "combine"
         ? `No single table seats ${guests} — choose tables one by one until everyone has a seat.`
         : `Showing tables that fit ${guests} ${guests === 1 ? "guest" : "guests"}. Choose a table; we seat you together.`
+      : adminSeatCap
+        ? `Choose ${guests} ${guests === 1 ? "seat" : "seats"} for ${guests} ${guests === 1 ? "guest" : "guests"} — any free seats, any table.`
       : isBooking
         ? "Tap seats, or use Select to book a whole table."
         : "View only — open this hotel from Book Table to reserve seats.";
 
   return (
     <Fragment>
-      <section className="fp-card" aria-label="Floor plan">
+      <section
+        className={`fp-card${refreshing ? " is-refreshing" : ""}`}
+        aria-label="Floor plan"
+        aria-busy={refreshing}
+      >
+        {refreshing && (
+          <span className="fp-card__refreshing" role="status">
+            Updating tables…
+          </span>
+        )}
         {/* Floors + legend stay pinned under the top nav while scrolling. */}
         <div className="fp-sticky">
           <div className="fp-toolbar">
@@ -1078,7 +1140,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
         )}
 
         {/* Booking: tables appear once the party size is chosen. */}
-        {slotActive && !guests && floorToShow && (floorToShow.tables || []).length > 0 && (
+        {slotActive && !guests && !isAdminView && floorToShow && (floorToShow.tables || []).length > 0 && (
           <div className="fp-guest-wait">
             <p>
               <strong>{floorStats[selectedFloorIndex]?.free ?? 0} seats free</strong> on this
@@ -1088,7 +1150,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
           </div>
         )}
 
-        {floorToShow && (floorToShow.tables || []).length > 0 && !(slotActive && !guests) && (
+        {floorToShow && (floorToShow.tables || []).length > 0 && !(slotActive && !guests && !isAdminView) && (
           <div className="fp-grid">
             {floorToShow.tables.map((table, tIndex) => {
               const chairs = table.seats || [];

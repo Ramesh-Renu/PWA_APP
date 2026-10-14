@@ -133,6 +133,8 @@ const KanbanBoard = ({
   // Optional: open a card (click / Enter). Clicks on buttons, links and form
   // controls inside the card, and the click that ends a drag, are ignored.
   onCardClick,
+  // Optional: extra class for a card (e.g. "is-cancelled" to fade it).
+  getCardClassName,
 }) => {
   const [dragging, setDragging] = useState(null); // { item, width, height }
   const [overColumnId, setOverColumnId] = useState(null);
@@ -380,7 +382,7 @@ const KanbanBoard = ({
                           String(draggingId) === String(itemId)
                             ? " is-dragging"
                             : ""
-                        }`}
+                        }${getCardClassName?.(item) ? ` ${getCardClassName(item)}` : ""}`}
                         onPointerDown={(event) =>
                           handlePointerDown(event, item, !movable)
                         }

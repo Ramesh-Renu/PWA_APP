@@ -70,7 +70,9 @@ export const createOrder = (params) =>
     : baseAPI.POST(API.ORDERS_API, params);
 export const getAllOrders = (params) => baseAPI.GET(`${API.ORDERS_API}`, params);
 export const updateOrderStatus = (orderId, body) => baseAPI.PATCH(`${API.ORDERS_API}/${orderId}/status`, body);
-export const cancelOrder = (orderId) => baseAPI.PATCH(`${API.ORDERS_API}/${orderId}/cancel`);
+// reason: why it was cancelled (shown on the cancelled order).
+export const cancelOrder = (orderId, reason) =>
+  baseAPI.PATCH(`${API.ORDERS_API}/${orderId}/cancel`, reason ? { reason } : undefined);
 
 /** Cooks (assigned to orders when accepted) **/
 export const getCooks = (params) => baseAPI.GET(API.COOK_API, params);

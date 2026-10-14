@@ -5,6 +5,7 @@ import {
   ChevronRightRounded,
   EventSeatOutlined,
   LayersOutlined,
+  PersonOutlineRounded,
   PlaceOutlined,
   TableRestaurantOutlined,
 } from "@mui/icons-material";
@@ -22,6 +23,8 @@ const HotelDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [hotelData, setHotelData] = useState(location.state?.hotelData || null);
+  // Front desk booking for a guest (Reservations → New reservation).
+  const guest = location.state?.guest || null;
   const [isEditable, setIsEditable] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   // Booking slot (Zomato-style picker): date, guests, meal, time.
@@ -192,6 +195,15 @@ const HotelDetails = () => {
 
       {!showMenuList && (
         <>
+          {guest && isBooking && !isEditable && (
+            <p className="hd-guest-banner" role="status">
+              <PersonOutlineRounded fontSize="small" aria-hidden />
+              <span>
+                Booking for <strong>{guest.name}</strong>
+                {guest.mobile ? ` · ${guest.mobile}` : ""}
+              </span>
+            </p>
+          )}
           {isBooking && !isEditable && (
             <SlotPicker
               value={slot}
@@ -220,6 +232,7 @@ const HotelDetails = () => {
                   : null
               }
               onFloorFreeSeats={setFloorFreeSeats}
+              guest={guest}
             />
           )}
         </>

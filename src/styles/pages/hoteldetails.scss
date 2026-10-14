@@ -234,11 +234,34 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
 
 /* ---------------- Floor plan card ---------------- */
 .fp-card {
+  position: relative;
   padding: 18px 20px 22px;
   border: 1px solid $line;
   border-radius: $radius-lg;
   background: $surface;
   box-shadow: $shadow-md;
+
+  // Reloading this section only: tables stay in place, dimmed, with a pill.
+  &.is-refreshing .fp-grid {
+    opacity: 0.55;
+    pointer-events: none;
+    transition: opacity 0.15s;
+  }
+}
+
+.fp-card__refreshing {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 5;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: $brand;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(15, 118, 110, 0.25);
 }
 
 // Floors + legend pinned under the sticky top nav (height published by
@@ -1141,16 +1164,17 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
   text-align: right;
 }
 
+// Four 15-minute slots per hour, stretched across the full width.
 .slot-hour__times {
-  display: flex;
+  display: grid;
   flex: 1;
-  flex-wrap: wrap;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
 .slot-time {
-  min-width: 92px;
-  min-height: 36px;
+  min-width: 0;
+  min-height: 38px;
   padding: 0 14px;
   border: 1px solid $line;
   border-radius: 999px;
@@ -1245,10 +1269,14 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
     text-align: left;
   }
 
+  .slot-hour__times {
+    width: 100%;
+    gap: 6px;
+  }
+
   .slot-time {
-    min-width: 0;
-    flex: 1 0 calc(25% - 8px);
-    padding: 0 8px;
+    padding: 0 4px;
+    font-size: 12px;
   }
 }
 
@@ -1432,5 +1460,23 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
 
   span {
     font-size: 13px;
+  }
+}
+
+/* Front desk booking for a guest (Reservations → New reservation). */
+.hd-guest-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border: 1px solid rgba(15, 118, 110, 0.25);
+  border-radius: $radius-md;
+  background: $brand-soft;
+  font-size: 14px;
+  color: $brand-strong;
+
+  strong {
+    font-weight: 800;
   }
 }

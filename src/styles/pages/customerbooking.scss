@@ -1122,3 +1122,436 @@ $bottom-nav-height: 64px;
     animation: none;
   }
 }
+
+/* ---------------- Dish preferences (spice, Ajinomoto, oil…) ---------------- */
+// "Customize" link on a dish in the order; shows the choices once set.
+.cx-dish__prefs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  margin-top: 6px;
+  padding: 3px 9px;
+  border: 1px dashed $brand;
+  border-radius: 999px;
+  background: transparent;
+  color: $brand;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left;
+
+  > svg {
+    flex-shrink: 0;
+    font-size: 13px;
+  }
+
+  > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &:hover {
+    background: $brand-soft;
+  }
+
+  &.is-set {
+    border-style: solid;
+    background: $brand-soft;
+    color: $brand-strong;
+  }
+}
+
+.order-lines__name .cx-dish__prefs {
+  display: flex;
+  width: fit-content;
+}
+
+.dish-prefs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dish-prefs__intro {
+  margin: 0;
+  font-size: 13px;
+  color: $ink-soft;
+}
+
+.dish-prefs__row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid $line;
+}
+
+.dish-prefs__label {
+  font-size: 13px;
+  font-weight: 700;
+  color: $ink;
+
+  small {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: $ink-faint;
+  }
+}
+
+.dish-prefs__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dish-prefs__chip {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid $line;
+  border-radius: 999px;
+  background: $surface;
+  color: $ink;
+  font-size: 12px;
+  font-weight: 700;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+
+  &:hover {
+    border-color: $brand;
+  }
+
+  &.is-selected {
+    border-color: $brand;
+    background: $brand;
+    color: #fff;
+  }
+}
+
+.dish-prefs__text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid $line;
+    border-radius: $radius-md;
+    background: $field;
+    font: inherit;
+    font-size: 13px;
+    resize: vertical;
+
+    &:focus {
+      outline: none;
+      border-color: $brand;
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+    }
+  }
+}
+
+.dish-prefs__count {
+  align-self: flex-end;
+  font-size: 11px;
+  color: $ink-faint;
+}
+
+// Customer's cooking notes on an ordered dish (kitchen board, order popups).
+.item-note {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #b45309;
+  white-space: normal;
+}
+
+@media (max-width: 560px) {
+  .dish-prefs__row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+// One-line note; "more" opens .item-note-popover with the whole note.
+.item-note--clamp {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  max-width: 100%;
+
+  .item-note__text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.item-note__toggle {
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: $brand;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.item-note-popover {
+  position: fixed;
+  z-index: 2000; // above dialogs
+  width: min(280px, calc(100vw - 16px));
+  padding: 12px 14px;
+  border: 1px solid $line;
+  border-radius: $radius-md;
+  background: $surface;
+  box-shadow: 0 16px 40px rgba(16, 24, 40, 0.18);
+  font-family: "Montserrat", sans-serif;
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    position: relative;
+    padding-left: 14px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #b45309;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 7px;
+      left: 2px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+  }
+}
+
+.item-note-popover__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid $line;
+
+  strong {
+    font-size: 13px;
+    color: $ink;
+  }
+}
+
+.item-note-popover__close {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: $ink-soft;
+  font-size: 18px;
+  line-height: 1;
+
+  &:hover {
+    background: $brand-soft;
+  }
+}
+
+// Menu picker (New order / Order menu): notes panel in place of the menu.
+.order-popup--notes .dish-prefs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.order-popup__notes-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  // Same side padding as the menu list below.
+  padding: 16px 24px 0;
+
+  strong,
+  small {
+    display: block;
+  }
+
+  strong {
+    font-size: 15px;
+    color: $ink;
+  }
+
+  small {
+    font-size: 12px;
+    color: $ink-soft;
+  }
+}
+
+// Padding and divider come from .hotel-form__actions.
+.order-popup__notes-actions {
+  justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+  .order-popup__notes-head {
+    padding-inline: 16px;
+  }
+}
+
+.dish-card .cx-dish__prefs {
+  align-self: flex-start;
+}
+
+// Admin order popup: "Add notes" under a dish, and the inline editor row.
+.order-lines__notes-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border: 1px dashed $brand;
+  border-radius: 999px;
+  background: transparent;
+  color: $brand;
+  font-size: 11px;
+  font-weight: 700;
+
+  &:hover,
+  &[aria-expanded="true"] {
+    background: $brand-soft;
+  }
+
+  &.is-set {
+    border-style: solid;
+  }
+}
+
+.order-lines li.order-lines__notes-editor {
+  display: block;
+  margin: 0 0 8px;
+  padding: 14px;
+  border: 1px solid $line;
+  border-radius: $radius-md;
+  background: $field;
+
+  .dish-prefs {
+    gap: 10px;
+  }
+
+  .dish-prefs__row {
+    grid-template-columns: 140px 1fr;
+    padding-bottom: 10px;
+  }
+}
+
+.order-lines__notes-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 560px) {
+  .order-lines li.order-lines__notes-editor .dish-prefs__row {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Reservations: guest a staff booking is for, and the New reservation intro.
+.kanban-card__guest {
+  font-weight: 700;
+  color: $ink;
+}
+
+.new-reservation__intro {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: $ink-soft;
+}
+
+/* ---------------- Cancel order: reason ---------------- */
+.cancel-order__reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 16px;
+  padding: 0;
+  border: 0;
+  text-align: left;
+
+  legend {
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: $ink;
+  }
+
+  textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid $line;
+    border-radius: $radius-md;
+    background: $field;
+    font: inherit;
+    font-size: 13px;
+    resize: vertical;
+
+    &:focus {
+      outline: none;
+      border-color: $brand;
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+    }
+  }
+}
+
+.cancel-order__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cancel-order__error {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c2410c;
+}
+
+// My orders: who cancelled and why.
+.cx-order__cancel-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 12px;
+  color: #7f1d1d;
+
+  strong {
+    font-weight: 800;
+  }
+}
+
+.cx-order__cancel-reason {
+  color: #991b1b;
+  font-style: italic;
+}

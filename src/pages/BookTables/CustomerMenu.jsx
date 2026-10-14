@@ -7,10 +7,12 @@ import {
   RemoveRounded,
   RestaurantMenuOutlined,
   SearchRounded,
+  TuneRounded,
   ShoppingBagOutlined,
 } from "@mui/icons-material";
 import PopupModal from "components/common/PopupModal";
 import ConfirmDialog from "components/common/ConfirmDialog";
+import CancelOrderDialog from "components/common/CancelOrderDialog";
 import useAuth from "hooks/useAuth";
 import useToast from "hooks/useToast";
 import {
@@ -21,6 +23,8 @@ import {
 } from "services";
 import { getApiErrorMessage } from "utils/apiError";
 import AppSelect from "components/common/AppSelect";
+import DishPreferences from "./DishPreferences";
+import { hasPreferences, preferencesToNote } from "./preferenceOptions";
 
 const TAX_RATE = 0.05; // same as the API (reservationOrder.controller.js)
 const CART_KEY = "customerCart";
@@ -42,13 +46,22 @@ const hotelNameOf = (menu) =>
   menu?.hotel?.hotel_name || menu?.hotel?.name || "Restaurant";
 const money = (value) => `₹${Number(value || 0).toFixed(2)}`;
 
-// The cart holds one hotel's dishes: { hotelId, hotelName, items: { [menuId]: qty } }
-const emptyCart = { hotelId: null, hotelName: "", items: {} };
+// The cart holds one hotel's dishes:
+// { hotelId, hotelName, items: { [menuId]: qty }, prefs: { [menuId]: { spice, msg, …, text } } }
+const emptyCart = { hotelId: null, hotelName: "", items: {}, prefs: {} };
 const readCart = () => {
   try {
-    return JSON.parse(sessionStorage.getItem(CART_KEY)) || emptyCart;
+    const saved = JSON.parse(sessionStorage.getItem(CART_KEY));
+    return saved ? { ...emptyCart, ...saved, prefs: saved.prefs || {} } : emptyCart;
   } catch {
     return emptyCart;
+  }
+};
+const writeCart = (cart) => {
+  try {
+    sessionStorage.setItem(CART_KEY, JSON.stringify(cart));
+  } catch {
+    // Storage unavailable: the selection just isn't kept across tabs.
   }
 };
 
@@ -69,6 +82,8 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
   const [confirmClear, setConfirmClear] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [placing, setPlacing] = useState(false);
+  // Dish being customized: { menu, fromReview } (review popup reopens after).
+  const [prefsFor, setPrefsFor] = useState(null);
   const [orderError, setOrderError] = useState("");
 
   const [activeOrder, setActiveOrder] = useState(null);
@@ -78,11 +93,7 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
   const [confirmCancel, setConfirmCancel] = useState(false);
 
   useEffect(() => {
-    try {
-      sessionStorage.setItem(CART_KEY, JSON.stringify(cart));
-    } catch {
-      // Storage unavailable: the selection just isn't kept across tabs.
-    }
+    writeCart(cart);
   }, [cart]);
 
   // Open order (one at a time) and open bookings (where an order can go).
@@ -160,7 +171,11 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
 
   /* ---------------- cart ---------------- */
   const cartLines = Object.entries(cart.items)
-    .map(([menuId, quantity]) => ({ menu: menusById[menuId], quantity }))
+    .map(([menuId, quantity]) => ({
+      menu: menusById[menuId],
+      quantity,
+      prefs: cart.prefs?.[menuId] || {},
+    }))
     .filter((line) => line.menu && line.quantity > 0);
   const itemCount = cartLines.reduce((sum, line) => sum + line.quantity, 0);
   const subtotal = cartLines.reduce(
@@ -178,12 +193,35 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
     setCart((current) => {
       const sameHotel = String(current.hotelId) === hotelId;
       const items = { ...(sameHotel ? current.items : {}) };
+      const prefs = { ...(sameHotel ? current.prefs : {}) };
       if (quantity > 0) items[menu.id] = quantity;
-      else delete items[menu.id];
+      else {
+        delete items[menu.id];
+        delete prefs[menu.id];
+      }
       return Object.keys(items).length
-        ? { hotelId, hotelName: hotelNameOf(menu), items }
+        ? { hotelId, hotelName: hotelNameOf(menu), items, prefs }
         : emptyCart;
     });
+  };
+
+  const prefsOf = (menu) => cart.prefs?.[menu.id] || {};
+
+  const savePrefs = (menu, prefs) =>
+    setCart((current) => ({
+      ...current,
+      prefs: { ...current.prefs, [menu.id]: prefs },
+    }));
+
+  // From the review popup: close it while customizing (one popup at a time).
+  const openPrefs = (menu, fromReview = false) => {
+    if (fromReview) setReviewOpen(false);
+    setPrefsFor({ menu, fromReview });
+  };
+
+  const closePrefs = () => {
+    if (prefsFor?.fromReview) setReviewOpen(true);
+    setPrefsFor(null);
   };
 
   const addFirst = (menu) => {
@@ -210,11 +248,11 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
   }, [reviewOpen]);
 
   // Customers may cancel their open order until the kitchen accepts it.
-  const cancelActiveOrder = async () => {
+  const cancelActiveOrder = async (reason) => {
     if (!activeOrder) return;
     setCancelling(true);
     try {
-      const response = await cancelOrder(activeOrder.id);
+      const response = await cancelOrder(activeOrder.id, reason);
       if (response?.success === false) throw new Error(response.message);
       showToast({
         message: `Order ${activeOrder.order_number || `#${activeOrder.id}`} cancelled`,
@@ -241,16 +279,23 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
       const response = await createOrder({
         reservation_id: reservationId ? Number(reservationId) : null,
         hotel_id: Number(cart.hotelId),
-        items: cartLines.map((line) => ({
-          menu_id: line.menu.id,
-          quantity: line.quantity,
-        })),
+        items: cartLines.map((line) => {
+          const notes = preferencesToNote(line.prefs);
+          return {
+            menu_id: line.menu.id,
+            quantity: line.quantity,
+            ...(notes ? { notes } : {}),
+          };
+        }),
       });
       if (response?.success === false) throw new Error(response.message);
       showToast({
         message: `Order placed at ${cart.hotelName}`,
         variant: "success",
       });
+      // Save the empty cart now: onOrdered switches tabs and unmounts this
+      // page before the [cart] effect would run, leaving the old cart stored.
+      writeCart(emptyCart);
       setCart(emptyCart);
       setReviewOpen(false);
       loadStatus();
@@ -416,6 +461,17 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
                           {sides.length > 3 && ` +${sides.length - 3} more`}
                         </p>
                       )}
+                      {qty > 0 && (
+                        <button
+                          type="button"
+                          className={`cx-dish__prefs${hasPreferences(prefsOf(menu)) ? " is-set" : ""}`}
+                          onClick={() => openPrefs(menu)}
+                          title={preferencesToNote(prefsOf(menu)) || "Spice, Ajinomoto, oil…"}
+                        >
+                          <TuneRounded fontSize="inherit" aria-hidden />
+                          <span>{preferencesToNote(prefsOf(menu)) || "Customize"}</span>
+                        </button>
+                      )}
                       <div className="cx-dish__foot">
                         <strong>{money(menu.price)}</strong>
                         {!menu.is_available ? (
@@ -487,13 +543,11 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
         </div>
       )}
 
-      <ConfirmDialog
+      <CancelOrderDialog
         show={confirmCancel}
-        tone="warning"
         title={`Cancel order ${activeOrder?.order_number || ""}?`}
         message="The kitchen hasn't started it yet. You can place a new order afterwards."
-        confirmLabel="Cancel order"
-        cancelLabel="Keep order"
+        audience="customer"
         loading={cancelling}
         onConfirm={cancelActiveOrder}
         onCancel={() => setConfirmCancel(false)}
@@ -547,13 +601,22 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
           <section className="hotel-form__section">
             <h3 className="hotel-form__section-title">Items</h3>
             <ul className="order-lines">
-              {cartLines.map(({ menu, quantity }) => {
+              {cartLines.map(({ menu, quantity, prefs }) => {
                 const name = menu.menu_name ?? menu.name;
+                const note = preferencesToNote(prefs);
                 return (
                   <li key={menu.id}>
                     <span className="order-lines__name">
                       <strong>{name}</strong>
                       <small>{money(menu.price)} each</small>
+                      <button
+                        type="button"
+                        className={`cx-dish__prefs${note ? " is-set" : ""}`}
+                        onClick={() => openPrefs(menu, true)}
+                      >
+                        <TuneRounded fontSize="inherit" aria-hidden />
+                        <span>{note || "Customize"}</span>
+                      </button>
                     </span>
                     <span className="dish-card__qty order-lines__qty">
                       <button
@@ -656,6 +719,18 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
           </button>
         </div>
       </PopupModal>
+
+      <DishPreferences
+        show={Boolean(prefsFor)}
+        dishName={prefsFor ? prefsFor.menu.menu_name ?? prefsFor.menu.name : ""}
+        quantity={prefsFor ? quantityOf(prefsFor.menu) : 1}
+        value={prefsFor ? prefsOf(prefsFor.menu) : {}}
+        onSave={(prefs) => {
+          savePrefs(prefsFor.menu, prefs);
+          closePrefs();
+        }}
+        onClose={closePrefs}
+      />
     </div>
   );
 };

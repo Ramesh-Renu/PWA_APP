@@ -1582,3 +1582,513 @@ ul.kanban-card__items > li.is-ready .kanban-card__item-name {
     max-height: none;
   }
 }
+
+/* ---------------- Cancelled orders ---------------- */
+// Orders board: cancelled cards step back so live orders stand out.
+.kanban-card.is-cancelled {
+  border-left-color: #fca5a5;
+  background: #fbfbfd;
+  box-shadow: none;
+  opacity: 0.62;
+  transition: opacity 0.15s;
+
+  .kanban-card__title {
+    color: #6b7085;
+    text-decoration: line-through;
+    text-decoration-color: rgba(239, 68, 68, 0.6);
+  }
+
+  &:hover,
+  &:focus-within {
+    opacity: 1;
+  }
+}
+
+// "Cancelled · 14 Oct, 1:37 PM · by Admin" on the card.
+.kanban-card__cancelled {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  padding: 8px 10px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #fef2f2;
+  font-size: 12px;
+  color: #7f1d1d;
+
+  strong {
+    font-weight: 800;
+  }
+}
+
+.kanban-card__cancelled-label {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+// Booking details: active orders highlighted, cancelled ones faded.
+.booking-details__order.is-active {
+  border-color: rgba(15, 118, 110, 0.35);
+  border-left: 4px solid #0f766e;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(15, 118, 110, 0.1);
+}
+
+.booking-details__order.is-cancelled {
+  background: #f8f8fb;
+  opacity: 0.55;
+  transition: opacity 0.15s;
+
+  footer strong {
+    color: #8a8fa6;
+    text-decoration: line-through;
+  }
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.booking-details__cancelled-by {
+  font-weight: 700;
+  color: #b91c1c;
+}
+
+/* ---------------- Reservation card: food dish by dish ---------------- */
+// A clean list: hairline dividers, a quantity badge, dish name, and the
+// status as a coloured dot + label (no filled pills).
+.kanban-card__dishes {
+  gap: 0 !important;
+  overflow: hidden;
+  border: 1px solid #ecebf3;
+  border-radius: 10px;
+  background: #fff;
+
+  > li + li {
+    border-top: 1px solid #f1f0f6;
+  }
+}
+
+.kanban-card__dish {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  font-size: 13px;
+  text-align: left;
+  color: #1f2337;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover,
+  &:focus-visible {
+    background: #f6fbfa;
+
+    .kanban-card__dish-name {
+      color: #0f766e;
+    }
+  }
+}
+
+// Quantity badge: "7" in a soft rounded square, with a small ×.
+.kanban-card__dish-qty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 7px;
+  background: #e7f4f1;
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #0b5f58;
+
+  &::after {
+    content: "×";
+    margin-left: 1px;
+    font-weight: 600;
+    opacity: 0.6;
+  }
+}
+
+.kanban-card__dish-name {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+
+// Status: coloured dot + label in the stage colour.
+.kanban-card__dish-stage {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--stage-color);
+
+  &::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--stage-color);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--stage-color) 18%, transparent);
+  }
+
+  // Portions at different stages: a hollow dot (label = the one furthest behind).
+  &.is-mixed::before {
+    background: #fff;
+    box-shadow: inset 0 0 0 2px var(--stage-color);
+  }
+}
+
+// Portions at different stages: the pill shows the one furthest behind.
+.kanban-card__order-stage.is-mixed {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--stage-color) 45%, #fff);
+}
+
+/* ---------------- Booking food popup ---------------- */
+.booking-food {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.booking-food__summary {
+  margin: 0;
+  font-size: 13px;
+  color: #5b6078;
+}
+
+.booking-food__dish {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #ecebf3;
+  border-radius: 12px;
+  background: #fbfbfe;
+  scroll-margin: 16px;
+
+  > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+
+    strong {
+      font-size: 15px;
+      color: #1f2337;
+    }
+  }
+
+  &.is-focused {
+    border-color: #0f766e;
+    border-left: 4px solid #0f766e;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(15, 118, 110, 0.12);
+  }
+}
+
+// "2 Food prepared, 1 Served": dark amber on light amber (stage colours are
+// too pale for text this small).
+.booking-food__mixed {
+  padding: 3px 10px;
+  border: 1px solid #fcd34d;
+  border-radius: 999px;
+  background: #fffbeb;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #92400e;
+}
+
+// Not served yet: "Ready 3:10 PM" or "—".
+.booking-food__pending {
+  color: #8a8fa6;
+}
+
+.booking-food__note-row td {
+  padding-top: 0 !important;
+  border-top: 0 !important;
+}
+
+// Reason under "Cancelled · time · by …" on the Orders board card.
+.kanban-card__cancelled-reason {
+  flex-basis: 100%;
+  font-style: italic;
+  color: #991b1b;
+}
+
+// Serving booking without a server: must be assigned.
+.kanban-card__cook-assign.is-required {
+  border-style: solid;
+  border-color: #f87171;
+  background: #fef2f2;
+  color: #b91c1c;
+  animation: kanban-needs-server 1.6s ease-in-out infinite;
+
+  &:hover {
+    background: #fee2e2;
+  }
+}
+
+@keyframes kanban-needs-server {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kanban-card__cook-assign.is-required {
+    animation: none;
+  }
+}
+
+/* ---------------- Booking stage tracker ---------------- */
+.stage-tracker__body {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid #ecebf3;
+  border-radius: 14px;
+  background: #fbfbfe;
+}
+
+.stage-tracker__steps {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(var(--steps), minmax(92px, 1fr));
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+  list-style: none;
+}
+
+.stage-tracker__step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 0 4px;
+  text-align: center;
+
+  // Line to the next step, coloured once this step is done.
+  &:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 13px;
+    left: calc(50% + 16px);
+    right: calc(-50% + 16px);
+    height: 3px;
+    border-radius: 3px;
+    background: #e4e3ef;
+  }
+
+  &.is-done:not(:last-child)::after {
+    background: var(--stage-color);
+  }
+
+  &.is-current:not(:last-child)::after {
+    background: linear-gradient(90deg, var(--stage-color), #e4e3ef);
+  }
+}
+
+.stage-tracker__dot {
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #d9d8e6;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  color: #9a9db2;
+
+  .is-done &,
+  .is-final & {
+    border-color: var(--stage-color);
+    background: var(--stage-color);
+    color: #fff;
+    font-size: 17px;
+  }
+
+  .is-current & {
+    border-color: var(--stage-color);
+    color: var(--stage-color);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--stage-color) 18%, transparent);
+  }
+}
+
+.stage-tracker__name {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #1f2337;
+
+  .is-upcoming &,
+  .is-skipped & {
+    color: #9a9db2;
+  }
+
+  .is-current & {
+    color: var(--stage-color);
+  }
+}
+
+.stage-tracker__time {
+  font-size: 11px;
+  color: #5b6078;
+
+  &.is-muted {
+    color: #a3a6ba;
+    font-style: italic;
+  }
+}
+
+.stage-tracker__duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--stage-color) 12%, #fff);
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--stage-color) 75%, #1f2337);
+
+  &.is-live {
+    background: var(--stage-color);
+    color: #fff;
+  }
+}
+
+.stage-tracker__pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  animation: stage-tracker-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes stage-tracker-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+// Total next to the tracker: running while the booking is open, stopped at the end.
+.stage-tracker__total {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  min-width: 150px;
+  padding: 10px 14px;
+  border: 1px solid rgba(15, 118, 110, 0.25);
+  border-radius: 12px;
+  background: #fff;
+
+  > svg {
+    font-size: 26px;
+    color: #0f766e;
+  }
+
+  span {
+    display: flex;
+    flex-direction: column;
+  }
+
+  small {
+    font-size: 11px;
+    color: #777b91;
+  }
+
+  strong {
+    font-size: 20px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: #0f766e;
+  }
+
+  &.is-stopped {
+    border-color: #86efac;
+    background: #f0fdf4;
+
+    > svg,
+    strong {
+      color: #15803d;
+    }
+  }
+}
+
+@media (max-width: 720px) {
+  .stage-tracker__body {
+    flex-direction: column;
+  }
+
+  .stage-tracker__total {
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-tracker__pulse {
+    animation: none;
+  }
+}
+
+// Admin order popup: cooking time per dish and for the whole order.
+.order-lines__cook-time {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: #047857;
+
+  &.is-cooking {
+    background: #fff7ed;
+    font-weight: 700;
+    color: #c2410c;
+  }
+}
+
+.order-details__cooked {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  color: #047857;
+}

@@ -14,64 +14,105 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 48px;
+  padding: 40px 48px;
   color: #ffffff;
   background:
-    linear-gradient(rgba(10, 75, 67, 0.88), rgba(10, 75, 67, 0.82)),
+    radial-gradient(circle at 85% 15%, rgba(255, 209, 102, 0.18), transparent 35%),
+    linear-gradient(160deg, rgba(8, 62, 56, 0.94), rgba(12, 92, 82, 0.86)),
     url("../../assets/images/login-banner.png") center / cover no-repeat;
 }
 
 .tableflow-login__logo {
   width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   color: inherit;
-  font-size: 32px;
+  font-size: 20px;
   font-weight: 800;
+  letter-spacing: 0.2px;
   line-height: 1;
   text-decoration: none;
 }
 
+.tableflow-login__logo-mark {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #ffd166;
+  color: #0a4b43;
+  font-size: 20px;
+}
+
 .tableflow-login__brand-content {
-  max-width: 560px;
+  max-width: 460px;
+}
+
+.tableflow-login__eyebrow {
+  display: inline-block;
+  margin-bottom: 16px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 209, 102, 0.45);
+  border-radius: 999px;
+  background: rgba(255, 209, 102, 0.12);
+  color: #ffd166;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
 }
 
 .tableflow-login__brand-content h1 {
-  margin: 0 0 22px;
-  font-size: clamp(42px, 5vw, 64px);
+  margin: 0 0 14px;
+  font-size: clamp(28px, 2.8vw, 38px);
   font-weight: 800;
-  line-height: 1.04;
+  letter-spacing: -0.5px;
+  line-height: 1.15;
 }
 
 .tableflow-login__brand-content p {
-  max-width: 520px;
-  margin: 0 0 34px;
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 19px;
-  line-height: 1.6;
+  max-width: 420px;
+  margin: 0 0 28px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 15px;
+  line-height: 1.65;
 }
 
 .tableflow-login__features {
   display: grid;
-  gap: 16px;
-  max-width: 420px;
+  gap: 10px;
+  max-width: 400px;
 }
 
 .tableflow-login__feature {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 14px 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(6px);
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.tableflow-login__feature:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateX(4px);
 }
 
 .tableflow-login__feature-icon {
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
   display: grid;
   place-items: center;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 209, 102, 0.16);
   color: #ffd166;
-  font-size: 24px;
+  font-size: 20px;
 }
 
 .tableflow-login__feature strong,
@@ -80,13 +121,13 @@
 }
 
 .tableflow-login__feature strong {
-  margin-bottom: 4px;
-  font-size: 16px;
+  margin-bottom: 2px;
+  font-size: 14px;
 }
 
 .tableflow-login__feature small {
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
 }
 
 .tableflow-login__copyright {
@@ -105,8 +146,31 @@
 }
 
 .tableflow-login__card {
-  width: min(100%, 460px);
-  padding: 8px 0;
+  width: min(100%, 440px);
+  padding: 36px 32px;
+  border: 1px solid #e3ece8;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(10, 75, 67, 0.1);
+}
+
+.tableflow-login__card-header {
+  margin-bottom: 22px;
+}
+
+.tableflow-login__card-header h2 {
+  margin: 0 0 6px;
+  color: #17211d;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.tableflow-login__card-header p {
+  margin: 0;
+  color: #67736f;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .tableflow-login__mobile-brand {
@@ -637,7 +701,13 @@
   }
 
   .tableflow-login__card {
-    padding: 0;
+    padding: 24px 18px;
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(10, 75, 67, 0.08);
+  }
+
+  .tableflow-login__card-header h2 {
+    font-size: 21px;
   }
 
   .tableflow-login__role-toggle button {

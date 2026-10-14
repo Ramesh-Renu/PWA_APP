@@ -1,7 +1,13 @@
 import React from "react";
-import { AddRounded, RemoveRounded, RestaurantMenuRounded } from "@mui/icons-material";
+import {
+  AddRounded,
+  RemoveRounded,
+  RestaurantMenuRounded,
+  TuneRounded,
+} from "@mui/icons-material";
 
-const MenuCard = ({ menu, quantity = 0, onIncrease, onDecrease }) => {
+// onEditNotes (optional): once picked, the dish shows "Add notes" / its note.
+const MenuCard = ({ menu, quantity = 0, note = "", onEditNotes, onIncrease, onDecrease }) => {
   const spice = menu.spiceLevel?.spice_level;
 
   return (
@@ -31,6 +37,18 @@ const MenuCard = ({ menu, quantity = 0, onIncrease, onDecrease }) => {
           <span className="dish-card__spice">
             {String(spice).toLowerCase().replace(/_/g, " ")}
           </span>
+        )}
+
+        {quantity > 0 && onEditNotes && (
+          <button
+            type="button"
+            className={`cx-dish__prefs${note ? " is-set" : ""}`}
+            title={note || "Spice, Ajinomoto, oil…"}
+            onClick={onEditNotes}
+          >
+            <TuneRounded fontSize="inherit" aria-hidden />
+            <span>{note || "Add notes"}</span>
+          </button>
         )}
 
         <div className="dish-card__foot">

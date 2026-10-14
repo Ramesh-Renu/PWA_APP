@@ -1,19 +1,43 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import {
   AddRounded,
   DeleteOutlineRounded,
   RemoveRounded,
   SearchRounded,
+  TimerOutlined,
+  TuneRounded,
 } from "@mui/icons-material";
 import PopupModal from "components/common/PopupModal";
 import { getAllMenu, getCooks, updateOrderItems } from "services";
 import { getApiErrorMessage } from "utils/apiError";
 import StaffAvatar from "pages/Settings/Staff/StaffAvatar";
 import AppSelect from "components/common/AppSelect";
+import ItemNote from "components/common/ItemNote";
+import { formatDuration } from "./PrepTimer";
+import { PreferencesFields } from "pages/BookTables/DishPreferences";
+import {
+  noteToPreferences,
+  preferencesToNote,
+} from "pages/BookTables/preferenceOptions";
 
 const TAX_RATE = 0.05; // same as the API (reservationOrder.controller.js)
 const money = (value) => `₹${Number(value || 0).toFixed(2)}`;
+const ITEM_CANCELLED = 5;
+
+// A dish's cooking time: start of cooking (order) to when it was ticked ready.
+const dishCookTime = (order, line) =>
+  order?.preparing_at && line.ready_at
+    ? formatDuration(new Date(line.ready_at) - new Date(order.preparing_at))
+    : null;
+
+// Whole order: start of cooking to the last dish ticked (all dishes ready).
+const orderCookTime = (order) => {
+  const dishes = (order?.items || []).filter((item) => item.item_status !== ITEM_CANCELLED);
+  if (!order?.preparing_at || !dishes.length || dishes.some((item) => !item.ready_at)) return null;
+  const last = Math.max(...dishes.map((item) => new Date(item.ready_at).getTime()));
+  return formatDuration(last - new Date(order.preparing_at).getTime());
+};
 
 /**
  * Admin order popup: ordered items (change quantity / remove) and the hotel's
@@ -42,6 +66,8 @@ const OrderDetailsDialog = ({
   const [category, setCategory] = useState("all");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  // Dish whose notes are open for editing: { menuId, prefs } (inline, under the dish).
+  const [notesEditor, setNotesEditor] = useState(null);
 
   // Working copy of the items, keyed by menu_id.
   useEffect(() => {
@@ -55,11 +81,15 @@ const OrderDetailsDialog = ({
         cook_id: item.cook_id ?? item.cook?.id ?? null,
         cook_name: item.cook?.cook_name || null,
         cook_photo: item.cook?.photo_url || null,
+        notes: item.notes || null,
+        ready_at: item.ready_at || null,
+        item_status: item.item_status,
       })),
     );
     setSearch("");
     setCategory("all");
     setError("");
+    setNotesEditor(null);
   }, [order]);
 
   useEffect(() => {
@@ -127,6 +157,13 @@ const OrderDetailsDialog = ({
       ),
     );
 
+  const setLineNotes = (menuId, notes) =>
+    setLines((current) =>
+      current.map((line) =>
+        line.menu_id === Number(menuId) ? { ...line, notes: notes || null } : line,
+      ),
+    );
+
   const subtotal = lines.reduce((sum, line) => sum + line.unit_price * line.quantity, 0);
   const tax = subtotal * TAX_RATE;
   const total =
@@ -137,12 +174,12 @@ const OrderDetailsDialog = ({
     const original = (order.items || [])
       .map(
         (item) =>
-          `${Number(item.menu_id)}:${Number(item.quantity)}:${item.cook_id ?? item.cook?.id ?? ""}`,
+          `${Number(item.menu_id)}:${Number(item.quantity)}:${item.cook_id ?? item.cook?.id ?? ""}:${item.notes || ""}`,
       )
       .sort()
       .join(",");
     const current = lines
-      .map((line) => `${line.menu_id}:${line.quantity}:${line.cook_id ?? ""}`)
+      .map((line) => `${line.menu_id}:${line.quantity}:${line.cook_id ?? ""}:${line.notes || ""}`)
       .sort()
       .join(",");
     return original !== current;
@@ -177,6 +214,7 @@ const OrderDetailsDialog = ({
           menu_id: line.menu_id,
           quantity: line.quantity,
           cook_id: line.cook_id ?? null,
+          notes: line.notes || "", // "" clears a removed note
         })),
       );
       if (response?.success === false) throw new Error(response.message);
@@ -220,6 +258,11 @@ const OrderDetailsDialog = ({
               : "No table booking"}
           </span>
           <span>{dayjs(order.createdAt).format("D MMM, h:mm A")}</span>
+          {orderCookTime(order) && (
+            <span className="order-details__cooked" title="Start of cooking to the last dish ready">
+              <TimerOutlined fontSize="inherit" aria-hidden /> Prepared in {orderCookTime(order)}
+            </span>
+          )}
           {/* Cooks are shown per dish below. */}
           {order.server && (
             <span className="order-details__staff">
@@ -239,11 +282,32 @@ const OrderDetailsDialog = ({
             </p>
           ) : (
             <ul className="order-lines">
-              {lines.map((line) => (
-                <li key={line.menu_id}>
+              {lines.map((line) => {
+                const editingNotes = notesEditor?.menuId === line.menu_id;
+                return (
+                <Fragment key={line.menu_id}>
+                <li>
                   <span className="order-lines__name">
                     <strong>{line.name}</strong>
                     <small>{money(line.unit_price)} each</small>
+                    <ItemNote text={line.notes} title={line.name} />
+                    {!readOnly && (
+                      <button
+                        type="button"
+                        className={`order-lines__notes-btn${line.notes ? " is-set" : ""}`}
+                        aria-expanded={editingNotes}
+                        onClick={() =>
+                          setNotesEditor(
+                            editingNotes
+                              ? null
+                              : { menuId: line.menu_id, prefs: noteToPreferences(line.notes) },
+                          )
+                        }
+                      >
+                        <TuneRounded fontSize="inherit" aria-hidden />
+                        {editingNotes ? "Close notes" : line.notes ? "Edit notes" : "Add notes"}
+                      </button>
+                    )}
                   </span>
                   {readOnly || reduceOnly ? (
                     line.cook_name && (
@@ -295,6 +359,19 @@ const OrderDetailsDialog = ({
                     />
                     </span>
                   )}
+                  {/* How long the cook took on this dish (once it was ticked ready). */}
+                  {dishCookTime(order, line) ? (
+                    <span
+                      className="order-lines__cook-time"
+                      title="From the start of cooking to this dish being ready"
+                    >
+                      <TimerOutlined fontSize="inherit" aria-hidden />
+                      {dishCookTime(order, line)}
+                    </span>
+                  ) : order.preparing_at && !line.ready_at && line.item_status !== ITEM_CANCELLED &&
+                    [2, 3].includes(order.order_status) ? (
+                    <span className="order-lines__cook-time is-cooking">Cooking…</span>
+                  ) : null}
                   {readOnly ? (
                     <span className="order-lines__qty-read">× {line.quantity}</span>
                   ) : (
@@ -337,7 +414,46 @@ const OrderDetailsDialog = ({
                     </button>
                   )}
                 </li>
-              ))}
+                {editingNotes && (
+                  <li className="order-lines__notes-editor">
+                    <div className="dish-prefs">
+                      <PreferencesFields
+                        idPrefix={`order-pref-${line.menu_id}`}
+                        value={notesEditor.prefs}
+                        onChange={(prefs) => setNotesEditor({ menuId: line.menu_id, prefs })}
+                      />
+                      <div className="order-lines__notes-actions">
+                        <button
+                          type="button"
+                          className="ui-btn ui-btn--ghost ui-btn--sm"
+                          onClick={() => setNotesEditor({ menuId: line.menu_id, prefs: {} })}
+                        >
+                          Clear all
+                        </button>
+                        <button
+                          type="button"
+                          className="ui-btn ui-btn--ghost ui-btn--sm"
+                          onClick={() => setNotesEditor(null)}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          className="ui-btn ui-btn--primary ui-btn--sm"
+                          onClick={() => {
+                            setLineNotes(line.menu_id, preferencesToNote(notesEditor.prefs));
+                            setNotesEditor(null);
+                          }}
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                )}
+                </Fragment>
+                );
+              })}
             </ul>
           )}
 

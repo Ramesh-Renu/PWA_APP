@@ -5,10 +5,12 @@ import {
   CheckCircleOutlineRounded,
   EditRounded,
   RefreshRounded,
+  SearchRounded,
   TimerOutlined,
 } from "@mui/icons-material";
 import KanbanBoard from "components/common/KanbanBoard";
-import ConfirmDialog from "components/common/ConfirmDialog";
+import AppSelect from "components/common/AppSelect";
+import CancelOrderDialog from "components/common/CancelOrderDialog";
 import AssignStaffDialog from "./AssignStaffDialog";
 import OrderDetailsDialog from "./OrderDetailsDialog";
 import CreateOrderDialog from "./CreateOrderDialog";
@@ -20,6 +22,7 @@ import StaffAvatar from "pages/Settings/Staff/StaffAvatar";
 import { COOK_CONFIG, SERVER_CONFIG } from "pages/Settings/Staff/staffConfig";
 import useToast from "hooks/useToast";
 import useGlobalMaster from "hooks/useGlobalMaster";
+import ItemNote from "components/common/ItemNote";
 import {
   getAllOrders,
   updateOrderStatus,
@@ -97,6 +100,49 @@ const preparedAt = (order) => {
 const ORDERS_PAGE_LIMIT = 500;
 const VISIBLE_ITEMS = 3;
 
+// Search box: which part of an order to look in (same pattern as Reservations).
+const SEARCH_FIELDS = [
+  {
+    value: "all",
+    label: "All fields",
+    placeholder: "Search order, hotel, booking, dish or staff",
+  },
+  { value: "order", label: "Order number", placeholder: "e.g. ORD-1791963805026" },
+  { value: "hotel", label: "Hotel name", placeholder: "e.g. Sangeetha Veg" },
+  { value: "booking", label: "Booking ID", placeholder: "e.g. 126" },
+  { value: "dish", label: "Dish", placeholder: "e.g. Lemon Rice" },
+  { value: "staff", label: "Cook / server", placeholder: "e.g. Mubarak" },
+];
+
+// "#126", "Res 126", "Booking 126" → "126".
+const normalizeSearch = (value) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/^(res|booking)\s*/, "")
+    .replace(/^#/, "")
+    .trim();
+
+const orderMatches = (order, field, query) => {
+  if (!query) return true;
+  const items = order.items || [];
+  const values = {
+    order: [order.order_number, order.id],
+    hotel: [order.hotel?.hotel_name],
+    booking: [order.reservation_id],
+    dish: items.map((item) => item.menu_name),
+    staff: [
+      order.cook?.cook_name,
+      order.server?.server_name,
+      ...items.map((item) => item.cook?.cook_name),
+    ],
+  };
+  const fields = field === "all" ? Object.keys(values) : [field];
+  return fields.some((key) =>
+    values[key].some((value) => value != null && String(value).toLowerCase().includes(query)),
+  );
+};
+
 const OrderBoard = () => {
   const { showToast } = useToast();
   const { orderStatusList, getOrderStatus, paymentStatusList, getPaymentStatus } =
@@ -116,6 +162,10 @@ const OrderBoard = () => {
   // Order whose details popup is open (looked up live so edits show at once).
   const [openOrderId, setOpenOrderId] = useState(null);
   const [createOrderOpen, setCreateOrderOpen] = useState(false);
+  const [searchField, setSearchField] = useState("all");
+  const [searchText, setSearchText] = useState("");
+  const searchQuery = normalizeSearch(searchText);
+  const activeSearchField = SEARCH_FIELDS.find((option) => option.value === searchField);
   // { order, deliver }: payment popup (on drop to Delivered, or badge click).
   const [paymentRequest, setPaymentRequest] = useState(null);
   const openOrder = orders.find((order) => order.id === openOrderId) || null;
@@ -214,7 +264,15 @@ const OrderBoard = () => {
   const patchStageTimes = (orderId, saved) => {
     if (!saved) return;
     const times = {};
-    ["preparing_at", "served_at", "delivered_at", "completed_at"].forEach((field) => {
+    [
+      "preparing_at",
+      "served_at",
+      "delivered_at",
+      "completed_at",
+      "cancelled_at",
+      "cancelled_by_name",
+      "cancel_reason",
+    ].forEach((field) => {
       if (saved[field] !== undefined) times[field] = saved[field];
     });
     if (Object.keys(times).length) patchOrder(orderId, times);
@@ -250,7 +308,12 @@ const OrderBoard = () => {
       }
       notifyOrdersChanged();
       showToast({
-        message: response.message || "Order status updated successfully",
+        message:
+          (response.message || "Order status updated successfully") +
+          // Serving the first food moves a Seated booking to Serving.
+          (response.reservation_status && order.reservation_id
+            ? ` · Booking #${order.reservation_id} is now Serving`
+            : ""),
         variant: "success",
       });
       return true;
@@ -573,12 +636,12 @@ const OrderBoard = () => {
     );
   };
 
-  const confirmCancel = () => {
+  const confirmCancel = (reason) => {
     const order = pendingCancel;
     setPendingCancel(null);
     if (!order) return;
     // The cancel endpoint also marks every order item as cancelled.
-    changeStatus(order, CANCELLED, () => cancelOrder(order.id));
+    changeStatus(order, CANCELLED, () => cancelOrder(order.id, reason));
   };
 
   // One compact panel for what happened after cooking: total prep time,
@@ -595,6 +658,31 @@ const OrderBoard = () => {
       : order.delivered_at
         ? { label: "Delivered", at: order.delivered_at }
         : null;
+
+    // Cancelled: when and by whom ("Admin" or the customer's name).
+    if (order.order_status === CANCELLED) {
+      return (
+        <div className="kanban-card__cancelled" role="note">
+          <span className="kanban-card__cancelled-label">Cancelled</span>
+          {order.cancelled_at ? (
+            <span title={dayjs(order.cancelled_at).format("D MMM YYYY, h:mm A")}>
+              {dayjs(order.cancelled_at).format("D MMM, h:mm A")}
+              {order.cancelled_by_name && (
+                <>
+                  {" · by "}
+                  <strong>{order.cancelled_by_name}</strong>
+                </>
+              )}
+            </span>
+          ) : (
+            <span>Time not recorded</span>
+          )}
+          {order.cancel_reason && (
+            <span className="kanban-card__cancelled-reason">“{order.cancel_reason}”</span>
+          )}
+        </div>
+      );
+    }
 
     const server = order.server;
     const canChangeServer = SERVER_EDITABLE.includes(order.order_status);
@@ -664,8 +752,14 @@ const OrderBoard = () => {
 
   // Orders, plus a Ready ticket for each order still cooking that has some
   // (not all) dishes prepared.
+  // Orders matching the search box (a Ready ticket follows its order).
+  const visibleOrders = useMemo(
+    () => orders.filter((order) => orderMatches(order, searchField, searchQuery)),
+    [orders, searchField, searchQuery],
+  );
+
   const boardCards = useMemo(() => {
-    const tickets = orders
+    const tickets = visibleOrders
       .filter((order) => TICKET_SOURCE.includes(order.order_status))
       .map((order) => {
         const dishes = (order.items || []).filter((item) => item.item_status !== 5);
@@ -681,8 +775,8 @@ const OrderBoard = () => {
         };
       })
       .filter(Boolean);
-    return [...orders, ...tickets];
-  }, [orders]);
+    return [...visibleOrders, ...tickets];
+  }, [visibleOrders]);
 
   const renderTicket = (ticket) => (
     <div className="kanban-ticket">
@@ -711,6 +805,7 @@ const OrderBoard = () => {
           <li key={item.id} className="is-ready">
             <span className="kanban-card__item-name">
               {item.quantity} × {item.menu_name}
+              <ItemNote text={item.notes} title={item.menu_name} />
             </span>
             {item.cook?.cook_name && (
               <span className="kanban-card__item-cook" title={`Cook: ${item.cook.cook_name}`}>
@@ -786,6 +881,7 @@ const OrderBoard = () => {
                 <li key={item.id} className={prepared ? "is-prepared" : ""}>
                   <span className="kanban-card__item-name">
                     {item.quantity} × {item.menu_name}
+                    <ItemNote text={item.notes} title={item.menu_name} />
                   </span>
                   {editable ? (
                     <button
@@ -896,9 +992,6 @@ const OrderBoard = () => {
             <p>Track food orders from the kitchen to the table.</p>
           </div>
           <div className="ui-header__actions">
-            <span className="ui-toolbar__count">
-              {orders.length} {orders.length === 1 ? "order" : "orders"}
-            </span>
             <button
               type="button"
               className="ui-btn ui-btn--ghost"
@@ -917,6 +1010,37 @@ const OrderBoard = () => {
           </div>
         </header>
 
+        <div className="ui-toolbar" role="search">
+          <label className="ui-search">
+            <SearchRounded fontSize="small" aria-hidden />
+            <AppSelect
+              variant="compact"
+              value={searchField}
+              onChange={(event) => setSearchField(event.target.value)}
+              aria-label="Search in"
+              searchable={false}
+              options={SEARCH_FIELDS.map(({ value, label }) => ({ value, label }))}
+            />
+            <input
+              type="search"
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+              placeholder={activeSearchField?.placeholder}
+              aria-label={`Search by ${activeSearchField?.label}`}
+            />
+          </label>
+          <span className="ui-toolbar__count">
+            {searchQuery
+              ? `${visibleOrders.length} of ${orders.length} orders`
+              : `${orders.length} ${orders.length === 1 ? "order" : "orders"}`}
+            {searchQuery && (
+              <button type="button" onClick={() => setSearchText("")}>
+                Clear
+              </button>
+            )}
+          </span>
+        </div>
+
         <KanbanBoard
           columns={columns}
           items={boardCards}
@@ -925,6 +1049,8 @@ const OrderBoard = () => {
           onMove={handleMove}
           onBlocked={handleBlocked}
           renderCard={renderCard}
+          // Cancelled orders step back so live ones stand out.
+          getCardClassName={(order) => (order.order_status === CANCELLED ? "is-cancelled" : "")}
           loading={loading}
           emptyLabel="No orders"
         />
@@ -993,15 +1119,13 @@ const OrderBoard = () => {
         onSaved={handleItemsSaved}
       />
 
-      <ConfirmDialog
+      <CancelOrderDialog
         show={Boolean(pendingCancel)}
-        tone="warning"
         title={`Cancel order ${
           pendingCancel?.order_number || `#${pendingCancel?.id}`
         }?`}
-        message="The order will be marked as cancelled."
-        confirmLabel="Cancel order"
-        cancelLabel="Keep order"
+        message="The order will be marked as cancelled. The customer sees the reason."
+        audience="staff"
         onConfirm={confirmCancel}
         onCancel={() => setPendingCancel(null)}
       />

@@ -17,6 +17,20 @@ export const formatElapsed = (ms) => {
     : `${pad(minutes)}:${pad(seconds)}`;
 };
 
+/**
+ * Duration with units, for finished times: "45 sec", "10 min 56 sec",
+ * "1 hr 05 min". (Live clocks keep formatElapsed's "10:56".)
+ */
+export const formatDuration = (ms) => {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  if (hours) return `${hours} hr ${pad(minutes)} min`;
+  if (minutes) return `${minutes} min ${pad(seconds)} sec`;
+  return `${seconds} sec`;
+};
+
 const toTime = (value) => (value ? new Date(value).getTime() : NaN);
 
 const toneOf = (ms) => {

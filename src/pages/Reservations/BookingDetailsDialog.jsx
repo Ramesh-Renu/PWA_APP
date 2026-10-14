@@ -2,8 +2,9 @@ import React from "react";
 import dayjs from "dayjs";
 import PopupModal from "components/common/PopupModal";
 import StaffAvatar from "pages/Settings/Staff/StaffAvatar";
-import { formatElapsed } from "pages/Orders/PrepTimer";
+import { formatDuration } from "pages/Orders/PrepTimer";
 import { paymentMethodLabel } from "pages/Orders/PaymentDialog";
+import BookingStageTracker from "./BookingStageTracker";
 
 const ITEM_CANCELLED = 5;
 const ORDER_CANCELLED = 7;
@@ -24,7 +25,7 @@ const diningTime = (row) => {
 // Time a dish took: from the order's start of cooking to its tick.
 const dishTime = (order, item) =>
   order.preparing_at && item.ready_at
-    ? formatElapsed(new Date(item.ready_at) - new Date(order.preparing_at))
+    ? formatDuration(new Date(item.ready_at) - new Date(order.preparing_at))
     : null;
 
 // Whole order: start of cooking to the last dish ticked.
@@ -34,7 +35,7 @@ const orderPrepTime = (order) => {
     return null;
   }
   const last = Math.max(...dishes.map((item) => new Date(item.ready_at).getTime()));
-  return formatElapsed(last - new Date(order.preparing_at).getTime());
+  return formatDuration(last - new Date(order.preparing_at).getTime());
 };
 
 const Person = ({ name, photo, tone, role, detail }) => (
@@ -62,6 +63,8 @@ const BookingDetailsDialog = ({
   tables = [],
   seats = 0,
   orderStages = {},
+  // Booking stage names / colours for the tracker: [{ id, name, color }].
+  stageColumns = [],
   onOpenOrder,
   onClose,
 }) => {
@@ -98,6 +101,9 @@ const BookingDetailsDialog = ({
           <span>Booked {when(bookedAt)}</span>
         </div>
 
+        {/* ---------- Stages: when each started, time in each, total ---------- */}
+        <BookingStageTracker reservation={reservation} columns={stageColumns} />
+
         {/* ---------- Who & when ---------- */}
         <section className="hotel-form__section">
           <h3 className="hotel-form__section-title">Booking</h3>
@@ -117,6 +123,16 @@ const BookingDetailsDialog = ({
                 )}
               </dd>
             </div>
+            {/* Staff booking for a phone / walk-in guest. */}
+            {byAdmin && reservation.customer_name && (
+              <div>
+                <dt>Guest</dt>
+                <dd>
+                  {reservation.customer_name}
+                  {reservation.customer_mobile && <small>{reservation.customer_mobile}</small>}
+                </dd>
+              </div>
+            )}
             <div>
               <dt>Dining</dt>
               <dd>{diningTime(reservation)}</dd>
@@ -180,15 +196,24 @@ const BookingDetailsDialog = ({
           {orders.length === 0 ? (
             <p className="booking-details__none">No food ordered for this booking.</p>
           ) : (
-            orders.map((order) => {
-              const stage = orderStages[order.order_status] || {
-                name: "—",
-                color: "#64748b",
-              };
+            // Active orders first and highlighted; cancelled ones last and faded.
+            [...orders]
+              .sort(
+                (a, b) =>
+                  (a.order_status === ORDER_CANCELLED) - (b.order_status === ORDER_CANCELLED),
+              )
+              .map((order) => {
+              const isCancelled = order.order_status === ORDER_CANCELLED;
+              const stage = isCancelled
+                ? { name: "Cancelled", color: "#ef4444" }
+                : orderStages[order.order_status] || { name: "—", color: "#64748b" };
               const prepTime = orderPrepTime(order);
               const finishedAt = order.served_at || order.delivered_at;
               return (
-                <article key={order.id} className="booking-details__order">
+                <article
+                  key={order.id}
+                  className={`booking-details__order ${isCancelled ? "is-cancelled" : "is-active"}`}
+                >
                   <header>
                     <button
                       type="button"
@@ -214,6 +239,13 @@ const BookingDetailsDialog = ({
                       </span>
                     )}
                     {order.server?.server_name && <span>Server: {order.server.server_name}</span>}
+                    {isCancelled && order.cancelled_at && (
+                      <span className="booking-details__cancelled-by">
+                        Cancelled {when(order.cancelled_at)}
+                        {order.cancelled_by_name && ` by ${order.cancelled_by_name}`}
+                        {order.cancel_reason && ` · “${order.cancel_reason}”`}
+                      </span>
+                    )}
                   </p>
 
                   <table className="booking-details__dishes">
