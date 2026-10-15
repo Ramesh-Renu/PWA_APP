@@ -417,6 +417,56 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
   }
 }
 
+// Long lists (hooks/useIncrementalRows): the table scrolls inside its panel,
+// the header stays on top, and more rows load at the bottom.
+.ui-table-wrap--scroll {
+  max-height: max(320px, calc(100dvh - 260px));
+  overflow: auto;
+  overscroll-behavior: contain;
+
+  .ui-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+}
+
+.ui-table__more td {
+  padding: 14px 16px;
+  text-align: center;
+  font-size: 12px;
+  color: $ink-faint;
+}
+
+// Description cells: a readable minimum width, two lines then "…"
+// (components/common/ClampText.jsx shows the rest on hover / tap).
+.ui-table .ui-table__desc {
+  min-width: 200px;
+  max-width: 340px;
+}
+
+.ui-clamp {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--clamp-lines, 2);
+  line-clamp: var(--clamp-lines, 2);
+  word-break: break-word;
+  cursor: pointer;
+
+  &.is-open {
+    display: block;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+  }
+
+  &:focus-visible {
+    border-radius: 4px;
+    outline: 2px solid rgba(15, 118, 110, 0.4);
+    outline-offset: 2px;
+  }
+}
+
 .ui-table__state td {
   padding: 48px 16px;
   text-align: center;
@@ -622,7 +672,7 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
 
 @media (max-width: 640px) {
   .ui-page {
-    padding: 16px 16px 32px;
+    padding: 16px 16px;
 
     &--embedded {
       padding: 0;
@@ -1062,6 +1112,31 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
 
 .kanban-card__move-select {
   width: 100%;
+}
+
+// Host of portalled lists (AppSelect `portal`): takes no space; the list
+// inside is position: fixed with its width set by react-dropdown-select.
+.app-select.app-select--portal {
+  position: static;
+  width: 0;
+  height: 0;
+
+  .react-dropdown-select.app-select-portal__root {
+    position: static;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: transparent !important;
+  }
+
+  .react-dropdown-select-dropdown {
+    min-width: 0;
+    border: 1px solid $line;
+    border-radius: 10px;
+    background: $surface;
+    box-shadow: 0 12px 32px rgba(31, 35, 55, 0.16);
+    font-size: 13px;
+  }
 }
 
 .order-lines__cook-select {

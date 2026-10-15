@@ -27,6 +27,7 @@ import useGlobalMaster from "hooks/useGlobalMaster";
 import { getDashboardSummary } from "services";
 import { getDashboardSummaryParams } from "utils/dashboard";
 import { getApiErrorDetails } from "utils/apiError";
+import { paymentColor, paymentLabel } from "utils/paymentStatus";
 
 export const BOARD_FILTER_OPTIONS = [
   { label: "7 days", value: "LAST_7_DAYS" },
@@ -57,6 +58,26 @@ const TREND_SERIES = [
   { key: "cancelled", label: "Cancelled", color: "#eb6834" },
   { key: "completed", label: "Completed", color: "#1baf7a" },
 ];
+
+// orders.byStatus keys from the API → ORDER_STATUS (API utils/orderStatus.js).
+// Colours match the Orders board defaults; Settings → order statuses win.
+// `legacy` rows (old Completed) are listed only when they have orders.
+const ORDER_STATUS_ROWS = [
+  { id: 1, label: "Ordered", color: "#6366f1" },
+  { id: 2, label: "Accepted", color: "#0ea5e9" },
+  { id: 3, label: "Preparing", color: "#f59e0b" },
+  { id: 4, label: "Ready", color: "#14b8a6" },
+  { id: 5, label: "Served", color: "#8b5cf6" },
+  { id: 8, label: "Delivered", color: "#0ea5e9" },
+  { id: 6, label: "Completed", color: "#22c55e", legacy: true },
+  { id: 7, label: "Cancelled", color: "#ef4444" },
+];
+
+const rupees = (value) =>
+  `₹${(Number(value) || 0).toLocaleString("en-IN", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}`;
 
 // Chart chrome in the app's font and inks.
 const CHART_THEME = {
@@ -94,7 +115,14 @@ const tableLabels = (seatStatus) =>
 const Dashboard = () => {
   const navigate = useNavigate();
   const [{ data: auth }] = useAuth();
-  const { diningStatusList, getDiningStatus } = useGlobalMaster();
+  const {
+    diningStatusList,
+    getDiningStatus,
+    orderStatusList,
+    getOrderStatus,
+    paymentStatusList,
+    getPaymentStatus,
+  } = useGlobalMaster();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -104,6 +132,8 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (diningStatusList.data.length === 0) getDiningStatus();
+    if (orderStatusList.data.length === 0) getOrderStatus();
+    if (paymentStatusList.data.length === 0) getPaymentStatus();
   }, []);
 
   const loadDashboard = useCallback(async (params) => {
@@ -231,6 +261,31 @@ const Dashboard = () => {
     { label: "Hotels with bookings", value: totals.hotelsWithBookings || 0, of: totals.hotels || 0 },
   ];
 
+  const orders = data?.orders || {};
+  const orderCounts = orders.byStatus || {};
+  const orderTotal = Number(orders.total) || 0;
+  const recentOrders = orders.recent || [];
+  const orderStatusRows = ORDER_STATUS_ROWS.map((row) => ({
+    ...row,
+    count: Number(orderCounts[row.id]) || 0,
+  })).filter((row) => !row.legacy || row.count > 0);
+  // Order status names / colours from Settings, else the defaults above.
+  const orderStatusOf = (id) => {
+    const fallback = ORDER_STATUS_ROWS.find((row) => row.id === id);
+    const master = orderStatusList.data.find((status) => Number(status.status_id) === id);
+    const name = String(master?.name || "").trim();
+    return {
+      label:
+        name && !/^STATUS_\d+$/.test(name)
+          ? name.charAt(0) + name.slice(1).toLowerCase().replace(/_/g, " ")
+          : fallback?.label || "—",
+      color:
+        master?.color_code && master.color_code !== "#000000"
+          ? master.color_code
+          : fallback?.color || "#64748b",
+    };
+  };
+
   const openReservation = (reservation) => {
     const hotelId = reservation.hotel_id || reservation.hotel?.id;
     if (!hotelId) return;
@@ -247,6 +302,8 @@ const Dashboard = () => {
   const firstLoad = loading && !data;
   // Guests see their own bookings; restaurant-wide occupancy is for staff.
   const isGuest = data?.isAdmin === false;
+  // Staff → Orders board; guests → their "My orders" tab.
+  const ordersPath = isGuest ? "/book-table?tab=orders" : "/orders";
 
   return (
     <section className={`ui-page dash${firstLoad ? " is-loading" : ""}`}>
@@ -571,7 +628,7 @@ const Dashboard = () => {
                       >
                         <td className="is-strong">#{String(reservation.id).padStart(4, "0")}</td>
                         <td>{reservation.hotel?.hotel_name || "—"}</td>
-                        <td>
+                        <td className="dash-row__date">
                           {reservation.dining_date
                             ? dayjs(reservation.dining_date).format("D MMM YYYY")
                             : "—"}
@@ -603,6 +660,160 @@ const Dashboard = () => {
                             }}
                           >
                             {master?.name || status?.label || "—"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </div>
+
+      {/* ---------- Orders (staff: all orders; guests: their own) ---------- */}
+      <div className="dash__grid dash__grid--flip">
+        <article className="dash-card">
+          <header className="dash-card__head">
+            <div>
+              <h2>{isGuest ? "My orders" : "Orders"}</h2>
+              <p>
+                {isGuest ? "Food you ordered" : "Food orders placed"} · {rangeLabel}
+              </p>
+            </div>
+          </header>
+          <div className="dash-orders__totals">
+            <div>
+              <span>Orders</span>
+              <strong>{orderTotal}</strong>
+            </div>
+            <div>
+              <span>{isGuest ? "Spent" : "Revenue"}</span>
+              <strong>{rupees(orders.revenue)}</strong>
+              <small>{rupees(orders.paidRevenue)} paid</small>
+            </div>
+            <div>
+              <span>{isGuest ? "To pay" : "Unpaid"}</span>
+              <strong>{rupees(orders.unpaidAmount)}</strong>
+              <small>
+                {orders.unpaidCount || 0} {orders.unpaidCount === 1 ? "order" : "orders"}
+              </small>
+            </div>
+          </div>
+          {orderTotal === 0 ? (
+            <p className="dash-card__empty">{firstLoad ? "Loading…" : "No orders in this range."}</p>
+          ) : (
+            <ul className="dash-occupancy__facts dash-orders__status">
+              {orderStatusRows.map((row) => {
+                const { label, color } = orderStatusOf(row.id);
+                return (
+                  <li key={row.id} className={row.count ? "" : "is-zero"}>
+                    <div>
+                      <span>{label}</span>
+                      <strong>
+                        {row.count}
+                        <small> · {percent(row.count, orderTotal)}%</small>
+                      </strong>
+                    </div>
+                    <span
+                      className="dash-occupancy__meter"
+                      style={{
+                        "--fill": `${percent(row.count, orderTotal)}%`,
+                        "--meter": color,
+                      }}
+                      aria-hidden
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </article>
+
+        <article className="dash-card dash-card--wide dash-card--table">
+          <header className="dash-card__head">
+            <div>
+              <h2>{isGuest ? "My recent orders" : "Recent orders"}</h2>
+              <p>Latest orders in this range</p>
+            </div>
+            <button
+              type="button"
+              className="ui-btn ui-btn--ghost ui-btn--sm"
+              onClick={() => navigate(ordersPath)}
+            >
+              View all <ArrowForwardRounded fontSize="small" />
+            </button>
+          </header>
+          <div className="ui-table-wrap">
+            <table className="ui-table">
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Hotel</th>
+                  <th>Placed</th>
+                  <th className="is-center">Amount</th>
+                  <th>Payment</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {firstLoad ? (
+                  <tr className="ui-table__state">
+                    <td colSpan={6}>Loading…</td>
+                  </tr>
+                ) : recentOrders.length === 0 ? (
+                  <tr className="ui-table__state">
+                    <td colSpan={6}>No orders in this range.</td>
+                  </tr>
+                ) : (
+                  recentOrders.map((order) => {
+                    const status = orderStatusOf(order.order_status);
+                    return (
+                      <tr
+                        key={order.id}
+                        className="dash-row"
+                        tabIndex={0}
+                        onClick={() => navigate(ordersPath)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") navigate(ordersPath);
+                        }}
+                      >
+                        <td className="is-strong">
+                          {order.order_number || `#${String(order.id).padStart(4, "0")}`}
+                          <small className="dash-row__time">
+                            {order.reservation_id ? "Table order" : "No booking"}
+                          </small>
+                        </td>
+                        <td>{order.hotel?.hotel_name || "—"}</td>
+                        <td className="dash-row__date">
+                          {order.ordered_at ? dayjs(order.ordered_at).format("D MMM YYYY") : "—"}
+                          {order.ordered_at && (
+                            <small className="dash-row__time">
+                              {dayjs(order.ordered_at).format("h:mm A")}
+                            </small>
+                          )}
+                        </td>
+                        <td className="is-center">{rupees(order.total_amount)}</td>
+                        <td>
+                          <span
+                            className="ui-chip booking-status"
+                            style={{
+                              "--status-color": paymentColor(
+                                order.payment_status,
+                                paymentStatusList.data,
+                              ),
+                            }}
+                          >
+                            {paymentLabel(order.payment_status, paymentStatusList.data)}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className="ui-chip booking-status"
+                            style={{ "--status-color": status.color }}
+                          >
+                            {status.label}
                           </span>
                         </td>
                       </tr>

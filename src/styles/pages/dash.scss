@@ -441,8 +441,52 @@ $shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.04
     width: var(--fill);
     height: 100%;
     border-radius: inherit;
-    background: $brand;
+    background: var(--meter, $brand);
   }
+}
+
+/* ---------------- Orders card ---------------- */
+.dash-orders__totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: 10px 12px;
+    border-radius: $radius-md;
+    background: #f7f8fb;
+  }
+
+  span {
+    font-size: 12px;
+    font-weight: 600;
+    color: $ink-faint;
+  }
+
+  strong {
+    overflow: hidden;
+    font-size: 17px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: $ink;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    font-size: 11px;
+    font-weight: 600;
+    color: $ink-soft;
+  }
+}
+
+.dash-orders__status li.is-zero {
+  opacity: 0.5;
 }
 
 /* ---------------- Recent table ---------------- */
@@ -457,6 +501,11 @@ $shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.04
     background: $brand-soft;
     outline: none;
   }
+}
+
+// Date + time cell: "15 Oct 2026" on one line, the time under it.
+.dash-row__date {
+  white-space: nowrap;
 }
 
 .dash-row__time {
@@ -550,11 +599,42 @@ $shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.04
     min-height: 230px;
   }
 
+  // Phones: the two months stack (one above the other) instead of being cut
+  // off side by side; the popup scrolls vertically if it's taller than the screen.
   .dash__calendar {
     left: 0;
     right: auto;
+    width: calc(100vw - 32px);
     max-width: calc(100vw - 32px);
-    overflow-x: auto;
+    max-height: calc(100dvh - 160px);
+    padding: 10px 14px 16px;
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    .customDatePicker {
+      width: 100% !important;
+    }
+
+    .dual-calendar {
+      min-width: 0;
+      flex-direction: column;
+      gap: 14px;
+
+      .calendar {
+        width: 100%;
+      }
+    }
+
+    .week-header,
+    .day-list {
+      width: 100%;
+    }
+
+    .calendar-footer,
+    .calendar-footer-left,
+    .calendar-footer-right {
+      flex-wrap: wrap;
+    }
   }
 }
 

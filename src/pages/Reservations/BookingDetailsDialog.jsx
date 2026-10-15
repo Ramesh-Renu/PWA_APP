@@ -196,11 +196,13 @@ const BookingDetailsDialog = ({
           {orders.length === 0 ? (
             <p className="booking-details__none">No food ordered for this booking.</p>
           ) : (
-            // Active orders first and highlighted; cancelled ones last and faded.
+            // Latest order first (last in, first out); cancelled ones go
+            // last and faded, also latest first.
             [...orders]
               .sort(
                 (a, b) =>
-                  (a.order_status === ORDER_CANCELLED) - (b.order_status === ORDER_CANCELLED),
+                  (a.order_status === ORDER_CANCELLED) - (b.order_status === ORDER_CANCELLED) ||
+                  new Date(b.ordered_at || b.createdAt) - new Date(a.ordered_at || a.createdAt),
               )
               .map((order) => {
               const isCancelled = order.order_status === ORDER_CANCELLED;

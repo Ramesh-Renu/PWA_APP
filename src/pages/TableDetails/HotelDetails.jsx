@@ -23,8 +23,12 @@ const HotelDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [hotelData, setHotelData] = useState(location.state?.hotelData || null);
-  // Front desk booking for a guest (Reservations → New reservation).
-  const guest = location.state?.guest || null;
+  // Front desk booking for a guest: pre-filled from Reservations → New
+  // reservation, or typed here when staff start from the hotel page.
+  const [guestForm, setGuestForm] = useState({
+    name: location.state?.guest?.name || "",
+    mobile: location.state?.guest?.mobile || "",
+  });
   const [isEditable, setIsEditable] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   // Booking slot (Zomato-style picker): date, guests, meal, time.
@@ -42,6 +46,18 @@ const HotelDetails = () => {
   const [floorFreeSeats, setFloorFreeSeats] = useState(null);
   const [{ data: auth }] = useAuth();
   const isAdmin = auth?.details?.role === "Admin";
+  // Staff booking a table: the booking is for a guest (name required,
+  // mobile optional) — never saved under the staff member's own name.
+  const askGuest = isAdmin && isBooking && !isEditable;
+  const guestName = guestForm.name.trim();
+  const guestMobileError =
+    guestForm.mobile && guestForm.mobile.length !== 10 ? "Enter a 10-digit mobile number" : "";
+  const guest = askGuest
+    ? guestName && !guestMobileError
+      ? { name: guestName, mobile: guestForm.mobile || null }
+      : null
+    : location.state?.guest || null;
+  const guestMissing = askGuest && !guest;
   // Breadcrumb points back to the page this hotel was opened from (callers
   // pass state.from); direct links fall back to the role's hotel list.
   const backTo = location.state?.from?.path
@@ -195,14 +211,54 @@ const HotelDetails = () => {
 
       {!showMenuList && (
         <>
-          {guest && isBooking && !isEditable && (
-            <p className="hd-guest-banner" role="status">
-              <PersonOutlineRounded fontSize="small" aria-hidden />
-              <span>
-                Booking for <strong>{guest.name}</strong>
-                {guest.mobile ? ` · ${guest.mobile}` : ""}
-              </span>
-            </p>
+          {askGuest && (
+            <section className="hd-guest-form" aria-label="Guest details">
+              <h3 className="hd-guest-form__title">
+                <PersonOutlineRounded fontSize="small" aria-hidden />
+                Booking for
+              </h3>
+              <div className="hd-guest-form__fields">
+                <label className="hd-guest-form__field">
+                  <span>
+                    Guest name <sup>*</sup>
+                  </span>
+                  <input
+                    className="hotel-form__input"
+                    value={guestForm.name}
+                    maxLength={100}
+                    onChange={(event) =>
+                      setGuestForm((current) => ({ ...current, name: event.target.value }))
+                    }
+                    placeholder="e.g. Priya"
+                    autoComplete="off"
+                    aria-invalid={!guestName}
+                  />
+                </label>
+                <label className="hd-guest-form__field">
+                  <span>
+                    Mobile <span className="cx-optional">optional</span>
+                  </span>
+                  <input
+                    className="hotel-form__input"
+                    type="tel"
+                    inputMode="numeric"
+                    value={guestForm.mobile}
+                    onChange={(event) =>
+                      setGuestForm((current) => ({
+                        ...current,
+                        mobile: event.target.value.replace(/\D/g, "").slice(0, 10),
+                      }))
+                    }
+                    placeholder="10-digit number"
+                    autoComplete="off"
+                    aria-invalid={Boolean(guestMobileError)}
+                  />
+                  {guestMobileError && (
+                    <small className="hotel-form__error">{guestMobileError}</small>
+                  )}
+                </label>
+              </div>
+            </section>
           )}
           {isBooking && !isEditable && (
             <SlotPicker
@@ -233,6 +289,7 @@ const HotelDetails = () => {
               }
               onFloorFreeSeats={setFloorFreeSeats}
               guest={guest}
+              guestMissing={guestMissing}
             />
           )}
         </>

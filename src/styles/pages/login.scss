@@ -196,6 +196,14 @@
   background: #edf5f1;
 }
 
+.tableflow-login__role-toggle--single {
+  grid-template-columns: 1fr;
+}
+
+.tableflow-login__role-toggle--single button {
+  cursor: default;
+}
+
 .tableflow-login__role-toggle button {
   min-height: 50px;
   display: inline-flex;

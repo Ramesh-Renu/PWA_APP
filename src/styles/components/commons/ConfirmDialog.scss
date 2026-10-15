@@ -1,6 +1,15 @@
 // Shared confirm popup (components/common/ConfirmDialog.jsx). Buttons reuse
 // .hotel-form__btn from pages/hotelform.scss.
 
+// Stack above a parent react-bootstrap modal (z-index 1055 / backdrop 1050).
+.modal-backdrop.confirm-dialog-backdrop {
+  z-index: 1060;
+}
+
+.modal.confirm-dialog-modal {
+  z-index: 1065;
+}
+
 .modal-dialog.confirm-dialog {
   width: calc(100% - 32px);
   max-width: 400px;

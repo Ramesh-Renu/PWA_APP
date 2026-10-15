@@ -15,6 +15,8 @@ import {
   updateArea,
 } from "services";
 import AppSelect from "components/common/AppSelect";
+import ClampText from "components/common/ClampText";
+import useIncrementalRows from "hooks/useIncrementalRows";
 
 const emptyForm = { name: "", location_id: "", description: "" };
 
@@ -78,6 +80,7 @@ const Areas = () => {
       return matchesSearch && matchesLocation;
     });
   }, [areas, search, locationFilter, locations]);
+  const { shown, hasMore, scrollRef, sentinelRef } = useIncrementalRows(visible);
 
   // An area name can exist only once.
   const duplicateName = useMemo(() => {
@@ -224,7 +227,7 @@ const Areas = () => {
         </span>
       </div>
 
-      <div className="ui-panel ui-table-wrap">
+      <div ref={scrollRef} className="ui-panel ui-table-wrap ui-table-wrap--scroll">
         <table className="ui-table">
           <thead>
             <tr>
@@ -245,11 +248,13 @@ const Areas = () => {
                 <td colSpan={5}>No areas found. Add one or adjust your search.</td>
               </tr>
             ) : (
-              visible.map((area) => (
+              shown.map((area) => (
                 <tr key={area.id}>
                   <td className="is-strong">{area.name}</td>
                   <td>{locationName(area.location_id)}</td>
-                  <td className="is-muted">{area.description || "—"}</td>
+                  <td className="is-muted ui-table__desc">
+                    <ClampText text={area.description} />
+                  </td>
                   <td className="is-center">{Number(area.hotel_count) || 0}</td>
                   <td className="is-right">
                     <button
@@ -273,6 +278,13 @@ const Areas = () => {
                   </td>
                 </tr>
               ))
+            )}
+            {!loading && hasMore && (
+              <tr className="ui-table__more">
+                <td ref={sentinelRef} colSpan={5}>
+                  Loading more…
+                </td>
+              </tr>
             )}
           </tbody>
         </table>

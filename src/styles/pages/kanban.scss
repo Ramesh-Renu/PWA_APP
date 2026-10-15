@@ -372,8 +372,112 @@ button.kanban-card__title:hover {
     min-width: 0;
   }
 
-  span:first-child {
+  span:first-child,
+  > .is-wide {
     grid-column: 1 / -1;
+  }
+}
+
+// Order card (table order): "Booking 15 Oct, 06:15 PM" — and, before the
+// kitchen may start, "Kitchen from 6:00 PM" in amber.
+.kanban-card__booking-time {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  font-size: 12px;
+  color: #4f5368;
+
+  svg {
+    font-size: 15px;
+    color: #10b981;
+  }
+
+  strong {
+    font-weight: 700;
+    color: #047857;
+  }
+
+  small {
+    margin-left: auto;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: #fffbeb;
+    font-size: 11px;
+    font-weight: 700;
+    color: #b45309;
+  }
+}
+
+// Reservation card details: dining date | floor, then tables | seats. The
+// right column takes only what it needs, so the date fits on one line.
+.kanban-card__meta--booking {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+
+  > span {
+    white-space: nowrap;
+  }
+
+  > span.kanban-card__tables {
+    white-space: normal;
+  }
+
+  // Reserved-for date/time: bold green text (no background), so it reads
+  // differently from the plain dark "Booked" time above.
+  > span.kanban-card__dining {
+    font-weight: 700;
+    color: #047857;
+
+    svg {
+      color: #10b981;
+    }
+  }
+}
+
+// Reservation card: booker (name over mobile) left, "Booked" + time right.
+.kanban-card__meta > .kanban-card__booked {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed #e4e3ef;
+}
+
+.kanban-card__booked-by,
+.kanban-card__booked-at {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+
+  strong {
+    font-size: 13px;
+    font-weight: 700;
+    color: #292d46;
+  }
+
+  small {
+    font-size: 11px;
+    color: #8a8fa6;
+  }
+}
+
+.kanban-card__booked-by strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kanban-card__booked-at {
+  flex-shrink: 0;
+  align-items: flex-end;
+  text-align: right;
+
+  strong {
+    font-size: 12px;
+    white-space: nowrap;
   }
 }
 
@@ -557,6 +661,12 @@ ul.kanban-card__items > li:has(.kanban-card__item-time, .kanban-card__prepared) 
     grid-column: 2;
     grid-row: 1;
     justify-self: end;
+  }
+
+  // No prepared checkbox on this row (Served / Delivered cards): the dish
+  // name uses the full width instead of leaving the timer's column empty.
+  &:not(:has(.kanban-card__prepared)) .kanban-card__item-name {
+    grid-column: 1 / -1;
   }
 
   .kanban-card__item-cook {
@@ -1034,10 +1144,15 @@ ul.kanban-card__items > li.is-ready .kanban-card__item-name {
 
 /* ---------------- Reservation: "Booking #" opens details ---------------- */
 .kanban-card__title--link {
+  // "Booking #132" stays on one line; the hotel name beside it shrinks
+  // and ends with "…" instead.
+  flex-shrink: 0;
   padding: 0;
   border: 0;
   background: none;
   text-align: left;
+  white-space: nowrap;
+  overflow-wrap: normal;
   cursor: pointer;
 
   &:hover {
@@ -1251,15 +1366,26 @@ ul.kanban-card__items > li.is-ready .kanban-card__item-name {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
+  margin-top: 8px;
 
   &:empty {
     display: none;
   }
 
-  // "+ Add server / cleaner" buttons fill their own cell.
+  // The row carries the top spacing, so the person chip and the
+  // "+ Add server / cleaner" button are the same height and line up.
+  > .kanban-card__staff-person {
+    margin-top: 0;
+  }
+
+  // "+ Add server / cleaner" buttons fill their own cell, chip-shaped.
   > .kanban-card__cook-assign {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     margin: 0;
+    border-radius: 10px;
   }
 }
 
@@ -1576,10 +1702,29 @@ ul.kanban-card__items > li.is-ready .kanban-card__item-name {
   cursor: pointer;
 }
 
+// Phones: one-screen-tall columns (--kanban-fit-height, KanbanBoard.jsx).
+// The page scrolls first, until the columns dock under the top bar
+// (.is-docked); then the cards scroll inside the column under its heading.
 @media (max-width: 767px) {
   .kanban-column {
     flex-basis: 85vw;
-    max-height: none;
+    min-height: var(--kanban-fit-height, calc(100dvh - 64px));
+    max-height: var(--kanban-fit-height, calc(100dvh - 64px));
+  }
+
+  .kanban-column__header {
+    flex-shrink: 0;
+  }
+
+  .kanban-column__body {
+    flex: 1;
+    min-height: 0;
+    // Not docked yet: a swipe on the cards scrolls the page instead.
+    overflow-y: hidden;
+  }
+
+  .kanban-board.is-docked .kanban-column__body {
+    overflow-y: auto;
   }
 }
 

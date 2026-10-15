@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   AiOutlineMail,
   AiOutlineDashboard,
-  AiOutlineShop,
   AiOutlineUser,
   AiOutlinePhone,
   AiOutlineEnvironment,
@@ -36,7 +35,6 @@ export default function Login() {
   const { showToast } = useToast();
   const [{ data }, { setAuth, getAuth, getUserInfoData  }] = useAuth();
   const [mobile, setMobile] = useState("");
-  const [role, setRole] = useState("guest");
   const [mobileError, setMobileError] = useState("");
   const navigate = useNavigate();
   const [otpTimer, setOtpTimer] = useState(0);
@@ -133,11 +131,10 @@ export default function Login() {
     setInProgress(true);
 
     try {
-      // Guest tab → signed in as a User (even Admins); Restaurant tab → Admins only.
+      // Same OTP login for Guests and Admins; the backend returns the account's role.
       const response = await getAuth({
         mobilenumber: mobile,
         otp: getOTPnumber,
-        loginAs: role,
       });
 
       if (!response?.data?.success) {
@@ -154,9 +151,9 @@ export default function Login() {
         message: response.data.message,
         variant: "success",
       });
-      console.log("response", response.data.role);
-      // navigate("/home", { replace: true });
-      navigate(response.data.role =="Admin" ? "/dashboard" : "/book-table", { replace: true });
+      // ADMIN → Restaurant Dashboard, USER → Guest Dashboard.
+      const isAdmin = String(response.data.role || "").toLowerCase() === "admin";
+      navigate(isAdmin ? "/dashboard" : "/book-table", { replace: true });
     } catch (error) {
       showToast({
         title: error?.response?.status === 403 ? "Not allowed" : undefined,
@@ -280,24 +277,12 @@ export default function Login() {
           </header>
           {!createForm && (
             <div
-              className="tableflow-login__role-toggle"
+              className="tableflow-login__role-toggle tableflow-login__role-toggle--single"
               aria-label="Account role"
             >
-              <button
-                type="button"
-                className={role === "guest" ? "active" : ""}
-                onClick={() => setRole("guest")}
-              >
+              <button type="button" className="active">
                 <AiOutlineUser />
                 Guest
-              </button>
-              <button
-                type="button"
-                className={role === "restaurant" ? "active" : ""}
-                onClick={() => setRole("restaurant")}
-              >
-                <AiOutlineShop />
-                Restaurant
               </button>
             </div>
           )}

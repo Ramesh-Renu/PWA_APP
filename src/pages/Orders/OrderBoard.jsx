@@ -4,6 +4,7 @@ import {
   AddRounded,
   CheckCircleOutlineRounded,
   EditRounded,
+  EventAvailableOutlined,
   RefreshRounded,
   SearchRounded,
   TimerOutlined,
@@ -80,6 +81,23 @@ const ITEM_ORDERED = 1;
 const ITEM_READY = 3;
 // The kitchen ticks dishes as prepared while it works on the order.
 const READY = 4;
+
+// Table orders reach the kitchen (Preparing and later) only from 15 minutes
+// before the booking time — same rule as the API (updateOrderStatus).
+const KITCHEN_LEAD_MINUTES = 15;
+const KITCHEN_STAGES = [PREPARING, READY, SERVED];
+/** Booking time of a table order and when its kitchen stages open; null without a booking. */
+const kitchenDue = (order) => {
+  const at = order?.reservation_id ? order.reservation?.dining_date : null;
+  if (!at || !dayjs(at).isValid()) return null;
+  const dining = dayjs(at);
+  const opens = dining.subtract(KITCHEN_LEAD_MINUTES, "minute");
+  return {
+    dining,
+    opens,
+    waiting: !KITCHEN_STAGES.includes(order.order_status) && dayjs().isBefore(opens),
+  };
+};
 // Dishes can be ticked once cooking starts (Accepted shows them locked).
 const PREPARED_EDITABLE = [PREPARING, READY];
 // While some (not all) dishes are prepared, a ticket with just those dishes
@@ -575,6 +593,17 @@ const OrderBoard = () => {
       });
       return;
     }
+    // Table order before its time: Preparing / Ready / Served open 15 minutes
+    // before the booking (it can still be accepted or cancelled).
+    const due = kitchenDue(order);
+    if (KITCHEN_STAGES.includes(column.id) && due?.waiting) {
+      showToast({
+        title: `Booking #${order.reservation_id} isn't due yet`,
+        message: `The table is booked for ${due.dining.format("D MMM, h:mm A")}. This order can move to ${column.name} from ${due.opens.format("h:mm A")} (${KITCHEN_LEAD_MINUTES} minutes before).`,
+        variant: "warning",
+      });
+      return;
+    }
     // Accepting just changes the stage; cooks are chosen per dish afterwards
     // with the "+ Cook" chips on the card.
     // Table orders are served, orders without a booking are delivered.
@@ -869,8 +898,27 @@ const OrderBoard = () => {
         </div>
         <div className="kanban-card__meta kanban-card__meta--split">
           <span>{order.hotel?.hotel_name || "-"}</span>
-          <span>{dayjs(order.createdAt).format("DD MMM, hh:mm A")}</span>
+          <span title="Ordered at">{dayjs(order.createdAt).format("DD MMM, hh:mm A")}</span>
         </div>
+        {/* Table order: the booking time, and when the kitchen may start. */}
+        {(() => {
+          const due = kitchenDue(order);
+          if (!due) return null;
+          return (
+            <div
+              className={`kanban-card__booking-time${due.waiting ? " is-waiting" : ""}`}
+              title={`Can move to Preparing from ${due.opens.format("h:mm A")} (${KITCHEN_LEAD_MINUTES} min before the booking)`}
+            >
+              <EventAvailableOutlined fontSize="inherit" aria-hidden />
+              <span>
+                Booking <strong>{due.dining.format("DD MMM, hh:mm A")}</strong>
+              </span>
+              {due.waiting && (
+                <small>Kitchen from {due.opens.format("h:mm A")}</small>
+              )}
+            </div>
+          );
+        })()}
         {items.length > 0 && (
           <ul className="kanban-card__items">
             {items.slice(0, VISIBLE_ITEMS).map((item) => {

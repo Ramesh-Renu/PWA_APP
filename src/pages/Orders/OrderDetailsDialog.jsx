@@ -287,7 +287,7 @@ const OrderDetailsDialog = ({
                 return (
                 <Fragment key={line.menu_id}>
                 <li>
-                  <span className="order-lines__name">
+                  <span className={`order-lines__name${readOnly ? "" : " has-notes-btn"}`}>
                     <strong>{line.name}</strong>
                     <small>{money(line.unit_price)} each</small>
                     <ItemNote text={line.notes} title={line.name} />

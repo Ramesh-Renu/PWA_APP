@@ -1445,6 +1445,26 @@ $bottom-nav-height: 64px;
   }
 }
 
+// The button sits top-right of the dish name, beside name / price / note.
+.order-lines__name.has-notes-btn {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 8px;
+  align-items: start;
+
+  > * {
+    grid-column: 1;
+  }
+
+  > .order-lines__notes-btn {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    justify-self: end;
+    margin-top: 0;
+    white-space: nowrap;
+  }
+}
+
 .order-lines li.order-lines__notes-editor {
   display: block;
   margin: 0 0 8px;

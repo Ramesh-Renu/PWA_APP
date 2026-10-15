@@ -1,9 +1,10 @@
-import React, { useState, useEffect, Fragment, useMemo } from "react";
+import React, { useState, useEffect, Fragment, useMemo, useRef } from "react";
 import {
   AddRounded,
   CheckRounded,
   DeleteOutlineRounded,
   EventSeatOutlined,
+  ScheduleRounded,
   RemoveRounded,
   TableRestaurantOutlined,
 } from "@mui/icons-material";
@@ -26,6 +27,7 @@ import dayjs from "dayjs";
 import { useGlobalContext } from "store/context/GlobalProvider";
 import useGlobalMaster from "hooks/useGlobalMaster";
 import MenuOrderPopup from "pages/MenuOrderPopup/MenuOrderPopup";
+import { onReservationsChanged } from "utils/orderEvents";
 
 // Used when the seat status master has no row/colour for a status
 // (matches SEAT_STATUS in the API: utils/seatStatus.js).
@@ -51,7 +53,17 @@ const tableLabel = (table) =>
 // onFloorFreeSeats(n): told the free seats of the floor on show (booking
 // mode), so the Guests picker can offer up to that many.
 // guest (optional): { name, mobile } when staff book for a phone / walk-in guest.
-const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFreeSeats, guest }) => {
+// guestMissing: staff booking whose guest name isn't filled in yet — Book now waits.
+const TableDetails = ({
+  data,
+  onChange,
+  isEditable,
+  isBooking,
+  slot,
+  onFloorFreeSeats,
+  guest,
+  guestMissing = false,
+}) => {
   const slotActive = Boolean(isBooking && slot?.date && slot?.time);
   const [{ data: auth }, { setAuth }] = useAuth();
   const { reservationData, dispatch } = useGlobalContext();
@@ -89,8 +101,10 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
   }, [data]);
 
   // Refreshes only the floor plan (shown as an overlay on that section).
-  const fetchHotelbyId = async (hotelData) => {
-    setRefreshing(true);
+  // live: a background reload because a booking changed elsewhere — no
+  // overlay, and seats the user already picked stay picked if still free.
+  const fetchHotelbyId = async (hotelData, { live = false } = {}) => {
+    if (!live) setRefreshing(true);
     try {
       const response = await getTablebyid({
         hotel_id: hotelData.id,
@@ -98,7 +112,33 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
       });
       // Optionally, refresh the hotel list or provide user feedback here
       if (response) {
-        setFloorsState(response.data[0].floors);
+        const nextFloors = response.data[0].floors;
+        if (!live) {
+          setFloorsState(nextFloors);
+        } else {
+          setFloorsState((previous) => {
+            const picked = new Set();
+            (previous || []).forEach((floor) =>
+              (floor.tables || []).forEach((table) =>
+                (table.seats || []).forEach((seat) => {
+                  if (seat.is_booking) picked.add(seat.seat_id);
+                }),
+              ),
+            );
+            if (!picked.size) return nextFloors;
+            return nextFloors.map((floor) => ({
+              ...floor,
+              tables: (floor.tables || []).map((table) => ({
+                ...table,
+                seats: (table.seats || []).map((seat) =>
+                  picked.has(seat.seat_id) && seat.status === 4
+                    ? { ...seat, is_booking: true }
+                    : seat,
+                ),
+              })),
+            }));
+          });
+        }
       }
     } catch (error) {
       console.error("Error creating hotel:", error);
@@ -121,6 +161,24 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
   useEffect(() => {
     fetchHotelbyId(data);
   }, [slot?.date, slot?.time]);
+
+  // Live floor plan: reload when a booking changes in another tab (e.g. a
+  // status moved on the Reservations board) and when this tab comes back
+  // into view. The ref keeps the latest slot / hotel for the listeners.
+  const liveReloadRef = useRef(null);
+  liveReloadRef.current = () => fetchHotelbyId(data, { live: true });
+  useEffect(() => {
+    const reload = () => liveReloadRef.current?.();
+    const unsubscribe = onReservationsChanged(reload);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") reload();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      unsubscribe();
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
 
   useEffect(() => {
     loadMenus();
@@ -795,6 +853,35 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
       );
   }, [guestMode, floors, guests, selectedFloorIndex]);
 
+  // When a table's occupied seats are expected free: the latest end of the
+  // bookings holding them (held_until from the API: dining time + 60 min).
+  // Seats of different bookings can end at different times, so this is one
+  // entry per end time, earliest first: [{ label, past, seats: [1, 3] }].
+  // null when nothing on the table is taken by a booking.
+  const endTimeLabel = (time) =>
+    time.format(time.isSame(slotActive ? dayjs(slot.date) : dayjs(), "day") ? "h:mm A" : "D MMM, h:mm A");
+
+  const tableFreeAt = (table) => {
+    const groups = new Map();
+    (table.seats || []).forEach((seat) => {
+      if (seat.status === 4 || seat.is_new || !seat.held_until) return;
+      const time = dayjs(seat.held_until);
+      if (!time.isValid()) return;
+      const key = time.valueOf();
+      if (!groups.has(key)) groups.set(key, { time, seats: [] });
+      groups.get(key).seats.push(seat.seat_number);
+    });
+    if (!groups.size) return null;
+    return [...groups.values()]
+      .sort((a, b) => a.time.valueOf() - b.time.valueOf())
+      .map(({ time, seats }) => ({
+        label: endTimeLabel(time),
+        // Running over its time (e.g. guests still seated).
+        past: time.isBefore(dayjs()),
+        seats: seats.sort((a, b) => Number(a) - Number(b)),
+      }));
+  };
+
   const tableFit = (table) => {
     if (!guestPlan) return { ok: true };
     const free = freeSeatsOf(table).length;
@@ -999,6 +1086,11 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
         : isMine
           ? `${meta.name} by you — click to cancel`
           : meta.name;
+    // Taken seat: when its booking ends (hover / screen readers).
+    const seatEnds =
+      state === "taken" && chair.held_until && dayjs(chair.held_until).isValid()
+        ? endTimeLabel(dayjs(chair.held_until))
+        : null;
 
     return (
       <button
@@ -1006,8 +1098,8 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
         type="button"
         className={`fp-seat fp-seat--${state}${isMine ? " is-mine" : ""}`}
         style={{ "--seat-color": meta.color }}
-        title={`Seat ${chair.seat_number} · ${label}`}
-        aria-label={`Seat ${chair.seat_number}, ${label}`}
+        title={`Seat ${chair.seat_number} · ${label}${seatEnds ? ` · ends ${seatEnds}` : ""}`}
+        aria-label={`Seat ${chair.seat_number}, ${label}${seatEnds ? `, ends ${seatEnds}` : ""}`}
         aria-pressed={Boolean(chair.is_booking)}
         disabled={!canAccessEdit}
         onClick={() => handleSeatClick(table, chair)}
@@ -1101,6 +1193,22 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
               ))}
             </ul>
             <p className="fp-hint">{modeHint}</p>
+            {(floorToShow?.tables || []).some((table) => tableFreeAt(table)) && (
+              <p className="fp-grace-note" role="note">
+                <span className="fp-grace-note__mark" aria-hidden>*</span>
+                <ScheduleRounded fontSize="inherit" aria-hidden />
+                {/* Full wording on wider screens; one short line on phones so
+                    the sticky floor header leaves room for the tables. */}
+                <span className="fp-grace-note__full">
+                  <strong>End Time</strong> on busy tables is when their booking ends.
+                  Allow a <strong>15-minute grace period</strong> before and after
+                  that time (±15 min).
+                </span>
+                <span className="fp-grace-note__short">
+                  <strong>End Time</strong> = booking ends · allow <strong>±15 min</strong>
+                </span>
+              </p>
+            )}
           </div>
         </div>
 
@@ -1162,6 +1270,7 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
 
               const total = chairs.filter((chair) => !chair.is_new).length;
               const free = chairs.filter((chair) => chair.status === 4 && !chair.is_new).length;
+              const freeAt = tableFreeAt(table);
               const selectedCount = chairs.filter((chair) => chair.is_booking).length;
               const hasNewSeats = chairs.some((chair) => chair.is_new === true);
               const eligibleSeats = getEligibleSeats(table);
@@ -1305,6 +1414,28 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
                     )}
                   </div>
 
+                  {/* Seats from different bookings: each one's end time,
+                      with the seat numbers it covers. */}
+                  {freeAt?.length > 1 && (
+                    <ul
+                      className="fp-table__ends"
+                      title="When each booking's time ends — allow ±15 minutes"
+                    >
+                      {freeAt.map((end) => (
+                        <li key={end.label} className={end.past ? "is-overdue" : undefined}>
+                          <span className="fp-table__ends-seats">
+                            {end.seats.length === 1 ? "Seat" : "Seats"} {end.seats.join(", ")}
+                          </span>
+                          <span className="fp-table__free-at">
+                            <ScheduleRounded fontSize="inherit" aria-hidden />
+                            End Time: {end.label}
+                            <sup className="fp-table__free-at-mark" aria-hidden>*</sup>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
                   <footer className="fp-table__foot">
                     <span className="fp-table__count">
                       <EventSeatOutlined fontSize="inherit" />
@@ -1313,6 +1444,19 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
                         <strong className="fp-table__picked">· {selectedCount} selected</strong>
                       )}
                     </span>
+
+                    {/* Occupied seats, one booking end time: beside the count. */}
+                    {freeAt?.length === 1 && (
+                      <span
+                        className={`fp-table__free-at${freeAt[0].past ? " is-overdue" : ""}`}
+                        title="When the current booking's time ends — allow ±15 minutes"
+                      >
+                        <ScheduleRounded fontSize="inherit" aria-hidden />
+                        End Time: {freeAt[0].label}
+                        {/* Points to the ±15 min note under the legend. */}
+                        <sup className="fp-table__free-at-mark" aria-hidden>*</sup>
+                      </span>
+                    )}
 
                     {showSeatEditor && (
                       <div className="fp-seat-editor">
@@ -1366,7 +1510,9 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
                 ` · ${dayjs(slot.date).format("ddd, D MMM")} at ${dayjs(`2000-01-01T${slot.time}`).format("h:mm A")}`}
             </strong>
             <span>
-              {fewSeats
+              {guestMissing
+                ? "Enter the guest's name above to book"
+                : fewSeats
                 ? `Select ${slot.guests - seletedSeatCount} more ${slot.guests - seletedSeatCount === 1 ? "seat" : "seats"} for ${slot.guests} guests`
                 : `Floor ${floorToShow?.floor_number} · ${selectedTables
                     .map((table) => `${tableLabel(table)} (${table.count})`)
@@ -1381,8 +1527,14 @@ const TableDetails = ({ data, onChange, isEditable, isBooking, slot, onFloorFree
               type="button"
               className="fp-btn fp-btn--primary"
               onClick={() => createBookingTableinSeats(data)}
-              disabled={getloading || fewSeats}
-              title={fewSeats ? `Select a seat for each of the ${slot.guests} guests` : undefined}
+              disabled={getloading || fewSeats || guestMissing}
+              title={
+                guestMissing
+                  ? "Enter the guest's name first"
+                  : fewSeats
+                    ? `Select a seat for each of the ${slot.guests} guests`
+                    : undefined
+              }
             >
               Book now
             </button>

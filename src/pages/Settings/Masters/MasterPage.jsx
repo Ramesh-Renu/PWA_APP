@@ -8,6 +8,7 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import PopupModal from "components/common/PopupModal";
 import ConfirmDialog from "components/common/ConfirmDialog";
 import useGlobalMaster from "hooks/useGlobalMaster";
+import useIncrementalRows from "hooks/useIncrementalRows";
 import { getApiErrorMessage } from "utils/apiError";
 import { MASTERS } from "./masterConfigs";
 import SettingsBackLink from "pages/Settings/SettingsBackLink";
@@ -76,6 +77,7 @@ const MasterPage = () => {
         .some((value) => String(value).toLowerCase().includes(query)),
     );
   }, [rows, search, config]);
+  const { shown, hasMore, scrollRef, sentinelRef } = useIncrementalRows(visible);
 
   if (!config) return <Navigate to="/settings" replace />;
 
@@ -227,7 +229,7 @@ const MasterPage = () => {
         </span>
       </div>
 
-      <div className="ui-panel ui-table-wrap">
+      <div ref={scrollRef} className="ui-panel ui-table-wrap ui-table-wrap--scroll">
         <table className="ui-table">
           <thead>
             <tr>
@@ -249,12 +251,17 @@ const MasterPage = () => {
                 <td colSpan={columnCount}>Nothing found.</td>
               </tr>
             ) : (
-              visible.map((row) => (
+              shown.map((row) => (
                 <tr key={row.id}>
                   {config.columns.map((column) => (
                     <td
                       key={column.label}
-                      className={[column.strong && "is-strong", column.muted && "is-muted", column.align && `is-${column.align}`]
+                      className={[
+                        column.strong && "is-strong",
+                        column.muted && "is-muted",
+                        column.desc && "ui-table__desc",
+                        column.align && `is-${column.align}`,
+                      ]
                         .filter(Boolean)
                         .join(" ") || undefined}
                     >
@@ -285,6 +292,13 @@ const MasterPage = () => {
                   </td>
                 </tr>
               ))
+            )}
+            {!loading && hasMore && (
+              <tr className="ui-table__more">
+                <td ref={sentinelRef} colSpan={columnCount}>
+                  Loading more…
+                </td>
+              </tr>
             )}
           </tbody>
         </table>

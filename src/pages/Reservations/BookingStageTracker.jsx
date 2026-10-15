@@ -15,6 +15,10 @@ const STATUS = {
 };
 const FLOW = [STATUS.CONFIRMED, STATUS.SEATED, STATUS.SERVING, STATUS.CLEANING, STATUS.COMPLETED];
 const FINAL = [STATUS.COMPLETED, STATUS.CANCELLED];
+// Stages where the guests are at the table; the total time counts from the first.
+const DINING = [STATUS.SEATED, STATUS.SERVING, STATUS.CLEANING];
+// Before the guests arrive: these stages show only when they were entered.
+const PRE_DINING = [STATUS.PENDING, STATUS.CONFIRMED];
 const DEFAULT_STAGES = {
   [STATUS.PENDING]: { name: "Pending", color: "#f59e0b" },
   [STATUS.CONFIRMED]: { name: "Confirmed", color: "#0ea5e9" },
@@ -99,7 +103,9 @@ const BookingStageTracker = ({ reservation, columns = [] }) => {
   }
   const currentIndex = steps.indexOf(current);
 
-  const startedAt = history[0]?.at;
+  // The clock starts when the guests are seated (or, if Seated was skipped,
+  // at the first dining stage after it) — not at booking / confirmation.
+  const startedAt = history.find((entry) => DINING.includes(entry.status))?.at;
   const endedAt = finished ? history[history.length - 1]?.at : now;
   const total = startedAt ? Math.max(0, endedAt - startedAt) : 0;
 
@@ -146,8 +152,11 @@ const BookingStageTracker = ({ reservation, columns = [] }) => {
                     <span className="stage-tracker__time" title={dayjs(enteredAt.get(id)).format("D MMM YYYY, h:mm:ss A")}>
                       {when(enteredAt.get(id))}
                     </span>
-                    {/* Final stage just marks the end; others show time spent. */}
-                    {state !== "final" && duration !== undefined && (
+                    {/* Final stage just marks the end; dining stages show time
+                        spent. Before seating (Pending / Confirmed) only the
+                        time the stage was entered is shown — the clock starts
+                        at Seated. */}
+                    {state !== "final" && duration !== undefined && !PRE_DINING.includes(id) && (
                       <span className={`stage-tracker__duration${isCurrent ? " is-live" : ""}`}>
                         {isCurrent && <span className="stage-tracker__pulse" aria-hidden />}
                         {formatElapsed(duration)}
@@ -168,13 +177,15 @@ const BookingStageTracker = ({ reservation, columns = [] }) => {
           <TimerOutlined aria-hidden />
           <span>
             <small>{finished ? "Total time" : "Time so far"}</small>
-            <strong>{formatElapsed(total)}</strong>
+            <strong>{startedAt ? formatElapsed(total) : "—"}</strong>
             <small>
-              {finished
-                ? `Stopped ${when(endedAt)}`
-                : startedAt
-                  ? `Since ${when(startedAt)}`
-                  : ""}
+              {!startedAt
+                ? finished
+                  ? "Never seated"
+                  : "Starts when the guests are seated"
+                : finished
+                  ? `Seated ${when(startedAt)} · stopped ${when(endedAt)}`
+                  : `Since seated ${when(startedAt)}`}
             </small>
           </span>
         </div>

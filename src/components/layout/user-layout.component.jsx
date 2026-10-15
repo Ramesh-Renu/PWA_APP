@@ -13,6 +13,7 @@ const UserLayout = () => {
   const [{ data }, { getUserInfoData, logoutUser }] = useAuth();
   const token = localStorage.getItem("token");
   const location = useLocation();
+  const isDashboard = location.pathname === "/dashboard";
 
   // Count this device for the admin install total whenever the installed
   // app opens (any page; at most once a day).
@@ -52,17 +53,14 @@ const UserLayout = () => {
           >
             <ThemeToggle />
           </div> */}
-          {/* Admins: how many users installed the app, at the top of every page. */}
-          {data?.details?.role === "Admin" && (
+          {/* Dashboard only: admins see how many users installed the app, and
+              everyone gets the install hint (hidden once installed). */}
+          {isDashboard && data?.details?.role === "Admin" && (
             <div className="admin-installs-bar">
               <AppInstallsBadge />
             </div>
           )}
-          {/* Install hint only on the home page (Dashboard for admins, Book a
-              table for customers); hidden once installed. */}
-          {location.pathname === (data?.details?.role === "Admin" ? "/dashboard" : "/book-table") && (
-            <InstallAppBanner />
-          )}
+          {isDashboard && <InstallAppBanner />}
           <Outlet />
         </main>
       </div>

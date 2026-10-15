@@ -28,6 +28,17 @@
       margin: 0;
     }
   }
+  .bg-info {
+    background-color: var(--color-white) !important;
+    border-radius: 16px;
+    .toast-body-container-icon {
+      background-color: #e0f2fe !important;
+      color: #0369a1;
+      padding: 8px 10px;
+      border-radius: 4px;
+      margin: 0;
+    }
+  }
   .bg-warning {
     background-color: var(--color-white) !important;
     border-radius: 16px;
@@ -75,6 +86,19 @@
           }
         }
       }
+    }
+  }
+}
+
+// Phones: the toast spans the screen width (Bootstrap's is a fixed 350px).
+@media (max-width: 480px) {
+  .toast-container {
+    left: 12px !important;
+    right: 12px !important;
+
+    .toast {
+      width: 100%;
+      max-width: none;
     }
   }
 }

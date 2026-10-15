@@ -1,7 +1,9 @@
-import React, { useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
 import {
   CheckCircleRounded,
+  ChevronLeftRounded,
+  ChevronRightRounded,
   DarkModeOutlined,
   GroupOutlined,
   LightModeOutlined,
@@ -96,6 +98,40 @@ const SlotPicker = ({ value, onChange, maxGuests = null }) => {
     update({ date, meal, time: "" });
   };
 
+  // Day strip scroll state: which sides have more days hidden.
+  const daysRef = useRef(null);
+  const [dayScroll, setDayScroll] = useState({ left: false, right: false });
+  const updateDayScroll = useCallback(() => {
+    const strip = daysRef.current;
+    if (!strip) return;
+    const left = strip.scrollLeft > 4;
+    const right = strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 4;
+    setDayScroll((current) =>
+      current.left === left && current.right === right ? current : { left, right },
+    );
+  }, []);
+  const scrollDays = (direction) => {
+    const strip = daysRef.current;
+    if (strip) strip.scrollBy({ left: direction * strip.clientWidth * 0.7, behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    updateDayScroll();
+    window.addEventListener("resize", updateDayScroll);
+    return () => window.removeEventListener("resize", updateDayScroll);
+  }, [updateDayScroll, days.length]);
+
+  // Keep the chosen day in view (e.g. a later day restored from a booking).
+  useEffect(() => {
+    const strip = daysRef.current;
+    const chosen = strip?.querySelector(".slot-day.is-selected");
+    if (!strip || !chosen) return;
+    const { offsetLeft, offsetWidth } = chosen;
+    if (offsetLeft < strip.scrollLeft || offsetLeft + offsetWidth > strip.scrollLeft + strip.clientWidth) {
+      strip.scrollTo({ left: offsetLeft - 8 });
+    }
+  }, [value.date]);
+
   return (
     <section className="slot-picker" aria-label="Choose when to dine">
       <div className="slot-picker__top">
@@ -135,8 +171,27 @@ const SlotPicker = ({ value, onChange, maxGuests = null }) => {
         )}
       </div>
 
-      {/* Day strip */}
-      <div className="slot-days" role="radiogroup" aria-label="Date">
+      {/* Day strip: arrows + edge fades show when more days are off-screen. */}
+      <div
+        className={`slot-days-wrap${dayScroll.left ? " can-left" : ""}${dayScroll.right ? " can-right" : ""}`}
+      >
+      {dayScroll.left && (
+        <button
+          type="button"
+          className="slot-days__arrow slot-days__arrow--left"
+          aria-label="Earlier days"
+          onClick={() => scrollDays(-1)}
+        >
+          <ChevronLeftRounded fontSize="small" />
+        </button>
+      )}
+      <div
+        ref={daysRef}
+        className="slot-days"
+        role="radiogroup"
+        aria-label="Date"
+        onScroll={updateDayScroll}
+      >
         {days.map((day) => {
           const selected = value.date === day.value;
           return (
@@ -154,6 +209,17 @@ const SlotPicker = ({ value, onChange, maxGuests = null }) => {
             </button>
           );
         })}
+      </div>
+      {dayScroll.right && (
+        <button
+          type="button"
+          className="slot-days__arrow slot-days__arrow--right"
+          aria-label="Later days"
+          onClick={() => scrollDays(1)}
+        >
+          <ChevronRightRounded fontSize="small" />
+        </button>
+      )}
       </div>
 
       {/* Meal tabs */}

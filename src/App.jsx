@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import AppErrorBoundary from "components/common/AppErrorBoundary";
 import Spinner from "components/spinner/spinner.component";
@@ -60,6 +60,14 @@ const App = () => {
 
     restoreAuth();
   }, [auth?.details, token, getUserInfoData]);
+
+  // The window is the page scroller, so start each new page at the top
+  // instead of keeping the previous page's scroll position. `?tab=` counts as
+  // a page too: the side-nav's Menu / My bookings / My orders are /book-table tabs.
+  const pageTab = new URLSearchParams(location.search).get("tab");
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [location.pathname, pageTab]);
 
   const protectedElement = checkingAuth ? (
     <Spinner />

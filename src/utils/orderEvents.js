@@ -13,6 +13,26 @@ export const notifyOrdersChanged = () => {
   }
 };
 
+// Bookings changed (created, status moved, cancelled): hotel floor plans and
+// the Reservations board in other tabs reload their seats / cards.
+export const notifyReservationsChanged = () => {
+  try {
+    channel?.postMessage({ type: "reservations-changed", at: Date.now() });
+  } catch {
+    // Live updates are a convenience; a reload still catches up.
+  }
+};
+
+/** Calls `callback` when another tab changes bookings. Returns an unsubscribe. */
+export const onReservationsChanged = (callback) => {
+  if (!channel) return () => {};
+  const listener = (event) => {
+    if (event.data?.type === "reservations-changed") callback();
+  };
+  channel.addEventListener("message", listener);
+  return () => channel.removeEventListener("message", listener);
+};
+
 /** Calls `callback` when another tab changes orders. Returns an unsubscribe. */
 export const onOrdersChanged = (callback) => {
   if (!channel) return () => {};

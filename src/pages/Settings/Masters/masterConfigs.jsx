@@ -17,6 +17,7 @@ import {
   updateSpiceLevel,
 } from "services";
 import { PAYMENT_DEFAULT_COLORS } from "utils/paymentStatus";
+import ClampText from "components/common/ClampText";
 
 // "NO_SPICE" / "no spice" → "No Spice"
 const titleCase = (value = "") =>
@@ -109,7 +110,7 @@ export const MASTERS = {
     uniqueField: "name",
     columns: [
       { label: "Location", strong: true, render: (row) => row.name },
-      { label: "Description", muted: true, render: (row) => row.description || "—" },
+      { label: "Description", muted: true, desc: true, render: (row) => <ClampText text={row.description} /> },
       { label: "Areas", align: "center", render: (row) => countCell(row.area_count) },
       { label: "Hotels", align: "center", render: (row) => countCell(row.hotel_count) },
     ],
@@ -183,7 +184,7 @@ export const MASTERS = {
     uniqueValue: (row) => titleCase(row.spice_level),
     columns: [
       { label: "Spice level", strong: true, render: (row) => titleCase(row.spice_level) },
-      { label: "Description", muted: true, render: (row) => row.description || "—" },
+      { label: "Description", muted: true, desc: true, render: (row) => <ClampText text={row.description} /> },
       { label: "Order", align: "center", render: (row) => row.display_order ?? 0 },
       {
         label: "Status",

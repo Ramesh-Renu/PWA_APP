@@ -142,6 +142,76 @@ const KanbanBoard = ({
   const ghostRef = useRef(null);
   const dragRef = useRef(null);
 
+  // Phones: each column is one screen tall (under the app's top bar). Page
+  // scroll brings the board up until the columns dock right under the top
+  // bar — the page can't scroll further, because the column height is
+  // sized so the page ends there. Docked (.is-docked), the cards scroll
+  // inside their column with the stage heading on top; scrolling back up
+  // past the first card hands the scroll to the page again.
+  // (CSS sticky can't do this: the board scrolls sideways.)
+  useEffect(() => {
+    const board = boardRef.current;
+    if (!board) return undefined;
+    const phone = window.matchMedia("(max-width: 767px)");
+    const GAP = 8;
+    let frame = 0;
+    const barHeight = () => document.querySelector(".app-topbar")?.offsetHeight || 0;
+    // Real content under the board that the page must still scroll past:
+    // the minimap row, later siblings, and the bottom padding / border of
+    // each container up to <body>. Not document height — the app shell's
+    // min-height: 100vh adds empty filler there, which shrank the columns.
+    const contentBelow = () => {
+      let below = 0;
+      for (let el = board; el && el !== document.body; el = el.parentElement) {
+        for (let next = el.nextElementSibling; next; next = next.nextElementSibling) {
+          const style = getComputedStyle(next);
+          if (style.position === "fixed" || style.position === "absolute") continue;
+          below += next.offsetHeight + parseFloat(style.marginTop) + parseFloat(style.marginBottom);
+        }
+        const style = getComputedStyle(el);
+        below += parseFloat(style.marginBottom) || 0;
+        if (el !== board) {
+          below += (parseFloat(style.paddingBottom) || 0) + (parseFloat(style.borderBottomWidth) || 0);
+        }
+      }
+      // Row gap between the board and the minimap (flex column gap).
+      below += parseFloat(getComputedStyle(board.parentElement).rowGap) || 0;
+      return below;
+    };
+    const dock = () => {
+      frame = 0;
+      const docked =
+        phone.matches && board.getBoundingClientRect().top <= barHeight() + GAP + 1;
+      board.classList.toggle("is-docked", docked);
+    };
+    const fit = () => {
+      if (!phone.matches) {
+        board.style.removeProperty("--kanban-fit-height");
+        board.classList.remove("is-docked");
+        return;
+      }
+      const height = Math.max(320, window.innerHeight - barHeight() - GAP - contentBelow());
+      board.style.setProperty("--kanban-fit-height", `${height}px`);
+      dock();
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(dock);
+    };
+    fit();
+    // Once more after the first paint (fonts / minimap settled).
+    const settle = requestAnimationFrame(fit);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", fit);
+    phone.addEventListener?.("change", fit);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      cancelAnimationFrame(settle);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", fit);
+      phone.removeEventListener?.("change", fit);
+    };
+  }, []);
+
   const itemsByColumn = useMemo(() => {
     const grouped = new Map(columns.map((column) => [String(column.id), []]));
     items.forEach((item) => {
@@ -412,6 +482,7 @@ const KanbanBoard = ({
                             value={String(column.id)}
                             aria-label="Move to status"
                             searchable={false}
+                            portal
                             onChange={(event) =>
                               moveItem(
                                 item,

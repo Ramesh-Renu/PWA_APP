@@ -6,6 +6,8 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import PopupModal from "components/common/PopupModal";
 import ConfirmDialog from "components/common/ConfirmDialog";
 import SideDishesDialog from "./SideDishesDialog";
+import ClampText from "components/common/ClampText";
+import useIncrementalRows from "hooks/useIncrementalRows";
 
 import { getApiErrorMessage } from "utils/apiError";
 import SettingsBackLink from "pages/Settings/SettingsBackLink";
@@ -187,6 +189,7 @@ const MenuCategories = () => {
         Number(first?.display_order ?? 0) - Number(second?.display_order ?? 0),
       );
   }, [categories, search, statusFilter]);
+  const { shown, hasMore, scrollRef, sentinelRef } = useIncrementalRows(filteredCategories);
 
   const openCreateDialog = () => {
     setEditingCategory(null);
@@ -376,7 +379,7 @@ const MenuCategories = () => {
         </div>
       </div>
 
-      <div className="ui-panel ui-table-wrap">
+      <div ref={scrollRef} className="ui-panel ui-table-wrap ui-table-wrap--scroll">
         <table className="ui-table">
           <thead>
             <tr>
@@ -400,14 +403,16 @@ const MenuCategories = () => {
                 </td>
               </tr>
             ) : (
-              filteredCategories.map((category) => {
+              shown.map((category) => {
                 const active = isActive(category?.is_active);
                 const dishes = categorySideDishes(category);
 
                 return (
                   <tr key={categoryId(category)}>
                     <td className="is-strong">{category?.category_name || "—"}</td>
-                    <td className="is-muted">{category?.description || "—"}</td>
+                    <td className="is-muted ui-table__desc">
+                      <ClampText text={category?.description} />
+                    </td>
                     <td>
                       <div className="category-sides">
                         {dishes.slice(0, 3).map((dish) => (
@@ -469,6 +474,13 @@ const MenuCategories = () => {
                   </tr>
                 );
               })
+            )}
+            {!loading && hasMore && (
+              <tr className="ui-table__more">
+                <td ref={sentinelRef} colSpan={6}>
+                  Loading more…
+                </td>
+              </tr>
             )}
           </tbody>
         </table>

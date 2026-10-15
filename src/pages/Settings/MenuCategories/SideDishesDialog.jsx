@@ -3,6 +3,7 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import PopupModal from "components/common/PopupModal";
+import ConfirmDialog from "components/common/ConfirmDialog";
 
 import { getApiErrorMessage } from "utils/apiError";
 import {
@@ -28,6 +29,7 @@ const SideDishesDialog = ({ category, sideDishes, onClose, onChanged }) => {
   const [editingDish, setEditingDish] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [dishToDelete, setDishToDelete] = useState(null);
   const [error, setError] = useState("");
 
   const show = Boolean(category);
@@ -107,8 +109,6 @@ const SideDishesDialog = ({ category, sideDishes, onClose, onChanged }) => {
   };
 
   const handleDelete = async (dish) => {
-    if (!window.confirm(`Delete “${dish.side_dish_name}”?`)) return;
-
     setDeletingId(dish.id);
     setError("");
 
@@ -123,10 +123,12 @@ const SideDishesDialog = ({ category, sideDishes, onClose, onChanged }) => {
       );
     } finally {
       setDeletingId(null);
+      setDishToDelete(null);
     }
   };
 
   return (
+    <>
     <PopupModal
       show={show}
       onClose={() => !busy && onClose()}
@@ -307,7 +309,7 @@ const SideDishesDialog = ({ category, sideDishes, onClose, onChanged }) => {
                           className="ui-icon-btn ui-icon-btn--danger"
                           title="Delete"
                           aria-label={`Delete ${dish.side_dish_name}`}
-                          onClick={() => handleDelete(dish)}
+                          onClick={() => setDishToDelete(dish)}
                           disabled={busy}
                         >
                           <DeleteOutlineRoundedIcon fontSize="small" />
@@ -333,6 +335,16 @@ const SideDishesDialog = ({ category, sideDishes, onClose, onChanged }) => {
         </div>
       </div>
     </PopupModal>
+    <ConfirmDialog
+      show={Boolean(dishToDelete)}
+      title={`Delete “${dishToDelete?.side_dish_name ?? ""}”?`}
+      message="It will be removed from this category."
+      confirmLabel="Delete"
+      loading={deletingId !== null}
+      onConfirm={() => handleDelete(dishToDelete)}
+      onCancel={() => setDishToDelete(null)}
+    />
+    </>
   );
 };
 

@@ -43,6 +43,8 @@ const ConfirmDialog = ({
       centered
       backdrop="static"
       dialogClassName="confirm-dialog"
+      className="confirm-dialog-modal"
+      backdropClassName="confirm-dialog-backdrop"
       aria-labelledby="confirm-dialog-title"
     >
       <Modal.Body>

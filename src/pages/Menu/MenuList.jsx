@@ -17,6 +17,7 @@ import PopupModal from "components/common/PopupModal";
 import ConfirmDialog from "components/common/ConfirmDialog";
 import AddMenu from "./AddMenu";
 import AppSelect from "components/common/AppSelect";
+import useToast from "hooks/useToast";
 
 const extractList = (response) => {
   const candidates = [
@@ -32,6 +33,7 @@ const extractList = (response) => {
 };
 
 const MenuList = ({ hotelId }) => {
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
 
   const [menus, setMenus] = useState([]);
@@ -138,7 +140,10 @@ const MenuList = ({ hotelId }) => {
       await loadMenus();
     } catch (err) {
       console.error(err);
-      window.alert("Unable to delete this menu item. Please try again.");
+      showToast({
+        message: "Unable to delete this menu item. Please try again.",
+        variant: "danger",
+      });
     } finally {
       setDeletingMenuId(null);
     }

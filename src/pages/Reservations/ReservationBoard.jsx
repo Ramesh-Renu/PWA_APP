@@ -16,7 +16,6 @@ import {
   AddRounded,
   EditRounded,
   RefreshRounded,
-  PersonOutlineRounded,
   RoomServiceOutlined,
   SearchRounded,
 } from "@mui/icons-material";
@@ -43,7 +42,7 @@ import {
   updateDiningStatus,
   deleteReservation,
 } from "services";
-import { notifyOrdersChanged, onOrdersChanged } from "utils/orderEvents";
+import { notifyOrdersChanged, onOrdersChanged, onReservationsChanged } from "utils/orderEvents";
 import AppSelect from "components/common/AppSelect";
 
 // Order / order item statuses (utils/orderStatus.js, item_status comment).
@@ -171,7 +170,9 @@ const STAFF = {
   },
   cleaner: {
     config: CLEANER_CONFIG,
-    editableIn: [STATUS.CLEANING],
+    // Can be lined up while the guests are at the table (Seated / Serving),
+    // so moving to Cleaning doesn't need to ask.
+    editableIn: [STATUS.SEATED, STATUS.SERVING, STATUS.CLEANING],
     question: "Who will clean this table?",
     moveLabel: "Start cleaning",
     movedVerb: "moved to Cleaning",
@@ -380,7 +381,13 @@ const ReservationBoard = () => {
       fetchOrders();
       fetchReservations({ silent: true });
     };
-    const unsubscribe = onOrdersChanged(refresh);
+    const unsubscribeOrders = onOrdersChanged(refresh);
+    // A booking made / changed in another tab (e.g. on a hotel page).
+    const unsubscribeBookings = onReservationsChanged(refresh);
+    const unsubscribe = () => {
+      unsubscribeOrders();
+      unsubscribeBookings();
+    };
     const onVisible = () => {
       if (document.visibilityState === "visible") refresh();
     };
@@ -419,6 +426,16 @@ const ReservationBoard = () => {
   const statusName = (statusId) =>
     columns.find((column) => column.id === statusId)?.name || "this status";
 
+  // Moving to Serving serves the booking's Ready orders (API); reload them
+  // here and tell an open Orders tab. Returns a note for the toast, or "".
+  const syncServedOrders = (response) => {
+    const served = response?.data?.served_orders || [];
+    if (!served.length) return "";
+    fetchOrders();
+    notifyOrdersChanged();
+    return ` ${served.length === 1 ? "Order" : "Orders"} ${served.join(", ")} marked Served.`;
+  };
+
   const changeStatus = async (reservation, statusId) => {
     const previousStatus = reservation.dining_status;
     setLocalStatus(reservation.id, statusId);
@@ -429,8 +446,9 @@ const ReservationBoard = () => {
       if (!response.success) throw response.message;
       // Pick up the new stage time for the stage tracker.
       fetchReservations({ silent: true });
+      const servedNote = syncServedOrders(response);
       showToast({
-        message: response.message || "Reservation status updated successfully",
+        message: `${response.message || "Reservation status updated successfully"}${servedNote}`,
         variant: "success",
       });
     } catch (error) {
@@ -516,11 +534,13 @@ const ReservationBoard = () => {
       });
       if (!response.success) throw response.message;
       fetchReservations({ silent: true });
+      const servedNote = syncServedOrders(response);
       showToast({
-        message:
+        message: `${
           status === reservation.dining_status
             ? `${name} assigned to booking #${reservation.id}`
-            : `Booking #${reservation.id} ${movedVerb} · ${name}`,
+            : `Booking #${reservation.id} ${movedVerb} · ${name}`
+        }${servedNote}`,
         variant: "success",
       });
     } catch (error) {
@@ -753,17 +773,33 @@ const ReservationBoard = () => {
           {row.hotel?.hotel_name || "Unnamed Hotel"}
         </button>
       </div>
-      <div className="kanban-card__meta">
-        {/* Guest a staff booking is for (phone / walk-in). */}
-        {row.customer_name && String(row.user?.role || "").toLowerCase() === "admin" && (
-          <span className="kanban-card__guest" title={row.customer_mobile || undefined}>
-            <PersonOutlineRounded sx={{ fontSize: 16, color: "#0f766e" }} />
-            {row.customer_name}
-            {row.customer_mobile ? ` · ${row.customer_mobile}` : ""}
-          </span>
-        )}
-        <span>
-          <EventAvailableOutlined sx={{ fontSize: 16, color: "#10b981" }} />
+      {/* Rows: guest | booked · dining date | floor · tables | seats. */}
+      <div className="kanban-card__meta kanban-card__meta--booking">
+        {/* Left: the guest (name over phone). Right: when it was booked.
+            Staff bookings (phone / walk-in) show the guest they were made
+            for; the guest's own bookings show their account. */}
+        {(() => {
+          const byStaff = String(row.user?.role || "").toLowerCase() === "admin";
+          const guestName = byStaff ? row.customer_name || row.user?.name : row.user?.name;
+          const guestPhone = byStaff ? row.customer_mobile : row.user?.mobilenumber;
+          const bookedAt = row.booking_date || row.createdAt;
+          return (
+            <div className="kanban-card__booked is-wide">
+              <div className="kanban-card__booked-by" title="Guest">
+                <strong>{guestName || "—"}</strong>
+                {guestPhone && <small>{guestPhone}</small>}
+              </div>
+              {bookedAt && (
+                <div className="kanban-card__booked-at" title="When the booking was made">
+                  <small>Booked</small>
+                  <strong>{dayjs(bookedAt).format("D MMM YYYY, h:mm A")}</strong>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+        <span className="kanban-card__dining" title="Reserved for (dining date and time)">
+          <EventAvailableOutlined sx={{ fontSize: 16 }} />
           {dayjs(row.dining_date).format("DD MMM YYYY, hh:mm A")}
         </span>
         <span>
@@ -1059,10 +1095,9 @@ const ReservationBoard = () => {
         return (
           <BookingDetailsDialog
             reservation={booking}
-            // Every order of the booking, cancelled ones too, oldest first.
-            orders={orders
-              .filter((order) => order.reservation_id === detailsId)
-              .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))}
+            // Every order of the booking, cancelled ones too (the dialog
+            // lists the latest first).
+            orders={orders.filter((order) => order.reservation_id === detailsId)}
             statusName={booking ? statusName(booking.dining_status) : ""}
             statusColor={columns.find((column) => column.id === booking?.dining_status)?.color}
             tables={booking ? getTableLabels(booking.seat_status) : []}

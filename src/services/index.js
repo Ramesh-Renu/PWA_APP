@@ -1,6 +1,7 @@
 import baseAPI from "./baseAPI";
 import { API } from "constant/service";
 import creatAPI from "./creatAPI";
+import { notifyReservationsChanged } from "utils/orderEvents";
 
 /**
  *
@@ -52,14 +53,25 @@ export const getAllSeatInTable = (params) =>
 export const deleteSeatInTable = (body, tableId) => baseAPI.DELETE(`${API.DELETE_SEAT_API}/${tableId}/remove`, body);
 
 /** Reservation **/
-export const createReservation = (params) => baseAPI.POST(API.RESERVATION_API, params);
-export const updateReservation = (reservationId, body) => baseAPI.PUT(`${API.RESERVATION_API}/${reservationId}`, body);
-export const updateDiningStatus = (reservationId, body) =>baseAPI.PATCH(`${API.RESERVATION_API}/${reservationId}/dining-status`, body);
+// Every booking change tells other open tabs (hotel floor plans, the
+// Reservations board) to reload — see utils/orderEvents.
+const announceBookingChange = (request) =>
+  request.then((response) => {
+    if (response?.success !== false) notifyReservationsChanged();
+    return response;
+  });
+export const createReservation = (params) =>
+  announceBookingChange(baseAPI.POST(API.RESERVATION_API, params));
+export const updateReservation = (reservationId, body) =>
+  announceBookingChange(baseAPI.PUT(`${API.RESERVATION_API}/${reservationId}`, body));
+export const updateDiningStatus = (reservationId, body) =>
+  announceBookingChange(baseAPI.PATCH(`${API.RESERVATION_API}/${reservationId}/dining-status`, body));
 export const getReservationByHotel = (params) => baseAPI.GET(API.GET_RESERVATION_HOTEL+"/"+params.hotel_id);
 export const getReservationByUser = (params) =>
   baseAPI.GET(API.GET_RESERVATION_USER, params);
 export const getDashboardSummary = (params) => baseAPI.POST(API.DASHBOARD_SUMMARY, params);
-export const deleteReservation = (params) => baseAPI.DELETE(API.RESERVATION_API+"/"+params.reservation_id+"/cancel");
+export const deleteReservation = (params) =>
+  announceBookingChange(baseAPI.DELETE(API.RESERVATION_API + "/" + params.reservation_id + "/cancel"));
 
 /** Orders  **/
 // With reservation_id the order goes on that table booking; without it the
