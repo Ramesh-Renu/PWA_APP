@@ -20,6 +20,7 @@ import { getApiErrorMessage } from "utils/apiError";
 import StaffAvatar, { avatarColorOf, initialsOf } from "./StaffAvatar";
 import SettingsBackLink from "pages/Settings/SettingsBackLink";
 import AppSelect from "components/common/AppSelect";
+import usePermission from "hooks/usePermission";
 
 // Optional personal details + working hours (API: staffPersonalFields.js).
 const PERSONAL_FIELDS = [
@@ -75,6 +76,11 @@ const StaffPage = ({ config }) => {
     detailSuggestions,
     api,
   } = config;
+  // Permission page key: cooks, servers, cleaners.
+  const { can } = usePermission();
+  const canCreate = can(`${kind}s`, "create");
+  const canEdit = can(`${kind}s`, "edit");
+  const canDelete = can(`${kind}s`, "delete");
   const lower = singular.toLowerCase();
 
   const emptyForm = {
@@ -323,11 +329,13 @@ const StaffPage = ({ config }) => {
           <h1>{title}</h1>
           <p>{intro}</p>
         </div>
-        <div className="ui-header__actions">
-          <button type="button" className="ui-btn ui-btn--primary" onClick={openCreate}>
-            <AddRounded fontSize="small" /> Add {lower}
-          </button>
-        </div>
+        {canCreate && (
+          <div className="ui-header__actions">
+            <button type="button" className="ui-btn ui-btn--primary" onClick={openCreate}>
+              <AddRounded fontSize="small" /> Add {lower}
+            </button>
+          </div>
+        )}
       </header>
 
       <div className="ui-toolbar">
@@ -385,7 +393,7 @@ const StaffPage = ({ config }) => {
               ? "Try another search or filter."
               : `Add your ${title.toLowerCase()} to assign them to orders.`}
           </p>
-          {!rows.length && (
+          {!rows.length && canCreate && (
             <button type="button" className="ui-btn ui-btn--primary" onClick={openCreate}>
               <AddRounded fontSize="small" /> Add {lower}
             </button>
@@ -396,7 +404,8 @@ const StaffPage = ({ config }) => {
           {visible.map((row) => (
             <article
               key={row.id}
-              className={`cook-card${row.is_active ? "" : " is-inactive"}`}
+              // Access removed (User Management → Inactive users): faded, no delete.
+              className={`cook-card${row.is_active ? "" : " is-inactive"}${row.access_removed ? " is-removed" : ""}`}
             >
               <StaffAvatar name={row[nameField]} photo={row.photo_url} size={56} tone={kind} />
               <div className="cook-card__body">
@@ -423,27 +432,36 @@ const StaffPage = ({ config }) => {
                   <span className={`ui-chip ${row.is_active ? "ui-chip--success" : ""}`}>
                     {row.is_active ? "Active" : "Inactive"}
                   </span>
+                  {row.access_removed && (
+                    <span className="ui-chip cook-card__removed" title="Retrieve them in User Management → Inactive users">
+                      Access removed
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="cook-card__actions">
-                <button
-                  type="button"
-                  className="ui-icon-btn"
-                  title="Edit"
-                  aria-label={`Edit ${row[nameField]}`}
-                  onClick={() => openEdit(row)}
-                >
-                  <EditOutlined fontSize="small" />
-                </button>
-                <button
-                  type="button"
-                  className="ui-icon-btn ui-icon-btn--danger"
-                  title="Delete"
-                  aria-label={`Delete ${row[nameField]}`}
-                  onClick={() => setToDelete(row)}
-                >
-                  <DeleteOutlineRounded fontSize="small" />
-                </button>
+                {canEdit && (
+                  <button
+                    type="button"
+                    className="ui-icon-btn"
+                    title="Edit"
+                    aria-label={`Edit ${row[nameField]}`}
+                    onClick={() => openEdit(row)}
+                  >
+                    <EditOutlined fontSize="small" />
+                  </button>
+                )}
+                {canDelete && !row.access_removed && (
+                  <button
+                    type="button"
+                    className="ui-icon-btn ui-icon-btn--danger"
+                    title="Delete"
+                    aria-label={`Delete ${row[nameField]}`}
+                    onClick={() => setToDelete(row)}
+                  >
+                    <DeleteOutlineRounded fontSize="small" />
+                  </button>
+                )}
               </div>
             </article>
           ))}
@@ -562,10 +580,14 @@ const StaffPage = ({ config }) => {
                     ]}
                   />
                 </div>
-                <label className="menu-switch cook-form__switch">
+                <label
+                  className={`menu-switch cook-form__switch${editing?.access_removed ? " is-disabled" : ""}`}
+                >
                   <input
                     type="checkbox"
                     checked={form.is_active}
+                    // Access removed: activate them by retrieving in Inactive users.
+                    disabled={Boolean(editing?.access_removed)}
                     onChange={(event) =>
                       setForm((current) => ({ ...current, is_active: event.target.checked }))
                     }
@@ -573,7 +595,11 @@ const StaffPage = ({ config }) => {
                   <span className="menu-switch__track" aria-hidden />
                   <span>
                     <strong>{form.is_active ? "Active" : "Inactive"}</strong>
-                    <small>Only active {title.toLowerCase()} can be assigned</small>
+                    <small>
+                      {editing?.access_removed
+                        ? "Access removed — retrieve them in User Management → Inactive users to activate"
+                        : `Only active ${title.toLowerCase()} can be assigned`}
+                    </small>
                   </span>
                 </label>
               </div>
@@ -700,6 +726,10 @@ const StaffPage = ({ config }) => {
                     placeholder="e.g. 98765 43210"
                     autoComplete="off"
                   />
+                  <span className="hotel-form__hint">
+                    A 10-digit mobile number also adds them to Staff users (Member), so
+                    they can sign in with OTP.
+                  </span>
                 </div>
                 <div className="hotel-form__field">
                   <label className="hotel-form__label" htmlFor={`${kind}-email`}>

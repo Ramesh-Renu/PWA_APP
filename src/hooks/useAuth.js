@@ -35,6 +35,7 @@ const useAuth = () => {
         const data = response.user;
         localStorage.setItem("userInfo", JSON.stringify(data));
         dispatch({ type: "SET_ACTIVE_USER_INFO", payload: data });
+        return data;
       } catch (error) {
         dispatch({ type: "SET_ERROR", payload: error });
         if (error?.response?.status === 401) {

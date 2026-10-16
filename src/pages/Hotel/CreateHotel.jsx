@@ -31,6 +31,7 @@ import {
 } from "@mui/icons-material";
 import { renderArea, renderLocation } from "utils/common";
 import SkeletonLoading from "components/common/SkeletonLoading";
+import { can, isStaffRole } from "utils/permissions";
 
 const TABLE_PREFIX_PATTERN = /^[A-Z0-9]{2,8}$/;
 
@@ -78,7 +79,12 @@ const CreateHotel = () => {
   // Create / update request in flight (button spinner, form locked).
   const [savingHotel, setSavingHotel] = useState(false);
   const [{ data: auth }] = useAuth();
-  const isAdminUser = auth?.details?.role === "Admin";
+  const isAdminUser = isStaffRole(auth?.details?.role);
+  const canCreateHotel = can(auth?.details, "hotels", "create");
+  const canEditHotel = can(auth?.details, "hotels", "edit");
+  const canDeleteHotel = can(auth?.details, "hotels", "delete");
+  const canCreateOrder = can(auth?.details, "orders", "create");
+  const canBookTable = !isAdminUser || can(auth?.details, "reservations", "create");
   // Hotel an admin is placing an order for (no table booking).
   const [orderHotel, setOrderHotel] = useState(null);
   const navigate = useNavigate();
@@ -511,13 +517,15 @@ const CreateHotel = () => {
             <h1>Hotels &amp; table layouts</h1>
             <p>Create hotels and configure floors, tables and seating capacity.</p>
           </div>
-          <button
-            type="button"
-            className="ui-btn ui-btn--primary"
-            onClick={handleCreateHotelShow}
-          >
-            <AddRounded fontSize="small" /> Add hotel
-          </button>
+          {canCreateHotel && (
+            <button
+              type="button"
+              className="ui-btn ui-btn--primary"
+              onClick={handleCreateHotelShow}
+            >
+              <AddRounded fontSize="small" /> Add hotel
+            </button>
+          )}
         </header>
 
         <div className="ui-stats">
@@ -603,29 +611,33 @@ const CreateHotel = () => {
                       </p>
                     </div>
                     <div className="hl-card__icons">
-                      <button
-                        type="button"
-                        className="ui-icon-btn"
-                        aria-label={`Edit ${hotelName}`}
-                        title="Edit hotel"
-                        onClick={() =>
-                          handleEditDeleteValue("Edit", hotel.id, hotel)
-                        }
-                      >
-                        <EditOutlined fontSize="small" />
-                      </button>
-                      <button
-                        type="button"
-                        className="ui-icon-btn ui-icon-btn--danger"
-                        aria-label={`Delete ${hotelName}`}
-                        title="Delete hotel"
-                        disabled={hotel?.isProcessOrder}
-                        onClick={() =>
-                          handleEditDeleteValue("Delete", hotel.id, hotel)
-                        }
-                      >
-                        <DeleteOutlineRounded fontSize="small" />
-                      </button>
+                      {canEditHotel && (
+                        <button
+                          type="button"
+                          className="ui-icon-btn"
+                          aria-label={`Edit ${hotelName}`}
+                          title="Edit hotel"
+                          onClick={() =>
+                            handleEditDeleteValue("Edit", hotel.id, hotel)
+                          }
+                        >
+                          <EditOutlined fontSize="small" />
+                        </button>
+                      )}
+                      {canDeleteHotel && (
+                        <button
+                          type="button"
+                          className="ui-icon-btn ui-icon-btn--danger"
+                          aria-label={`Delete ${hotelName}`}
+                          title="Delete hotel"
+                          disabled={hotel?.isProcessOrder}
+                          onClick={() =>
+                            handleEditDeleteValue("Delete", hotel.id, hotel)
+                          }
+                        >
+                          <DeleteOutlineRounded fontSize="small" />
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -653,23 +665,27 @@ const CreateHotel = () => {
                   </dl>
 
                   <div className="hl-card__actions">
-                    <button
-                      type="button"
-                      className="ui-btn ui-btn--ghost"
-                      onClick={() => handleHotelView(hotel.id, hotel, true)}
-                    >
-                      <GridViewOutlined fontSize="small" /> Edit layout
-                    </button>
-                    <button
-                      type="button"
-                      className="ui-btn ui-btn--primary"
-                      onClick={() =>
-                        handleHotelView(hotel.id, hotel, false, true)
-                      }
-                    >
-                      <TableRestaurantOutlined fontSize="small" /> Book table
-                    </button>
-                    {isAdminUser && (
+                    {canEditHotel && (
+                      <button
+                        type="button"
+                        className="ui-btn ui-btn--ghost"
+                        onClick={() => handleHotelView(hotel.id, hotel, true)}
+                      >
+                        <GridViewOutlined fontSize="small" /> Edit layout
+                      </button>
+                    )}
+                    {canBookTable && (
+                      <button
+                        type="button"
+                        className="ui-btn ui-btn--primary"
+                        onClick={() =>
+                          handleHotelView(hotel.id, hotel, false, true)
+                        }
+                      >
+                        <TableRestaurantOutlined fontSize="small" /> Book table
+                      </button>
+                    )}
+                    {isAdminUser && canCreateOrder && (
                       <button
                         type="button"
                         className="ui-btn hl-card__order"
@@ -688,13 +704,15 @@ const CreateHotel = () => {
             <ApartmentOutlined />
             <h2>No hotels found</h2>
             <p>Add a hotel to start configuring floors and tables.</p>
-            <button
-              type="button"
-              className="ui-btn ui-btn--primary"
-              onClick={handleCreateHotelShow}
-            >
-              <AddRounded fontSize="small" /> Add hotel
-            </button>
+            {canCreateHotel && (
+              <button
+                type="button"
+                className="ui-btn ui-btn--primary"
+                onClick={handleCreateHotelShow}
+              >
+                <AddRounded fontSize="small" /> Add hotel
+              </button>
+            )}
           </div>
         )}
       </section>

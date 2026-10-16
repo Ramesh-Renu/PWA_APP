@@ -12,6 +12,7 @@ import { MdOutlineRestaurant, MdOutlineSmartphone } from "react-icons/md";
 import { getOTp, createUser } from "services";
 import useToast from "hooks/useToast";
 import useAuth from "hooks/useAuth";
+import { homePathFor } from "utils/permissions";
 
 const features = [
   {
@@ -145,15 +146,14 @@ export default function Login() {
         return;
       }
 
-      await getUserInfoData();
+      const details = await getUserInfoData();
       showToast({
         title: "Welcome!",
         message: response.data.message,
         variant: "success",
       });
-      // ADMIN → Restaurant Dashboard, USER → Guest Dashboard.
-      const isAdmin = String(response.data.role || "").toLowerCase() === "admin";
-      navigate(isAdmin ? "/dashboard" : "/book-table", { replace: true });
+      // SuperAdmin/Admin → first page they may open, USER → Guest Dashboard.
+      navigate(homePathFor(details || { role: response.data.role }), { replace: true });
     } catch (error) {
       showToast({
         title: error?.response?.status === 403 ? "Not allowed" : undefined,
@@ -275,17 +275,6 @@ export default function Login() {
                 : "Enter your mobile number to get a one-time code."}
             </p>
           </header>
-          {!createForm && (
-            <div
-              className="tableflow-login__role-toggle tableflow-login__role-toggle--single"
-              aria-label="Account role"
-            >
-              <button type="button" className="active">
-                <AiOutlineUser />
-                Guest
-              </button>
-            </div>
-          )}
           {!createForm && (
             <form className="tableflow-login__form" onSubmit={handleSubmit}>
               <label>

@@ -12,6 +12,8 @@ import useIncrementalRows from "hooks/useIncrementalRows";
 import { getApiErrorMessage } from "utils/apiError";
 import { MASTERS } from "./masterConfigs";
 import SettingsBackLink from "pages/Settings/SettingsBackLink";
+import usePermission from "hooks/usePermission";
+import { MASTER_PERMISSION } from "utils/permissions";
 
 const listOf = (response) => {
   const value = response?.data ?? response?.rows ?? response;
@@ -30,6 +32,8 @@ const MasterPage = () => {
   const { master } = useParams();
   const config = MASTERS[master];
   const globalMaster = useGlobalMaster();
+  const { can, homePath } = usePermission();
+  const page = MASTER_PERMISSION[master];
 
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -80,9 +84,11 @@ const MasterPage = () => {
   const { shown, hasMore, scrollRef, sentinelRef } = useIncrementalRows(visible);
 
   if (!config) return <Navigate to="/settings" replace />;
+  if (!can(page)) return <Navigate to={homePath} replace />;
 
-  const canCreate = Boolean(config.api.create);
-  const canDelete = Boolean(config.api.remove);
+  const canCreate = Boolean(config.api.create) && can(page, "create");
+  const canEdit = can(page, "edit");
+  const canDelete = Boolean(config.api.remove) && can(page, "delete");
 
   const duplicateName = (() => {
     if (!config.uniqueField) return false;
@@ -269,15 +275,17 @@ const MasterPage = () => {
                     </td>
                   ))}
                   <td className="is-right">
-                    <button
-                      type="button"
-                      className="ui-icon-btn"
-                      title="Edit"
-                      aria-label={`Edit ${config.rowName(row)}`}
-                      onClick={() => openEdit(row)}
-                    >
-                      <EditOutlinedIcon fontSize="small" />
-                    </button>
+                    {canEdit && (
+                      <button
+                        type="button"
+                        className="ui-icon-btn"
+                        title="Edit"
+                        aria-label={`Edit ${config.rowName(row)}`}
+                        onClick={() => openEdit(row)}
+                      >
+                        <EditOutlinedIcon fontSize="small" />
+                      </button>
+                    )}
                     {canDelete && (
                       <button
                         type="button"

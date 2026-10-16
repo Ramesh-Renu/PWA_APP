@@ -102,3 +102,13 @@
     }
   }
 }
+
+// Highlighted words in a toast message (booking date / times / grace period).
+.toast-highlight {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 800;
+  white-space: nowrap;
+}

@@ -219,3 +219,19 @@ export const createSpiceLevel = (body) => baseAPI.POST(API.SPICE_LEVEL_API, body
 export const updateSpiceLevel = (id, body) =>
   baseAPI.PUT(`${API.SPICE_LEVEL_API}/${id}`, body);
 export const deleteSpiceLevel = (id) => baseAPI.DELETE(`${API.SPICE_LEVEL_API}/${id}`);
+
+/* SuperAdmin: Admin users and their page/option/hotel access */
+export const getPermissionCatalog = () => baseAPI.GET(API.ADMIN_PERMISSIONS_API);
+export const getAdminUsers = (params) => baseAPI.GET(API.ADMIN_USERS_API, params);
+export const createAdminUser = (body) => baseAPI.POST(API.ADMIN_USERS_API, body);
+export const updateAdminUser = (id, body) => baseAPI.PUT(`${API.ADMIN_USERS_API}/${id}`, body);
+export const removeAdminUser = (id) => baseAPI.DELETE(`${API.ADMIN_USERS_API}/${id}`);
+
+/* Admin: hotel Staff users (Manager / Lead / Member) */
+export const getStaffPermissionCatalog = () => baseAPI.GET(`${API.STAFF_USERS_API}/permissions`);
+export const getStaffUsers = (params) => baseAPI.GET(API.STAFF_USERS_API, params);
+export const createStaffUser = (body) => baseAPI.POST(API.STAFF_USERS_API, body);
+export const updateStaffUser = (id, body) => baseAPI.PUT(`${API.STAFF_USERS_API}/${id}`, body);
+export const removeStaffUser = (id) => baseAPI.DELETE(`${API.STAFF_USERS_API}/${id}`);
+export const getRemovedUsers = () => baseAPI.GET(`${API.STAFF_USERS_API}/removed`);
+export const restoreUser = (id, as) => baseAPI.POST(`${API.STAFF_USERS_API}/${id}/restore`, { as });

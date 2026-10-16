@@ -17,6 +17,7 @@ import useGlobalMaster from "hooks/useGlobalMaster";
 import useAuth from "hooks/useAuth";
 import { getHotelbyid } from "services";
 import MenuList from "pages/Menu/MenuList";
+import { isStaffRole } from "utils/permissions";
 
 const HotelDetails = () => {
   const { id } = useParams();
@@ -45,7 +46,7 @@ const HotelDetails = () => {
   // Free seats on the floor shown in the plan at the chosen time.
   const [floorFreeSeats, setFloorFreeSeats] = useState(null);
   const [{ data: auth }] = useAuth();
-  const isAdmin = auth?.details?.role === "Admin";
+  const isAdmin = isStaffRole(auth?.details?.role);
   // Staff booking a table: the booking is for a guest (name required,
   // mobile optional) — never saved under the staff member's own name.
   const askGuest = isAdmin && isBooking && !isEditable;

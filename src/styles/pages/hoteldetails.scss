@@ -493,6 +493,8 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
   &--partial { background: #fef3c7; color: #92400e; }
   &--full { background: #ffe4e6; color: #be123c; }
   &--muted { background: #f1f5f9; color: #64748b; }
+  // The guest's own booking on this table.
+  &--mine { background: #ede9fe; color: #6d28d9; font-weight: 800; }
 }
 
 .fp-table__select-wrap {
@@ -1531,6 +1533,33 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
   }
 }
 
+// The signed-in guest's own booked seats: purple with a ring, so they're
+// easy to tell apart from other people's bookings (red).
+.fp-seat.fp-seat--taken.is-mine {
+  --seat-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.25);
+
+  &:disabled {
+    opacity: 1;
+  }
+}
+
+// A table holding the guest's booking stays clear even if it can't take
+// the new party (it is still not choosable).
+.fp-table.has-mine {
+  border-color: rgba(124, 58, 237, 0.55);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+
+  &.is-blocked {
+    opacity: 1;
+    filter: none;
+
+    .fp-seat:not(.is-mine) {
+      opacity: 0.45;
+    }
+  }
+}
+
 // Tables that fit: a soft brand outline invites a tap.
 .fp-table.is-fit:not(.is-selected) {
   border-color: rgba(15, 118, 110, 0.45);
@@ -1793,5 +1822,23 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
 
   strong {
     font-weight: 800;
+  }
+}
+
+// Table status + "your booking" labels: own row, full card width.
+.fp-table__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -4px 0 4px;
+
+  .fp-chip {
+    line-height: 1.35;
+  }
+
+  .fp-chip--mine {
+    flex: 1 1 100%;
+    border-radius: 8px;
+    padding: 4px 8px;
   }
 }

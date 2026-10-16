@@ -1,0 +1,253 @@
+// Settings → Admin users (pages/Settings/AdminUsers): access form.
+// Same tokens as ui-kit.scss.
+
+$ink: #1f2337;
+$ink-soft: #5b6078;
+$ink-faint: #8a8fa6;
+$line: #e6e4f0;
+$brand: #0f766e;
+$brand-soft: #e7f4f1;
+
+.modal-dialog.hotel-form-dialog.admin-users-dialog {
+  max-width: 760px;
+}
+
+.admin-users__sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: $ink-faint;
+}
+
+.admin-users__title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 800;
+  color: $ink;
+
+  small {
+    font-weight: 500;
+    color: $ink-faint;
+  }
+}
+
+.admin-users__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+
+  .admin-users__title {
+    margin: 0;
+  }
+
+  span {
+    display: flex;
+    gap: 8px;
+  }
+}
+
+.admin-users__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: $ink;
+  cursor: pointer;
+
+  &--strong {
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+}
+
+.admin-users__check input,
+.admin-users__matrix input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: $brand;
+  cursor: pointer;
+}
+
+.admin-users__hotels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px 16px;
+  max-height: 200px;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid $line;
+  border-radius: 12px;
+}
+
+.admin-users__matrix-wrap {
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid $line;
+  border-radius: 12px;
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+}
+
+.admin-users__matrix {
+  td,
+  th {
+    padding: 8px 12px;
+  }
+}
+
+.admin-users__group td {
+  background: $brand-soft;
+  color: $brand;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-users__na {
+  color: $ink-faint;
+}
+
+.admin-users__hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: $ink-soft;
+}
+
+// Staff users: All / Cook / Server / Cleaner tabs under the search bar.
+.access-tabs {
+  max-width: 100%;
+  margin: 0 0 16px;
+  overflow-x: auto;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+}
+
+.access-tabs__count {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: $brand-soft;
+  color: $brand;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+
+  .is-active & {
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+  }
+}
+
+// Name cell: photo, then name / mobile / category.
+.admin-users__person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 200px;
+
+  strong {
+    display: block;
+    font-weight: 700;
+    color: $ink;
+  }
+}
+
+.admin-users__role {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+// The job badge (Cook / Server / Cleaner).
+.ui-chip.ui-chip--job {
+  background: $brand-soft;
+  color: $brand;
+  font-weight: 700;
+}
+
+// Role level next to it (Manager / Lead / Member), kept small.
+.admin-users__level {
+  font-size: 11px;
+  font-weight: 600;
+  color: $ink-faint;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+// The users table scrolls on its own (headings sticky via
+// .ui-table-wrap--scroll); sized so the header, search and tabs above it
+// stay on screen.
+.ui-table-wrap--scroll.admin-users__table {
+  max-height: max(320px, calc(100dvh - var(--app-topnav-height, 0px) - 300px));
+}
+
+// While the table is scrolled down the header (title, intro, Add button)
+// folds away, leaving the search, tabs and table; it returns at the top.
+.access-page__header {
+  max-height: 220px;
+  overflow: hidden;
+  transition: max-height 0.2s ease, opacity 0.2s ease, margin 0.2s ease;
+}
+
+.access-page.is-compact {
+  .access-page__header {
+    max-height: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .ui-table-wrap--scroll.admin-users__table {
+    max-height: max(320px, calc(100dvh - var(--app-topnav-height, 0px) - 170px));
+  }
+}
+
+// "View only" line under the intro (Admin users seen by an Admin).
+.access-page__note {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff7e6;
+  color: #b45309;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+// Inactive users: "Retrieve user as: [Staff User] [Admin User]".
+.inactive-users__retrieve {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+
+  > span {
+    font-size: 12px;
+    font-weight: 600;
+    color: $ink-soft;
+  }
+
+  .ui-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}

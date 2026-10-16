@@ -17,6 +17,7 @@ import {
 import AppSelect from "components/common/AppSelect";
 import ClampText from "components/common/ClampText";
 import useIncrementalRows from "hooks/useIncrementalRows";
+import usePermission from "hooks/usePermission";
 
 const emptyForm = { name: "", location_id: "", description: "" };
 
@@ -30,6 +31,10 @@ const listOf = (response) => {
  * each inside a location (city). Used by the hotel form and hotel search.
  */
 const Areas = () => {
+  const { can } = usePermission();
+  const canCreate = can("areas", "create");
+  const canEdit = can("areas", "edit");
+  const canDelete = can("areas", "delete");
   const [areas, setAreas] = useState([]);
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -177,11 +182,13 @@ const Areas = () => {
           <h1>Areas</h1>
           <p>Areas (e.g. T Nagar, Adyar) inside each location, used to place and find hotels.</p>
         </div>
-        <div className="ui-header__actions">
-          <button type="button" className="ui-btn ui-btn--primary" onClick={openCreate}>
-            <AddRoundedIcon fontSize="small" /> Add area
-          </button>
-        </div>
+        {canCreate && (
+          <div className="ui-header__actions">
+            <button type="button" className="ui-btn ui-btn--primary" onClick={openCreate}>
+              <AddRoundedIcon fontSize="small" /> Add area
+            </button>
+          </div>
+        )}
       </header>
 
       {error && (
@@ -257,24 +264,28 @@ const Areas = () => {
                   </td>
                   <td className="is-center">{Number(area.hotel_count) || 0}</td>
                   <td className="is-right">
-                    <button
-                      type="button"
-                      className="ui-icon-btn"
-                      title="Edit"
-                      aria-label={`Edit ${area.name}`}
-                      onClick={() => openEdit(area)}
-                    >
-                      <EditOutlinedIcon fontSize="small" />
-                    </button>
-                    <button
-                      type="button"
-                      className="ui-icon-btn ui-icon-btn--danger"
-                      title="Delete"
-                      aria-label={`Delete ${area.name}`}
-                      onClick={() => setToDelete(area)}
-                    >
-                      <DeleteOutlineRoundedIcon fontSize="small" />
-                    </button>
+                    {canEdit && (
+                      <button
+                        type="button"
+                        className="ui-icon-btn"
+                        title="Edit"
+                        aria-label={`Edit ${area.name}`}
+                        onClick={() => openEdit(area)}
+                      >
+                        <EditOutlinedIcon fontSize="small" />
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        type="button"
+                        className="ui-icon-btn ui-icon-btn--danger"
+                        title="Delete"
+                        aria-label={`Delete ${area.name}`}
+                        onClick={() => setToDelete(area)}
+                      >
+                        <DeleteOutlineRoundedIcon fontSize="small" />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))

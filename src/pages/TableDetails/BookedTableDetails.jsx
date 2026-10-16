@@ -22,6 +22,7 @@ import {
   TaskAltRounded,
 } from "@mui/icons-material";
 import SkeletonLoading from "components/common/SkeletonLoading";
+import { isStaffRole } from "utils/permissions";
 
 const BookedTableDetails = ({ data }) => {
   const [bookedData, setBookedData] = useState([]);
@@ -300,7 +301,7 @@ const BookedTableDetails = ({ data }) => {
                     Booked on {formatDate(row.booking_date)}
                   </p>
 
-                  {auth?.details?.role === "Admin" && (
+                  {isStaffRole(auth?.details?.role) && (
                     <ToolTipPopup
                       toolTipDatas={diningStatusList?.data || []}
                       labelField="name"

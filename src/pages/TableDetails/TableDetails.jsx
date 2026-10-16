@@ -28,6 +28,10 @@ import { useGlobalContext } from "store/context/GlobalProvider";
 import useGlobalMaster from "hooks/useGlobalMaster";
 import MenuOrderPopup from "pages/MenuOrderPopup/MenuOrderPopup";
 import { onReservationsChanged } from "utils/orderEvents";
+import { isStaffRole } from "utils/permissions";
+
+// The signed-in guest's own booked seats (other bookings use the Booked colour).
+const MY_SEAT_COLOR = "#7c3aed";
 
 // Used when the seat status master has no row/colour for a status
 // (matches SEAT_STATUS in the API: utils/seatStatus.js).
@@ -440,15 +444,24 @@ const TableDetails = ({
           response?.reservation_id;
         const bookedAt = dayjs(`${param.dining_date}T${param.reservation_time}`);
         const seatsText = `${seletedSeatCount || ""} ${seletedSeatCount === 1 ? "seat" : "seats"}`;
+        // Dates, times and the grace period stand out in the message.
+        const mark = (text) => <mark className="toast-highlight">{text}</mark>;
         showToast({
           title: rid ? `Booking #${rid} confirmed` : "Booking confirmed",
           // Users get the arrival rules with real clock times; admins a short summary.
           message: isAdminView
             ? `${guest?.name ? `For ${guest.name} · ` : ""}${bookedAt.format("ddd, D MMM [at] h:mm A")} · ${seatsText}`
-            : `Your reservation (${seatsText}) is confirmed for ${bookedAt.format("ddd, D MMM [at] h:mm A")}. ` +
-              `Please arrive between ${bookedAt.subtract(5, "minute").format("h:mm A")} and ${bookedAt.format("h:mm A")}. ` +
-              `A 15-minute grace period is allowed; if you haven't arrived by ${bookedAt.add(15, "minute").format("h:mm A")}, ` +
-              `your reservation will be automatically cancelled.`,
+            : (
+                <>
+                  Your reservation ({seatsText}) is confirmed for{" "}
+                  {mark(bookedAt.format("ddd, D MMM [at] h:mm A"))}. Please arrive between{" "}
+                  {mark(bookedAt.subtract(5, "minute").format("h:mm A"))} and{" "}
+                  {mark(bookedAt.format("h:mm A"))}. A {mark("15-minute grace period")} is
+                  allowed; if you haven't arrived by{" "}
+                  {mark(bookedAt.add(15, "minute").format("h:mm A"))}, your reservation will be
+                  automatically cancelled.
+                </>
+              ),
           variant: "success",
           // Long enough to read the arrival rules.
           showTime: isAdminView ? undefined : 12000,
@@ -539,7 +552,7 @@ const TableDetails = ({
           (targetTable.seats || [])
             .filter((s) =>
               isEditable === true ||
-              auth?.details?.role === "Admin" ||
+              isStaffRole(auth?.details?.role) ||
               auth?.details?.is_admin
                 ? s.status === 4 || s.status === 1
                 : s.status === 4 ||
@@ -782,7 +795,7 @@ const TableDetails = ({
    * ------------------------------------------------------------------ */
   const isAdminView =
     isEditable === true ||
-    auth?.details?.role === "Admin" ||
+    isStaffRole(auth?.details?.role) ||
     Boolean(auth?.details?.is_admin);
 
   const seatMeta = (statusId) => {
@@ -1096,8 +1109,8 @@ const TableDetails = ({
       <button
         key={chair.seat_id}
         type="button"
-        className={`fp-seat fp-seat--${state}${isMine ? " is-mine" : ""}`}
-        style={{ "--seat-color": meta.color }}
+        className={`fp-seat fp-seat--${state}${isMine && !isAdminView ? " is-mine" : ""}`}
+        style={{ "--seat-color": isMine && !isAdminView ? MY_SEAT_COLOR : meta.color }}
         title={`Seat ${chair.seat_number} · ${label}${seatEnds ? ` · ends ${seatEnds}` : ""}`}
         aria-label={`Seat ${chair.seat_number}, ${label}${seatEnds ? `, ends ${seatEnds}` : ""}`}
         aria-pressed={Boolean(chair.is_booking)}
@@ -1109,9 +1122,19 @@ const TableDetails = ({
     );
   };
 
+  // The signed-in guest's own booked seats (shown in their own colour).
+  const isMySeat = (chair) =>
+    !isAdminView && chair.status === 1 && chair.user_id === auth?.details?.id;
+  const hasMySeatsOnFloor = (floorToShow?.tables || []).some((table) =>
+    (table.seats || []).some(isMySeat),
+  );
+
   const legendItems = [
     { key: "available", label: seatMeta(4).name, color: seatMeta(4).color, variant: "available" },
     ...(isBooking ? [{ key: "selected", label: "Selected", variant: "selected" }] : []),
+    ...(hasMySeatsOnFloor
+      ? [{ key: "mine", label: "Your booking", color: MY_SEAT_COLOR, variant: "taken is-mine" }]
+      : []),
     { key: "booked", label: seatMeta(1).name, color: seatMeta(1).color, variant: "taken" },
     { key: "seated", label: seatMeta(5).name, color: seatMeta(5).color, variant: "taken" },
     { key: "cleaning", label: seatMeta(3).name, color: seatMeta(3).color, variant: "taken" },
@@ -1293,21 +1316,19 @@ const TableDetails = ({
               const fit = tableFit(table);
               const blocked = guestMode && !fit.ok;
               const pickedForGuests = guestMode && selectedCount > 0;
+              const mySeats = chairs.filter(isMySeat);
 
               return (
                 <article
                   key={table.table_id || tIndex}
                   className={`fp-table fp-table--${tone}${selectedCount ? " is-selected" : ""}${
                     blocked ? " is-blocked" : ""
-                  }${guestMode && !blocked ? " is-fit" : ""}`}
+                  }${guestMode && !blocked ? " is-fit" : ""}${mySeats.length ? " has-mine" : ""}`}
                   title={blocked ? fit.reason : undefined}
                 >
                   <header className="fp-table__head">
                     <div className="fp-table__title">
                       <h3>{tableLabel(table)}</h3>
-                      <span className={`fp-chip fp-chip--${blocked ? "muted" : tone}`}>
-                        {blocked ? fit.reason : chipText}
-                      </span>
                     </div>
 
                     {chairs.length > 0 && guestMode ? (
@@ -1395,6 +1416,19 @@ const TableDetails = ({
                       </button>
                     )}
                   </header>
+
+                  {/* Status + "your booking" labels: full card width, under the name. */}
+                  <div className="fp-table__chips">
+                    <span className={`fp-chip fp-chip--${blocked ? "muted" : tone}`}>
+                      {blocked ? fit.reason : chipText}
+                    </span>
+                    {mySeats.length > 0 && (
+                      <span className="fp-chip fp-chip--mine">
+                        ★ Your booking · {mySeats.length === 1 ? "seat" : "seats"}{" "}
+                        {mySeats.map((seat) => seat.seat_number).join(", ")}
+                      </span>
+                    )}
+                  </div>
 
                   <div className="fp-table__plan">
                     {chairs.length === 0 ? (

@@ -724,3 +724,19 @@ $shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
   font-size: 12px;
   color: $ink-soft;
 }
+
+// Access removed (User Management → Inactive users): fainter than inactive.
+.cook-card.is-removed {
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+.ui-chip.cook-card__removed {
+  background: #fdecec;
+  color: #b91c1c;
+}
+
+.menu-switch.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

@@ -1,0 +1,303 @@
+// My orders (pages/OrderHistory/OrderHistoryCard.jsx): each order is a
+// ticket — status strip, restaurant + order details, a tear line with side
+// notches, items and bill, another tear line, payment + total.
+// --status-color is set per card (order status colour).
+
+$ink: #1f2337;
+$ink-soft: #5b6078;
+$ink-faint: #8a8fa6;
+$line: #e6e4f0;
+$surface: #ffffff;
+$brand: #0f766e;
+$brand-soft: #e7f4f1;
+// Page background (AppShell.scss): the notches are "cut" in this colour.
+$page-bg: #f1f4f8;
+
+.cx-ticket {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid $line;
+  border-radius: 16px;
+  background: $surface;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 8px 20px rgba(16, 24, 40, 0.05);
+  font-family: "Montserrat", sans-serif;
+  color: $ink;
+
+  // Live orders stand out with the brand outline and glow.
+  &.is-live {
+    border: 1.5px solid $brand;
+    box-shadow:
+      0 0 0 3px rgba(15, 118, 110, 0.12),
+      0 10px 28px rgba(15, 118, 110, 0.16);
+  }
+}
+
+/* ---------------- Status strip ---------------- */
+.cx-ticket__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 10px;
+  padding: 10px 16px;
+  border-radius: 15px 15px 0 0;
+  background: color-mix(in srgb, var(--status-color) 12%, #fff);
+  color: color-mix(in srgb, var(--status-color) 80%, #000);
+
+  .is-live & {
+    background: $brand;
+    color: #fff;
+  }
+}
+
+.cx-ticket__status-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+
+  svg {
+    font-size: 18px;
+  }
+}
+
+.cx-ticket__status-time {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+/* ---------------- Body ---------------- */
+.cx-ticket__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+}
+
+.cx-ticket__hotel {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: $ink;
+}
+
+.cx-ticket__place {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: -6px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: $ink-soft;
+
+  svg {
+    font-size: 16px;
+    color: $brand;
+  }
+}
+
+.cx-ticket__address {
+  margin: -8px 0 0 20px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: $ink-faint;
+}
+
+.cx-ticket__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f7f8fb;
+  font-size: 12px;
+  color: $ink-faint;
+
+  span:last-child {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 3px;
+  }
+
+  svg {
+    font-size: 14px;
+  }
+}
+
+.cx-ticket__number {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: $ink;
+  overflow-wrap: anywhere;
+}
+
+/* ---------------- Tear line with side notches ---------------- */
+.cx-ticket__tear {
+  position: relative;
+  height: 0;
+  margin: 0 14px;
+  border-top: 2px dashed $line;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    top: -11px;
+    width: 20px;
+    height: 20px;
+    border: 1px solid $line;
+    border-radius: 50%;
+    background: $page-bg;
+  }
+
+  // Each circle is centred on the card edge; only the inner half shows
+  // (clip-path), so the ticket looks punched.
+  &::before {
+    left: -25px;
+    clip-path: inset(0 0 0 50%);
+  }
+
+  &::after {
+    right: -25px;
+    clip-path: inset(0 50% 0 0);
+  }
+}
+
+/* ---------------- Items + bill ---------------- */
+.cx-ticket__items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 30px 1fr auto;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 14px;
+  }
+}
+
+.cx-ticket__qty {
+  font-weight: 800;
+  color: $brand;
+}
+
+.cx-ticket__name {
+  min-width: 0;
+  color: $ink;
+  overflow-wrap: anywhere;
+
+  .item-note {
+    display: block;
+  }
+}
+
+.cx-ticket__price {
+  font-weight: 700;
+  color: $ink-soft;
+  white-space: nowrap;
+}
+
+.cx-ticket .cx-ticket__more {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: $ink-faint;
+}
+
+.cx-ticket__bill {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 2px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid #f0f1f5;
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: $ink-faint;
+  }
+
+  dt,
+  dd {
+    margin: 0;
+  }
+
+  dd {
+    font-weight: 700;
+    color: $ink-soft;
+  }
+}
+
+/* ---------------- Payment + total ---------------- */
+.cx-ticket__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px 14px;
+}
+
+.cx-ticket__payment {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: $brand-soft;
+  font-size: 12px;
+  font-weight: 800;
+  color: $brand;
+}
+
+.cx-ticket__total {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+
+  small {
+    font-size: 12px;
+    font-weight: 700;
+    color: $ink-faint;
+  }
+
+  strong {
+    font-size: 20px;
+    font-weight: 800;
+    color: $ink;
+  }
+}
+
+.cx-ticket__cancel {
+  margin: 0 16px 14px;
+}
+
+/* ---------------- Finished: calmer ---------------- */
+.cx-ticket.is-finished {
+  .cx-ticket__hotel,
+  .cx-ticket__total strong {
+    color: #3d4157;
+  }
+}
+
+.cx-ticket.is-cancelled {
+  .cx-ticket__items,
+  .cx-ticket__total strong {
+    opacity: 0.6;
+  }
+
+  .cx-ticket__total strong {
+    text-decoration: line-through;
+  }
+}

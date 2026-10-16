@@ -757,7 +757,8 @@ const OrderBoard = () => {
             ) : (
               <StaffAvatar name={server.server_name} photo={server.photo_url} size={28} tone="server" />
             )}
-            <span>
+            {/* Hover shows the full name (it is cut short on the card). */}
+            <span title={`${server.server_name} · Server${server.section ? ` · ${server.section}` : ""}`}>
               <strong>{server.server_name}</strong>
               <small>Server{server.section ? ` · ${server.section}` : ""}</small>
             </span>

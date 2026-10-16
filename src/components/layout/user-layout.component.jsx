@@ -7,6 +7,7 @@ import useAuth from "hooks/useAuth";
 import InstallAppBanner from "components/common/InstallApp";
 import AppInstallsBadge from "components/common/AppInstallsBadge";
 import { reportInstalledDevice } from "utils/pwaInstall";
+import { isStaffRole } from "utils/permissions";
 
 const UserLayout = () => {
   const { dispatch } = useGlobalContext(); // using context instead of redux
@@ -55,7 +56,7 @@ const UserLayout = () => {
           </div> */}
           {/* Dashboard only: admins see how many users installed the app, and
               everyone gets the install hint (hidden once installed). */}
-          {isDashboard && data?.details?.role === "Admin" && (
+          {isDashboard && isStaffRole(data?.details?.role) && (
             <div className="admin-installs-bar">
               <AppInstallsBadge />
             </div>

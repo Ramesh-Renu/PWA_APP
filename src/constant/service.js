@@ -38,6 +38,9 @@ export const API = {
   SIDE_DISH_API: "/api/menu-side-dishes",
   CATEGORY_SIDE_DISH_API: "/api/side-dishes",
   PWA_INSTALL_API: "/api/pwa/installs",
+  ADMIN_PERMISSIONS_API: "/api/admin/permissions",
+  ADMIN_USERS_API: "/api/admin/users",
+  STAFF_USERS_API: "/api/staff-users",
   /** NOTIFICATION */
   GET_RECENT_NOTIFICATION: "/master/TicketManagement/getnotification",
 };

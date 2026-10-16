@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
+import {
+  CancelRounded,
+  CheckCircleRounded,
+  LocationOnOutlined,
+  TableRestaurantOutlined,
+} from "@mui/icons-material";
 import useGlobalMaster from "hooks/useGlobalMaster";
 import useToast from "hooks/useToast";
 import CancelOrderDialog from "components/common/CancelOrderDialog";
@@ -109,101 +115,146 @@ const OrderHistoryCard = ({ order, onChanged }) => {
   const total = Number(
     order.total_amount ?? order.totalAmount ?? order.subtotal ?? order.total ?? 0,
   );
+  const money = (value) => `₹${Number(value || 0).toFixed(2)}`;
+  // Bill lines shown above the total (only the ones that apply).
+  const billLines = [
+    ["Subtotal", Number(order.subtotal || 0)],
+    ["Tax", Number(order.tax || 0)],
+    ["Service charge", Number(order.service_charge || 0)],
+    ["Discount", -Number(order.discount || 0)],
+  ].filter(([label, value]) => label === "Subtotal" || value !== 0);
+
+  const hotel = order.hotel || {};
+  const place = [hotel.area?.name, hotel.location?.name].filter(Boolean).join(", ");
 
   return (
-    // Finished orders are dimmed; orders still in progress stand out.
+    // A ticket: status strip, restaurant + order details, tear line, the
+    // items and bill, tear line, payment + total. Finished orders are quieter.
     <article
-      className={`cx-card cx-order ${finished ? "is-finished" : "is-live"}`}
+      className={`cx-ticket ${finished ? "is-finished" : "is-live"}${cancelled ? " is-cancelled" : ""}`}
       style={{ "--status-color": statusColor }}
       aria-disabled={finished || undefined}
     >
-      <div className="cx-order__head">
-        <div>
-          <h3>
-            {order.order_number || `Order #${order.id}`}
-            {!finished && (
-              <span className="cx-order__live">
-                <span className="cx-order__live-dot" aria-hidden /> Live
-              </span>
-            )}
-          </h3>
-          <p>
-            {orderedAt && dayjs(orderedAt).format("D MMM, h:mm A")}
-            {!order.reservation_id && " · No table"}
-          </p>
-        </div>
-        <span className="cx-order__hotel" title={order.hotel?.hotel_name}>
-          {order.hotel?.hotel_name || "Restaurant"}
+      <div className="cx-ticket__status">
+        <span className="cx-ticket__status-name">
+          {finished ? (
+            cancelled ? (
+              <CancelRounded fontSize="inherit" aria-hidden />
+            ) : (
+              <CheckCircleRounded fontSize="inherit" aria-hidden />
+            )
+          ) : (
+            <span className="cx-order__live-dot" aria-hidden />
+          )}
+          {finished ? statusName : `Live · ${statusName}`}
         </span>
+        {finished && finishedAt && (
+          <span className="cx-ticket__status-time">
+            {dayjs(finishedAt).format("D MMM YYYY, h:mm A")}
+          </span>
+        )}
       </div>
 
-      {finished ? (
-        <div className="cx-order__final">
-          <span
-            className="ui-chip booking-status"
-            style={{ "--status-color": statusColor }}
-          >
-            {statusName}
+      <div className="cx-ticket__body">
+        <h3 className="cx-ticket__hotel">{hotel.hotel_name || "Restaurant"}</h3>
+        {place && (
+          <p className="cx-ticket__place">
+            <LocationOnOutlined fontSize="inherit" aria-hidden />
+            {place}
+          </p>
+        )}
+        {hotel.address && <p className="cx-ticket__address">{hotel.address}</p>}
+
+        <div className="cx-ticket__meta">
+          <span className="cx-ticket__number">{order.order_number || `Order #${order.id}`}</span>
+          <span>
+            {orderedAt && `Ordered ${dayjs(orderedAt).format("D MMM, h:mm A")}`}
+            {" · "}
+            <TableRestaurantOutlined fontSize="inherit" aria-hidden />{" "}
+            {order.reservation_id ? "Table booking" : "No table"}
           </span>
-          {finishedAt && <span>{dayjs(finishedAt).format("D MMM YYYY, h:mm A")}</span>}
         </div>
-      ) : (
-        <OrderTracker
-          status={order.order_status}
-          cookName={order.cook?.cook_name}
-          serverName={order.server?.server_name}
-          delivery={!order.reservation_id}
-          colorOf={colorOf}
-        />
-      )}
 
-      {/* Who cancelled ("Admin" = the restaurant, or the customer) and why. */}
-      {cancelled && (order.cancelled_by_name || order.cancel_reason) && (
-        <div className="cx-order__cancel-info">
-          {order.cancelled_by_name && (
-            <span>
-              Cancelled by{" "}
-              <strong>{order.cancelled_by_name}</strong>
-            </span>
-          )}
-          {order.cancel_reason && (
-            <span className="cx-order__cancel-reason">Reason: {order.cancel_reason}</span>
-          )}
-        </div>
-      )}
+        {!finished && (
+          <OrderTracker
+            status={order.order_status}
+            cookName={order.cook?.cook_name}
+            serverName={order.server?.server_name}
+            delivery={!order.reservation_id}
+            colorOf={colorOf}
+          />
+        )}
 
-      {items.length > 0 && (
-        <ul className="cx-order__items">
-          {items.slice(0, VISIBLE_ITEMS).map((item, index) => (
-            <li key={item.id || index}>
-              <span className="cx-order__qty">{item.quantity ?? item.qty ?? 1}×</span>
-              <span className="cx-order__name">
-                {item.menu_name || item.name || "Item"}
-                {item.notes && <small className="item-note">{item.notes}</small>}
+        {/* Who cancelled ("Admin" = the restaurant, or the customer) and why. */}
+        {cancelled && (order.cancelled_by_name || order.cancel_reason) && (
+          <div className="cx-order__cancel-info">
+            {order.cancelled_by_name && (
+              <span>
+                Cancelled by{" "}
+                <strong>{order.cancelled_by_name}</strong>
               </span>
-              <span className="cx-order__price">
-                ₹{Number(item.total_price ?? item.totalPrice ?? item.unit_price ?? item.price ?? 0)}
-              </span>
-            </li>
-          ))}
-          {items.length > VISIBLE_ITEMS && (
-            <li className="cx-order__more">
-              +{items.length - VISIBLE_ITEMS} more{" "}
-              {items.length - VISIBLE_ITEMS === 1 ? "item" : "items"}
-            </li>
-          )}
-        </ul>
-      )}
+            )}
+            {order.cancel_reason && (
+              <span className="cx-order__cancel-reason">Reason: {order.cancel_reason}</span>
+            )}
+          </div>
+        )}
+      </div>
 
-      <div className="cx-order__foot">
-        <span>{paymentLabel(order.payment_status, paymentStatusList?.data)}</span>
-        <strong>₹{total.toFixed(2)}</strong>
+      <div className="cx-ticket__tear" aria-hidden />
+
+      <div className="cx-ticket__body">
+        {items.length > 0 && (
+          <ul className="cx-ticket__items">
+            {items.slice(0, VISIBLE_ITEMS).map((item, index) => (
+              <li key={item.id || index}>
+                <span className="cx-ticket__qty">{item.quantity ?? item.qty ?? 1}×</span>
+                <span className="cx-ticket__name">
+                  {item.menu_name || item.name || "Item"}
+                  {item.notes && <small className="item-note">{item.notes}</small>}
+                </span>
+                <span className="cx-ticket__price">
+                  {money(item.total_price ?? item.totalPrice ?? item.unit_price ?? item.price)}
+                </span>
+              </li>
+            ))}
+            {items.length > VISIBLE_ITEMS && (
+              <li className="cx-ticket__more">
+                +{items.length - VISIBLE_ITEMS} more{" "}
+                {items.length - VISIBLE_ITEMS === 1 ? "item" : "items"}
+              </li>
+            )}
+          </ul>
+        )}
+
+        {billLines.length > 1 && (
+          <dl className="cx-ticket__bill">
+            {billLines.map(([label, value]) => (
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{value < 0 ? `− ${money(-value)}` : money(value)}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+      </div>
+
+      <div className="cx-ticket__tear" aria-hidden />
+
+      <div className="cx-ticket__foot">
+        <span className="cx-ticket__payment">
+          {paymentLabel(order.payment_status, paymentStatusList?.data)}
+        </span>
+        <span className="cx-ticket__total">
+          <small>Total</small>
+          <strong>{money(total)}</strong>
+        </span>
       </div>
 
       {order.order_status === ORDERED && (
         <button
           type="button"
-          className="ui-btn ui-btn--ghost ui-btn--sm cx-order__cancel"
+          className="ui-btn ui-btn--ghost ui-btn--sm cx-order__cancel cx-ticket__cancel"
           onClick={() => setConfirming(true)}
         >
           Cancel order

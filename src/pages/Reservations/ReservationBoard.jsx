@@ -44,6 +44,7 @@ import {
 } from "services";
 import { notifyOrdersChanged, onOrdersChanged, onReservationsChanged } from "utils/orderEvents";
 import AppSelect from "components/common/AppSelect";
+import { isStaffRole } from "utils/permissions";
 
 // Order / order item statuses (utils/orderStatus.js, item_status comment).
 const ORDER_READY = 4;
@@ -719,7 +720,11 @@ const ReservationBoard = () => {
       />
     );
     return (
-      <div className={`kanban-card__cook kanban-card__cook--${kind} kanban-card__staff-person`}>
+      <div
+        className={`kanban-card__cook kanban-card__cook--${kind} kanban-card__staff-person`}
+        // The name is cut short on the card; hover shows it in full.
+        title={`${person[config.nameField]} · ${config.singular}`}
+      >
         {/* Click the photo to change the person (where it can still change). */}
         {editable ? (
           <button
@@ -779,7 +784,7 @@ const ReservationBoard = () => {
             Staff bookings (phone / walk-in) show the guest they were made
             for; the guest's own bookings show their account. */}
         {(() => {
-          const byStaff = String(row.user?.role || "").toLowerCase() === "admin";
+          const byStaff = isStaffRole(row.user?.role);
           const guestName = byStaff ? row.customer_name || row.user?.name : row.user?.name;
           const guestPhone = byStaff ? row.customer_mobile : row.user?.mobilenumber;
           const bookedAt = row.booking_date || row.createdAt;

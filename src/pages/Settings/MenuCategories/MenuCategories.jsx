@@ -11,6 +11,7 @@ import useIncrementalRows from "hooks/useIncrementalRows";
 
 import { getApiErrorMessage } from "utils/apiError";
 import SettingsBackLink from "pages/Settings/SettingsBackLink";
+import usePermission from "hooks/usePermission";
 import {
   createMenuCategory,
   deleteMenuCategory,
@@ -63,6 +64,11 @@ const isActive = (value) =>
   value === true || value === 1 || value === "1" || value === "true";
 
 const MenuCategories = () => {
+  const { can } = usePermission();
+  const canCreate = can("menuCategories", "create");
+  // Side dishes belong to a category: managing them is editing it.
+  const canEdit = can("menuCategories", "edit");
+  const canDelete = can("menuCategories", "delete");
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -320,15 +326,17 @@ const MenuCategories = () => {
           <h1>Menu categories</h1>
           <p>Menu categories shared by all hotels — each hotel picks from this list when adding a menu item.</p>
         </div>
-        <div className="ui-header__actions">
-          <button
-            type="button"
-            className="ui-btn ui-btn--primary"
-            onClick={openCreateDialog}
-          >
-            <AddRoundedIcon fontSize="small" /> Add category
-          </button>
-        </div>
+        {canCreate && (
+          <div className="ui-header__actions">
+            <button
+              type="button"
+              className="ui-btn ui-btn--primary"
+              onClick={openCreateDialog}
+            >
+              <AddRoundedIcon fontSize="small" /> Add category
+            </button>
+          </div>
+        )}
       </header>
 
       {error && !dialogOpen && (
@@ -431,18 +439,20 @@ const MenuCategories = () => {
                             +{dishes.length - 3}
                           </span>
                         )}
-                        <button
-                          type="button"
-                          className="category-sides__manage"
-                          aria-label={`Manage side dishes of ${category?.category_name}`}
-                          onClick={() => setSideDishTarget(category)}
-                        >
-                          {dishes.length ? "Manage" : (
-                            <>
-                              <AddRoundedIcon fontSize="inherit" /> Add
-                            </>
-                          )}
-                        </button>
+                        {canEdit && (
+                          <button
+                            type="button"
+                            className="category-sides__manage"
+                            aria-label={`Manage side dishes of ${category?.category_name}`}
+                            onClick={() => setSideDishTarget(category)}
+                          >
+                            {dishes.length ? "Manage" : (
+                              <>
+                                <AddRoundedIcon fontSize="inherit" /> Add
+                              </>
+                            )}
+                          </button>
+                        )}
                       </div>
                     </td>
                     <td className="is-center">{category?.display_order ?? 0}</td>
@@ -452,24 +462,28 @@ const MenuCategories = () => {
                       </span>
                     </td>
                     <td className="is-right">
-                      <button
-                        type="button"
-                        className="ui-icon-btn"
-                        title="Edit"
-                        aria-label={`Edit ${category?.category_name}`}
-                        onClick={() => openEditDialog(category)}
-                      >
-                        <EditOutlinedIcon fontSize="small" />
-                      </button>
-                      <button
-                        type="button"
-                        className="ui-icon-btn ui-icon-btn--danger"
-                        title="Delete"
-                        aria-label={`Delete ${category?.category_name}`}
-                        onClick={() => setDeleteTarget(category)}
-                      >
-                        <DeleteOutlineRoundedIcon fontSize="small" />
-                      </button>
+                      {canEdit && (
+                        <button
+                          type="button"
+                          className="ui-icon-btn"
+                          title="Edit"
+                          aria-label={`Edit ${category?.category_name}`}
+                          onClick={() => openEditDialog(category)}
+                        >
+                          <EditOutlinedIcon fontSize="small" />
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button
+                          type="button"
+                          className="ui-icon-btn ui-icon-btn--danger"
+                          title="Delete"
+                          aria-label={`Delete ${category?.category_name}`}
+                          onClick={() => setDeleteTarget(category)}
+                        >
+                          <DeleteOutlineRoundedIcon fontSize="small" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );

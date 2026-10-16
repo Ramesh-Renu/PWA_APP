@@ -4,6 +4,7 @@ import {
   AddRounded,
   DeleteOutlineRounded,
   HourglassTopRounded,
+  LocationOnOutlined,
   RemoveRounded,
   RestaurantMenuOutlined,
   SearchRounded,
@@ -18,6 +19,8 @@ import useToast from "hooks/useToast";
 import {
   cancelOrder,
   createOrder,
+  getAllArea,
+  getAllLocation,
   getAllOrders,
   getReservationByUser,
 } from "services";
@@ -74,8 +77,35 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
   const [{ data: auth }] = useAuth();
   const { showToast } = useToast();
   const [search, setSearch] = useState("");
-  const [vegOnly, setVegOnly] = useState(false);
-  const [hotelFilter, setHotelFilter] = useState("all");
+  // Filters: diet ("" | "veg" | "nonveg"), available dishes only, menu category.
+  const [diet, setDiet] = useState("");
+  const [availableOnly, setAvailableOnly] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState("");
+
+  // Location / area names shown under each restaurant's name.
+  const [places, setPlaces] = useState({ locations: [], areas: [] });
+  useEffect(() => {
+    const listOf = (response) => {
+      const value = response?.data ?? response;
+      return Array.isArray(value) ? value : [];
+    };
+    Promise.all([getAllLocation().catch(() => null), getAllArea().catch(() => null)]).then(
+      ([locations, areas]) => setPlaces({ locations: listOf(locations), areas: listOf(areas) }),
+    );
+  }, []);
+  // "12, LB Road · Adyar, Chennai": the street address tells apart branches
+  // with the same name in the same area.
+  // { area: "T Nagar, Chennai", address: "No. 112, …" } — the street address
+  // tells apart branches with the same name in the same area.
+  const placeOf = (hotel) => {
+    const nameIn = (list, id) => list.find((row) => Number(row.id) === Number(id))?.name;
+    return {
+      area: [nameIn(places.areas, hotel?.area_id), nameIn(places.locations, hotel?.location_id)]
+        .filter(Boolean)
+        .join(", "),
+      address: String(hotel?.address || "").trim(),
+    };
+  };
 
   const [cart, setCart] = useState(readCart);
   const [pendingSwitch, setPendingSwitch] = useState(null); // { menu }
@@ -131,23 +161,19 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
     [menus],
   );
 
-  const restaurants = useMemo(() => {
-    const seen = new Map();
-    menus.forEach((menu) => {
-      const id = String(hotelIdOf(menu));
-      if (!seen.has(id)) seen.set(id, hotelNameOf(menu));
-    });
-    return [...seen.entries()].map(([id, name]) => ({ id, name }));
-  }, [menus]);
+  const categoryOf = (menu) => menu.category_name ?? menu.category?.category_name ?? "";
+  const categories = useMemo(
+    () => [...new Set(menus.map(categoryOf).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [menus],
+  );
 
   const groups = useMemo(() => {
     const query = search.trim().toLowerCase();
     const byHotel = new Map();
     menus
-      .filter((menu) => !vegOnly || menu.is_veg)
-      .filter(
-        (menu) => hotelFilter === "all" || String(hotelIdOf(menu)) === hotelFilter,
-      )
+      .filter((menu) => !diet || (diet === "veg" ? menu.is_veg : !menu.is_veg))
+      .filter((menu) => !availableOnly || menu.is_available)
+      .filter((menu) => !categoryFilter || categoryOf(menu) === categoryFilter)
       .filter((menu) => {
         if (!query) return true;
         return [
@@ -162,12 +188,12 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
       .forEach((menu) => {
         const id = String(hotelIdOf(menu));
         if (!byHotel.has(id)) {
-          byHotel.set(id, { id, name: hotelNameOf(menu), items: [] });
+          byHotel.set(id, { id, name: hotelNameOf(menu), hotel: menu.hotel, items: [] });
         }
         byHotel.get(id).items.push(menu);
       });
     return [...byHotel.values()];
-  }, [menus, search, vegOnly, hotelFilter]);
+  }, [menus, search, diet, availableOnly, categoryFilter]);
 
   /* ---------------- cart ---------------- */
   const cartLines = Object.entries(cart.items)
@@ -371,27 +397,44 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
         <div className="cx-chip-row" role="toolbar" aria-label="Filters">
           <button
             type="button"
-            className={`cx-chip cx-chip--veg${vegOnly ? " is-active" : ""}`}
-            aria-pressed={vegOnly}
-            onClick={() => setVegOnly((value) => !value)}
+            className={`cx-chip cx-chip--veg${diet === "veg" ? " is-active" : ""}`}
+            aria-pressed={diet === "veg"}
+            onClick={() => setDiet((value) => (value === "veg" ? "" : "veg"))}
           >
             <span className="ui-diet ui-diet--veg" aria-hidden /> Veg only
           </button>
-          {restaurants.length > 1 &&
-            [{ id: "all", name: "All restaurants" }, ...restaurants].map(
-              (restaurant) => (
-                <button
-                  key={restaurant.id}
-                  type="button"
-                  className={`cx-chip${hotelFilter === restaurant.id ? " is-active" : ""}`}
-                  aria-pressed={hotelFilter === restaurant.id}
-                  onClick={() => setHotelFilter(restaurant.id)}
-                >
-                  {restaurant.name}
-                </button>
-              ),
-            )}
+          <button
+            type="button"
+            className={`cx-chip cx-chip--nonveg${diet === "nonveg" ? " is-active" : ""}`}
+            aria-pressed={diet === "nonveg"}
+            onClick={() => setDiet((value) => (value === "nonveg" ? "" : "nonveg"))}
+          >
+            <span className="ui-diet ui-diet--nonveg" aria-hidden /> Non-veg
+          </button>
+          <button
+            type="button"
+            className={`cx-chip${availableOnly ? " is-active" : ""}`}
+            aria-pressed={availableOnly}
+            onClick={() => setAvailableOnly((value) => !value)}
+          >
+            Available
+          </button>
         </div>
+        {/* Outside the chip row: its sideways scroll would clip the list. */}
+        {categories.length > 1 && (
+          <div className="cx-menu-filters__category">
+            <AppSelect
+              variant="toolbar"
+              value={categoryFilter}
+              onChange={(event) => setCategoryFilter(event.target.value)}
+              aria-label="Menu category"
+              options={[
+                { value: "", label: "All categories" },
+                ...categories.map((category) => ({ value: category, label: category })),
+              ]}
+            />
+          </div>
+        )}
       </div>
 
       {groups.length === 0 ? (
@@ -406,6 +449,15 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
             <header className="cx-menu-group__head">
               <div>
                 <h2>{group.name}</h2>
+                {placeOf(group.hotel).area && (
+                  <p className="cx-menu-group__place">
+                    <LocationOnOutlined fontSize="inherit" aria-hidden />
+                    {placeOf(group.hotel).area}
+                  </p>
+                )}
+                {placeOf(group.hotel).address && (
+                  <p className="cx-menu-group__address">{placeOf(group.hotel).address}</p>
+                )}
                 <span>
                   {group.items.length} {group.items.length === 1 ? "dish" : "dishes"}
                   {String(cart.hotelId) === group.id && itemCount > 0 && " · in your order"}

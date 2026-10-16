@@ -5,6 +5,7 @@ import StaffAvatar from "pages/Settings/Staff/StaffAvatar";
 import { formatDuration } from "pages/Orders/PrepTimer";
 import { paymentMethodLabel } from "pages/Orders/PaymentDialog";
 import BookingStageTracker from "./BookingStageTracker";
+import { isStaffRole } from "utils/permissions";
 
 const ITEM_CANCELLED = 5;
 const ORDER_CANCELLED = 7;
@@ -71,7 +72,7 @@ const BookingDetailsDialog = ({
   if (!reservation) return null;
 
   const user = reservation.user;
-  const byAdmin = String(user?.role || "").toLowerCase() === "admin";
+  const byAdmin = isStaffRole(user?.role);
   // Reservations name their created time booking_date (see the model).
   const bookedAt = reservation.booking_date || reservation.createdAt;
   const liveOrders = orders.filter((order) => order.order_status !== ORDER_CANCELLED);

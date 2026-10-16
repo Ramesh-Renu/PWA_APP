@@ -2,7 +2,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
+  AdminPanelSettingsOutlined,
   ApartmentOutlined,
+  BadgeOutlined,
   CategoryOutlined,
   CleaningServicesOutlined,
   ChevronLeftRounded,
@@ -14,6 +16,8 @@ import {
   LocationCityOutlined,
   PaymentsOutlined,
   LogoutRounded,
+  ManageAccountsOutlined,
+  PersonOffOutlined,
   MenuRounded,
   PlaceOutlined,
   ReceiptLongOutlined,
@@ -28,17 +32,20 @@ import {
 } from "@mui/icons-material";
 import LogoAvatarShowLetter from "components/common/LogoAvatarShowLetter";
 import useAuth from "hooks/useAuth";
+import usePermission from "hooks/usePermission";
+import { roleLabel } from "utils/permissions";
 import { useGlobalContext } from "store/context/GlobalProvider";
 
 const SIDEBAR_WIDTH = 248;
 const SIDEBAR_COLLAPSED_WIDTH = 76;
 const COLLAPSE_KEY = "sidebarCollapsed";
 
+// `page`: permission key (utils/permissions.js); hidden without view access.
 const ADMIN_LINKS = [
-  { label: "Dashboard", to: "/dashboard", icon: SpaceDashboardOutlined, match: /^\/dashboard/ },
-  { label: "Hotels", to: "/hotellist", icon: ApartmentOutlined, match: /^\/(hotellist|details\/)/ },
-  { label: "Reservations", to: "/booked-table", icon: EventNoteOutlined, match: /^\/booked-table/ },
-  { label: "Orders", to: "/orders", icon: ReceiptLongOutlined, match: /^\/orders/ },
+  { label: "Dashboard", page: "dashboard", to: "/dashboard", icon: SpaceDashboardOutlined, match: /^\/dashboard/ },
+  { label: "Hotels", page: "hotels", to: "/hotellist", icon: ApartmentOutlined, match: /^\/(hotellist|details\/)/ },
+  { label: "Reservations", page: "reservations", to: "/booked-table", icon: EventNoteOutlined, match: /^\/booked-table/ },
+  { label: "Orders", page: "orders", to: "/orders", icon: ReceiptLongOutlined, match: /^\/orders/ },
 ];
 
 // Admin master data, opened from the "Settings" item as a pop-up menu.
@@ -47,17 +54,29 @@ const SETTINGS_GROUP = {
   to: "/settings",
   match: /^\/(settings|menu-categories)(\/|$)/,
   children: [
-    { label: "Menu categories", to: "/settings/menu-categories", icon: CategoryOutlined, match: /^\/(settings\/menu-categories|menu-categories)/ },
-    { label: "Cooks", to: "/settings/cooks", icon: SoupKitchenOutlined, match: /^\/settings\/cooks/ },
-    { label: "Servers", to: "/settings/servers", icon: RoomServiceOutlined, match: /^\/settings\/servers/ },
-    { label: "Cleaners", to: "/settings/cleaners", icon: CleaningServicesOutlined, match: /^\/settings\/cleaners/ },
-    { label: "Locations", to: "/settings/masters/locations", icon: LocationCityOutlined, match: /^\/settings\/masters\/locations/ },
-    { label: "Areas", to: "/settings/areas", icon: PlaceOutlined, match: /^\/settings\/areas/ },
-    { label: "Spice levels", to: "/settings/masters/spice-levels", icon: LocalFireDepartmentOutlined, match: /^\/settings\/masters\/spice-levels/ },
-    { label: "Dining status", to: "/settings/masters/dining-status", icon: EventNoteOutlined, match: /^\/settings\/masters\/dining-status/ },
-    { label: "Order status", to: "/settings/masters/order-status", icon: ReceiptLongOutlined, match: /^\/settings\/masters\/order-status/ },
-    { label: "Payment status", to: "/settings/masters/payment-status", icon: PaymentsOutlined, match: /^\/settings\/masters\/payment-status/ },
-    { label: "Seat status", to: "/settings/masters/seat-status", icon: EventSeatOutlined, match: /^\/settings\/masters\/seat-status/ },
+    { label: "Menu categories", page: "menuCategories", to: "/settings/menu-categories", icon: CategoryOutlined, match: /^\/(settings\/menu-categories|menu-categories)/ },
+    { label: "Cooks", page: "cooks", to: "/settings/cooks", icon: SoupKitchenOutlined, match: /^\/settings\/cooks/ },
+    { label: "Servers", page: "servers", to: "/settings/servers", icon: RoomServiceOutlined, match: /^\/settings\/servers/ },
+    { label: "Cleaners", page: "cleaners", to: "/settings/cleaners", icon: CleaningServicesOutlined, match: /^\/settings\/cleaners/ },
+    { label: "Locations", page: "locations", to: "/settings/masters/locations", icon: LocationCityOutlined, match: /^\/settings\/masters\/locations/ },
+    { label: "Areas", page: "areas", to: "/settings/areas", icon: PlaceOutlined, match: /^\/settings\/areas/ },
+    { label: "Spice levels", page: "spiceLevels", to: "/settings/masters/spice-levels", icon: LocalFireDepartmentOutlined, match: /^\/settings\/masters\/spice-levels/ },
+    { label: "Dining status", page: "diningStatus", to: "/settings/masters/dining-status", icon: EventNoteOutlined, match: /^\/settings\/masters\/dining-status/ },
+    { label: "Order status", page: "orderStatus", to: "/settings/masters/order-status", icon: ReceiptLongOutlined, match: /^\/settings\/masters\/order-status/ },
+    { label: "Payment status", page: "paymentStatus", to: "/settings/masters/payment-status", icon: PaymentsOutlined, match: /^\/settings\/masters\/payment-status/ },
+    { label: "Seat status", page: "seatStatus", to: "/settings/masters/seat-status", icon: EventSeatOutlined, match: /^\/settings\/masters\/seat-status/ },
+  ],
+};
+
+// User Management: Staff users (Admins with access) and Admin users
+// (SuperAdmin), opened from its own sidebar item as a pop-up menu.
+const USERS_GROUP = {
+  label: "User Management",
+  match: /^\/user-management(\/|$)/,
+  children: [
+    { label: "Staff users", page: "users", to: "/user-management/staff", icon: BadgeOutlined, match: /^\/user-management\/staff/ },
+    { label: "Admin users", page: "adminUsers", to: "/user-management/admins", icon: AdminPanelSettingsOutlined, match: /^\/user-management\/admins/ },
+    { label: "Inactive users", page: "inactiveUsers", to: "/user-management/inactive", icon: PersonOffOutlined, match: /^\/user-management\/inactive/ },
   ],
 };
 
@@ -162,18 +181,21 @@ const SideNav = () => {
   const location = useLocation();
   const [{ data: auth }] = useAuth();
   const { dispatch } = useGlobalContext();
-  const isAdmin = auth?.details?.role === "Admin";
+  const { isStaff: isAdmin, can, homePath } = usePermission();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
+  const [usersMenuOpen, setUsersMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const topbarRef = useRef(null);
   const settingsRef = useRef(null);
+  const usersRef = useRef(null);
   const accountRef = useRef(null);
   const inSettings = SETTINGS_GROUP.match.test(location.pathname);
+  const inUsers = USERS_GROUP.match.test(location.pathname);
 
   const userName = auth?.details?.name || "User";
-  const userRole = auth?.details?.role;
+  const userRole = roleLabel(auth?.details);
   const userPhone = auth?.details?.mobilenumber;
 
   // Sidebar width for the main column and centred fixed elements.
@@ -210,13 +232,14 @@ const SideNav = () => {
   useEffect(() => {
     setDrawerOpen(false);
     setSettingsMenuOpen(false);
+    setUsersMenuOpen(false);
     setAccountMenuOpen(false);
   }, [location.pathname, location.search]);
 
   useEffect(() => {
     if (!drawerOpen) return undefined;
     const onKeyDown = (event) => {
-      if (event.key === "Escape" && !settingsMenuOpen && !accountMenuOpen) {
+      if (event.key === "Escape" && !settingsMenuOpen && !usersMenuOpen && !accountMenuOpen) {
         setDrawerOpen(false);
       }
     };
@@ -226,7 +249,7 @@ const SideNav = () => {
       document.removeEventListener("keydown", onKeyDown);
       document.body.classList.remove("app-drawer-open");
     };
-  }, [drawerOpen, settingsMenuOpen, accountMenuOpen]);
+  }, [drawerOpen, settingsMenuOpen, usersMenuOpen, accountMenuOpen]);
 
   const userLogout = () => {
     localStorage.removeItem("token");
@@ -247,8 +270,11 @@ const SideNav = () => {
       : location.pathname.startsWith("/book-table") &&
         (link.tab ? currentTab === link.tab : !currentTab);
 
-  const links = isAdmin ? ADMIN_LINKS : CUSTOMER_LINKS;
-  const homePath = isAdmin ? "/dashboard" : "/book-table";
+  const links = isAdmin ? ADMIN_LINKS.filter((link) => can(link.page)) : CUSTOMER_LINKS;
+  const settingsLinks = SETTINGS_GROUP.children.filter((link) => can(link.page));
+  const showSettings = isAdmin && settingsLinks.length > 0;
+  const userLinks = USERS_GROUP.children.filter((link) => can(link.page));
+  const showUsers = isAdmin && userLinks.length > 0;
 
   const renderAvatar = () =>
     auth?.details?.name ? (
@@ -336,7 +362,23 @@ const SideNav = () => {
             );
           })}
 
-          {isAdmin && (
+          {showUsers && (
+            <button
+              ref={usersRef}
+              type="button"
+              className={`app-sidebar__link${inUsers || usersMenuOpen ? " is-active" : ""}`}
+              onClick={() => setUsersMenuOpen((open) => !open)}
+              aria-haspopup="menu"
+              aria-expanded={usersMenuOpen}
+              title={collapsed ? USERS_GROUP.label : undefined}
+            >
+              <ManageAccountsOutlined aria-hidden />
+              <span>{USERS_GROUP.label}</span>
+              <ChevronRightRounded className="app-sidebar__link-more" aria-hidden />
+            </button>
+          )}
+
+          {showSettings && (
             <button
               ref={settingsRef}
               type="button"
@@ -382,7 +424,36 @@ const SideNav = () => {
         </div>
       </aside>
 
-      {isAdmin && (
+      {showUsers && (
+        <SidebarFlyout
+          anchorRef={usersRef}
+          open={usersMenuOpen}
+          onClose={() => setUsersMenuOpen(false)}
+          label={USERS_GROUP.label}
+        >
+          <div className="app-flyout__head">
+            <strong>{USERS_GROUP.label}</strong>
+            <small>Who can use the app</small>
+          </div>
+          {userLinks.map((link) => {
+            const Icon = link.icon;
+            const active = link.match.test(location.pathname);
+            return (
+              <NavLink
+                key={link.label}
+                to={link.to}
+                role="menuitem"
+                className={() => `app-flyout__item${active ? " is-active" : ""}`}
+              >
+                <Icon aria-hidden />
+                <span>{link.label}</span>
+              </NavLink>
+            );
+          })}
+        </SidebarFlyout>
+      )}
+
+      {showSettings && (
         <SidebarFlyout
           anchorRef={settingsRef}
           open={settingsMenuOpen}
@@ -393,7 +464,7 @@ const SideNav = () => {
             <strong>Settings</strong>
             <small>Master data</small>
           </div>
-          {SETTINGS_GROUP.children.map((link) => {
+          {settingsLinks.map((link) => {
             const Icon = link.icon;
             const active = link.match.test(location.pathname);
             return (
