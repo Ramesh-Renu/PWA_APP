@@ -548,15 +548,17 @@ const CreateHotel = () => {
         </div>
 
         <div className="ui-toolbar">
-          <label className="ui-search">
-            <SearchRounded aria-hidden />
-            <input
-              type="search"
-              onChange={handleSearchHotel}
-              placeholder="Search by hotel name or location"
-              aria-label="Search hotels"
-            />
-          </label>
+          {listOfHotel?.length > 1 && (
+            <label className="ui-search">
+              <SearchRounded aria-hidden />
+              <input
+                type="search"
+                onChange={handleSearchHotel}
+                placeholder="Search by hotel name or location"
+                aria-label="Search hotels"
+              />
+            </label>
+          )}
           <span className="ui-toolbar__count">
             {listOfHotel?.length || 0} hotel
             {listOfHotel?.length === 1 ? "" : "s"}

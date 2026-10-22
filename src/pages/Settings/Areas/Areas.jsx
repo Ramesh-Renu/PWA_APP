@@ -73,7 +73,7 @@ const Areas = () => {
     locations.find((location) => String(location.id) === String(id))?.name || "—";
 
   const visible = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = areas.length > 1 ? search.trim().toLowerCase() : "";
     return areas.filter((area) => {
       const matchesSearch =
         !query ||
@@ -209,16 +209,18 @@ const Areas = () => {
       )}
 
       <div className="ui-toolbar">
-        <label className="ui-search">
-          <SearchRoundedIcon fontSize="small" aria-hidden />
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search areas"
-            aria-label="Search areas"
-          />
-        </label>
+        {areas.length > 1 && (
+          <label className="ui-search">
+            <SearchRoundedIcon fontSize="small" aria-hidden />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search areas"
+              aria-label="Search areas"
+            />
+          </label>
+        )}
         <AppSelect
           variant="toolbar"
           value={locationFilter}

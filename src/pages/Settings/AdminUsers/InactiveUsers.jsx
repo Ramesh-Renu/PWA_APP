@@ -77,7 +77,7 @@ const InactiveUsers = () => {
   };
 
   const searched = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = rows.length > 1 ? search.trim().toLowerCase() : "";
     if (!query) return rows;
     return rows.filter((user) =>
       [user.name, user.mobilenumber]
@@ -145,16 +145,18 @@ const InactiveUsers = () => {
       )}
 
       <div className="ui-toolbar">
-        <label className="ui-search">
-          <SearchRoundedIcon fontSize="small" aria-hidden />
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search name or mobile"
-            aria-label="Search inactive users"
-          />
-        </label>
+        {rows.length > 1 && (
+          <label className="ui-search">
+            <SearchRoundedIcon fontSize="small" aria-hidden />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search name or mobile"
+              aria-label="Search inactive users"
+            />
+          </label>
+        )}
         <span className="ui-toolbar__count">{visible.length} inactive</span>
       </div>
 

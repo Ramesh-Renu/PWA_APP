@@ -44,6 +44,7 @@ export default function Login() {
   const [inProgress, setInProgress] = useState(false);
   const [isTokenSuccess, setIsTokenSuccess] = useState();
   const [getOTPnumber, setGetOTPnumber] = useState("");
+  const [devOtp, setDevOtp] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [activeForm, setActiveForm] = useState(false);
   const [createForm, setCreateForm] = useState(false);
@@ -81,6 +82,7 @@ export default function Login() {
 
     setMobile(digitsOnly);
     setEnableOTPsent(digitsOnly.length !== 10);
+    setDevOtp("");
 
     if (!digitsOnly || digitsOnly.length === 10) {
       setMobileError("");
@@ -106,6 +108,7 @@ export default function Login() {
       return;
     }
     setGetOTPnumber("");
+    setDevOtp("");
     setShowOTPSent(true);
     setOtpTimer(60);
     try {
@@ -113,7 +116,17 @@ export default function Login() {
         mobilenumber: mobile,
       });
       if (res.success) {
-        showToast({ message: res.message, variant: "success" });
+        const returnedDevOtp = res?.otp ? String(res.otp) : "";
+        if (returnedDevOtp) {
+          setDevOtp(returnedDevOtp);
+          setGetOTPnumber(returnedDevOtp);
+        }
+        showToast({
+          message: returnedDevOtp
+            ? `${res.message}: ${returnedDevOtp}`
+            : res.message,
+          variant: "success",
+        });
         setOtpTimer(60);
         const timer = setInterval(() => {
           setOtpTimer((prev) => (prev > 0 ? prev - 1 : 0));
@@ -306,6 +319,11 @@ export default function Login() {
                     onChange={(e) => setGetOTPnumber(e.target.value)}
                     required
                   />
+                  {devOtp && (
+                    <small className="tableflow-login__dev-otp" role="status">
+                      Development OTP: <strong>{devOtp}</strong>
+                    </small>
+                  )}
                 </label>
               )}
               <div className="tableflow-login__otp-actions">
@@ -333,6 +351,7 @@ export default function Login() {
                   onClick={() => {
                     setShowOTPSent(false);
                     setOtpTimer(0);
+                    setDevOtp("");
                   }}
                   className="tableflow-login__otp-button tableflow-login__otp-button--ghost"
                 >

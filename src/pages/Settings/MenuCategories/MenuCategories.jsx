@@ -177,7 +177,7 @@ const MenuCategories = () => {
   }, [categories, otherCategories, form.category_name]);
 
   const filteredCategories = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = categories.length > 1 ? search.trim().toLowerCase() : "";
 
     return [...categories]
       .filter((category) => {
@@ -357,16 +357,18 @@ const MenuCategories = () => {
       )}
 
       <div className="ui-toolbar">
-        <label className="ui-search">
-          <SearchRoundedIcon fontSize="small" aria-hidden />
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search categories"
-            aria-label="Search categories"
-          />
-        </label>
+        {categories.length > 1 && (
+          <label className="ui-search">
+            <SearchRoundedIcon fontSize="small" aria-hidden />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search categories"
+              aria-label="Search categories"
+            />
+          </label>
+        )}
         <div className="ui-segment" role="radiogroup" aria-label="Status">
           {[
             { value: "all", label: "All" },

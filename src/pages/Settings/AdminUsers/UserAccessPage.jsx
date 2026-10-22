@@ -128,7 +128,7 @@ const UserAccessPage = ({ config }) => {
 
   // Search + category, before the job tab (the tab counts use this).
   const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = users.length > 1 ? search.trim().toLowerCase() : "";
     return users.filter(
       (user) =>
         (!categoryFilter || user.staff_category === categoryFilter) &&
@@ -388,16 +388,18 @@ const UserAccessPage = ({ config }) => {
       )}
 
       <div className="ui-toolbar">
-        <label className="ui-search">
-          <SearchRoundedIcon fontSize="small" aria-hidden />
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search name, mobile or email"
-            aria-label={`Search ${config.title.toLowerCase()}`}
-          />
-        </label>
+        {users.length > 1 && (
+          <label className="ui-search">
+            <SearchRoundedIcon fontSize="small" aria-hidden />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search name, mobile or email"
+              aria-label={`Search ${config.title.toLowerCase()}`}
+            />
+          </label>
+        )}
         {categories && (
           <AppSelect
             variant="toolbar"

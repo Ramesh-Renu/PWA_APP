@@ -272,6 +272,15 @@
   font-weight: 600;
 }
 
+.tableflow-login__dev-otp {
+  color: #0a4b43;
+  font-size: 13px;
+}
+
+.tableflow-login__dev-otp strong {
+  letter-spacing: 1px;
+}
+
 .tableflow-login__form-row {
   display: flex;
   align-items: center;

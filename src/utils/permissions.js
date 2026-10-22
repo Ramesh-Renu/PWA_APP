@@ -29,10 +29,31 @@ export const isStaffRole = (role) => ["admin", "superadmin", "staff"].includes(r
 /** Pages only a SuperAdmin can change (never granted). */
 export const SUPER_ADMIN_PAGES = ["adminUsers"];
 
+// These pages operate on hotel-owned data. A limited Admin should not see
+// them when no hotel has been assigned, even if an old permission record says
+// the page is enabled.
+export const HOTEL_SCOPED_PAGES = [
+  "hotels",
+  "reservations",
+  "orders",
+  "menu",
+  "menuCategories",
+  "cooks",
+  "servers",
+  "cleaners",
+  "areas",
+];
+
+export const hasHotelAccess = (details) =>
+  isSuperAdmin(details?.role) ||
+  details?.hotel_ids == null ||
+  (Array.isArray(details.hotel_ids) && details.hotel_ids.length > 0);
+
 /** Can this user do `action` on `page`? Guests never; SuperAdmin always. */
 export const can = (details, page, action = "view") => {
   if (!isStaffRole(details?.role)) return false;
   if (isSuperAdmin(details.role)) return true;
+  if (HOTEL_SCOPED_PAGES.includes(page) && !hasHotelAccess(details)) return false;
   // Admin users: Admins can look (read-only); only a SuperAdmin changes it.
   if (SUPER_ADMIN_PAGES.includes(page)) {
     return action === "view" && roleOf(details.role) === "admin";

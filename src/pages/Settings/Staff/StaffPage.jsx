@@ -77,11 +77,13 @@ const StaffPage = ({ config }) => {
     api,
   } = config;
   // Permission page key: cooks, servers, cleaners.
-  const { can } = usePermission();
+  const { details, can } = usePermission();
   const canCreate = can(`${kind}s`, "create");
   const canEdit = can(`${kind}s`, "edit");
   const canDelete = can(`${kind}s`, "delete");
   const lower = singular.toLowerCase();
+  const allHotelsAccess = details?.hotel_ids == null;
+  const hotelRequired = !allHotelsAccess;
 
   const emptyForm = {
     name: "",
@@ -143,7 +145,7 @@ const StaffPage = ({ config }) => {
   }, [load]);
 
   const visible = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = rows.length > 1 ? search.trim().toLowerCase() : "";
     return rows.filter((row) => {
       const matchesSearch =
         !query ||
@@ -164,7 +166,10 @@ const StaffPage = ({ config }) => {
 
   const openCreate = () => {
     setEditing(null);
-    setForm(emptyForm);
+    setForm({
+      ...emptyForm,
+      hotel_id: hotelRequired && hotels.length === 1 ? String(hotels[0].id) : "",
+    });
     setPhotoFile(null);
     setPhotoPreview("");
     setFormError("");
@@ -340,24 +345,26 @@ const StaffPage = ({ config }) => {
 
       <div className="ui-toolbar">
         <div className="ui-toolbar__group">
-          <label className="ui-search">
-            <SearchRounded fontSize="small" aria-hidden />
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={`Search name or ${detailLabel.toLowerCase()}`}
-              aria-label={`Search ${title.toLowerCase()}`}
-            />
-          </label>
+          {rows.length > 1 && (
+            <label className="ui-search">
+              <SearchRounded fontSize="small" aria-hidden />
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder={`Search name or ${detailLabel.toLowerCase()}`}
+                aria-label={`Search ${title.toLowerCase()}`}
+              />
+            </label>
+          )}
           <AppSelect
             variant="toolbar"
             value={hotelFilter}
             onChange={(event) => setHotelFilter(event.target.value)}
             aria-label="Filter by hotel"
             options={[
-              { value: "", label: "Every hotel" },
-              { value: "all-hotels", label: "Works at all hotels" },
+              { value: "", label: allHotelsAccess ? "Every hotel" : "Assigned hotels" },
+              ...(allHotelsAccess ? [{ value: "all-hotels", label: "Works at all hotels" }] : []),
               ...hotels.map((hotel) => ({ value: hotel.id, label: hotel.hotel_name })),
             ]}
           />
@@ -575,10 +582,13 @@ const StaffPage = ({ config }) => {
                     value={form.hotel_id}
                     onChange={handleChange}
                     options={[
-                      { value: "", label: "All hotels" },
+                      ...(allHotelsAccess ? [{ value: "", label: "All hotels" }] : []),
                       ...hotels.map((hotel) => ({ value: hotel.id, label: hotel.hotel_name })),
                     ]}
                   />
+                  {hotelRequired && !form.hotel_id && (
+                    <span className="hotel-form__hint">Choose one of your assigned hotels.</span>
+                  )}
                 </div>
                 <label
                   className={`menu-switch cook-form__switch${editing?.access_removed ? " is-disabled" : ""}`}
@@ -833,7 +843,7 @@ const StaffPage = ({ config }) => {
             <button
               type="submit"
               className="hotel-form__btn hotel-form__btn--primary"
-              disabled={saving || !form.name.trim()}
+              disabled={saving || !form.name.trim() || (hotelRequired && !form.hotel_id)}
             >
               {saving ? "Saving…" : editing ? "Save changes" : `Add ${lower}`}
             </button>

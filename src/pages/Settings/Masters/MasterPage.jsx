@@ -71,7 +71,7 @@ const MasterPage = () => {
 
   const visible = useMemo(() => {
     if (!config) return [];
-    const query = search.trim().toLowerCase();
+    const query = rows.length > 1 ? search.trim().toLowerCase() : "";
     const sorted = config.sort ? [...rows].sort(config.sort) : rows;
     if (!query) return sorted;
     return sorted.filter((row) =>
@@ -220,16 +220,18 @@ const MasterPage = () => {
       )}
 
       <div className="ui-toolbar">
-        <label className="ui-search">
-          <SearchRoundedIcon fontSize="small" aria-hidden />
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={`Search ${config.title.toLowerCase()}`}
-            aria-label={`Search ${config.title.toLowerCase()}`}
-          />
-        </label>
+        {rows.length > 1 && (
+          <label className="ui-search">
+            <SearchRoundedIcon fontSize="small" aria-hidden />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={`Search ${config.title.toLowerCase()}`}
+              aria-label={`Search ${config.title.toLowerCase()}`}
+            />
+          </label>
+        )}
         <span className="ui-toolbar__count">
           {visible.length} {visible.length === 1 ? config.singular.toLowerCase() : config.title.toLowerCase()}
         </span>
