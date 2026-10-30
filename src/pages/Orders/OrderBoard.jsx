@@ -82,9 +82,9 @@ const ITEM_READY = 3;
 // The kitchen ticks dishes as prepared while it works on the order.
 const READY = 4;
 
-// Table orders reach the kitchen (Preparing and later) only from 15 minutes
+// Table orders reach the kitchen (Preparing and later) only from 30 minutes
 // before the booking time — same rule as the API (updateOrderStatus).
-const KITCHEN_LEAD_MINUTES = 15;
+const KITCHEN_LEAD_MINUTES = 30;
 const KITCHEN_STAGES = [PREPARING, READY, SERVED];
 /** Booking time of a table order and when its kitchen stages open; null without a booking. */
 const kitchenDue = (order) => {
@@ -593,7 +593,7 @@ const OrderBoard = () => {
       });
       return;
     }
-    // Table order before its time: Preparing / Ready / Served open 15 minutes
+    // Table order before its time: Preparing / Ready / Served open 30 minutes
     // before the booking (it can still be accepted or cancelled).
     const due = kitchenDue(order);
     if (KITCHEN_STAGES.includes(column.id) && due?.waiting) {

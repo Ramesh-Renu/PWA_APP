@@ -12,15 +12,17 @@ const STATUS = {
   PENDING: 5,
   CLEANING: 6,
   SERVING: 7,
+  WAITING: 8,
 };
 const FLOW = [STATUS.CONFIRMED, STATUS.SEATED, STATUS.SERVING, STATUS.CLEANING, STATUS.COMPLETED];
 const FINAL = [STATUS.COMPLETED, STATUS.CANCELLED];
 // Stages where the guests are at the table; the total time counts from the first.
 const DINING = [STATUS.SEATED, STATUS.SERVING, STATUS.CLEANING];
 // Before the guests arrive: these stages show only when they were entered.
-const PRE_DINING = [STATUS.PENDING, STATUS.CONFIRMED];
+const PRE_DINING = [STATUS.PENDING, STATUS.WAITING, STATUS.CONFIRMED];
 const DEFAULT_STAGES = {
   [STATUS.PENDING]: { name: "Pending", color: "#f59e0b" },
+  [STATUS.WAITING]: { name: "Waiting", color: "#d946ef" },
   [STATUS.CONFIRMED]: { name: "Confirmed", color: "#0ea5e9" },
   [STATUS.SEATED]: { name: "Seated", color: "#22c55e" },
   [STATUS.SERVING]: { name: "Serving", color: "#8b5cf6" },
@@ -94,9 +96,10 @@ const BookingStageTracker = ({ reservation, columns = [] }) => {
     if (!enteredAt.has(entry.status)) enteredAt.set(entry.status, entry.at);
   });
 
-  // Steps: the normal flow; Pending first if the booking had it; a cancelled
-  // booking ends at Cancelled instead of the stages it never reached.
+  // Steps: the normal flow; Waiting / Pending first if the booking had them; a
+  // cancelled booking ends at Cancelled instead of the stages it never reached.
   let steps = [...FLOW];
+  if (enteredAt.has(STATUS.WAITING)) steps = [STATUS.WAITING, ...steps];
   if (enteredAt.has(STATUS.PENDING)) steps = [STATUS.PENDING, ...steps];
   if (current === STATUS.CANCELLED) {
     steps = [...steps.filter((id) => enteredAt.has(id) && id !== STATUS.COMPLETED), STATUS.CANCELLED];

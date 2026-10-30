@@ -44,6 +44,7 @@ export const BOARD_FILTER_OPTIONS = [
 // `order` is the reading order in the list beside the donut.
 const STATUS_ROWS = [
   { key: "pending", id: 5, label: "Pending", color: "#f59e0b", order: 0 },
+  { key: "waiting", id: 8, label: "Waiting", color: "#d946ef", order: 0.5 },
   { key: "confirmed", id: 1, label: "Confirmed", color: "#3b82f6", order: 1 },
   { key: "seated", id: 2, label: "Seated", color: "#0d9488", order: 2 },
   { key: "completed", id: 3, label: "Completed", color: "#22c55e", order: 4 },

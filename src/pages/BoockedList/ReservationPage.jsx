@@ -146,8 +146,9 @@ const ReservationPage = ({ onBookTable }) => {
           key={row.id}
           reservation={row}
           status={statusOf(row)}
-          // Same rule as before: only bookings not yet seated can be cancelled.
-          canCancel={!(row.dining_status > 1)}
+          // Same rule as before: only bookings not yet seated can be cancelled
+          // (a waiting list entry, status 8, isn't seated yet).
+          canCancel={!(row.dining_status > 1) || row.dining_status === 8}
           isPast={past}
           onView={() => openHotel(row, { again: past })}
           onCancel={() => setToCancel(row)}

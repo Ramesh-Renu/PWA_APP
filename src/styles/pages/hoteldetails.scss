@@ -870,7 +870,9 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  // Narrow cards: the End Time drops to its own line instead of being cut off.
+  flex-wrap: wrap;
+  gap: 4px 8px;
   min-height: 46px;
   margin-top: auto;
   padding: 8px 12px 10px 14px;
@@ -882,6 +884,7 @@ $shadow-md: 0 10px 30px rgba(15, 75, 67, 0.08);
   align-items: center;
   gap: 5px;
   font-size: 12px;
+  white-space: nowrap;
   color: $ink-soft;
 }
 

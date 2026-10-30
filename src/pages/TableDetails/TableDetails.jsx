@@ -135,7 +135,8 @@ const TableDetails = ({
               tables: (floor.tables || []).map((table) => ({
                 ...table,
                 seats: (table.seats || []).map((seat) =>
-                  picked.has(seat.seat_id) && seat.status === 4
+                  // Staff may keep booked seats selected for the waiting list.
+                  picked.has(seat.seat_id) && (seat.status === 4 || isAdminView)
                     ? { ...seat, is_booking: true }
                     : seat,
                 ),
@@ -407,7 +408,9 @@ const TableDetails = ({
     setshowDeleteSeats(true);
   };
 
-  const createBookingTableinSeats = async (hotelData) => {
+  // waitingList: staff adding the guest to the waiting list for these seats
+  // (not a confirmed booking). Customers see the seats as booked either way.
+  const createBookingTableinSeats = async (hotelData, { waitingList = false } = {}) => {
     const floorToShow = floors[selectedFloorIndex] || floors[0];
     const bookingSeatsByTable = floorToShow?.tables
       .map((table) => {
@@ -432,6 +435,7 @@ const TableDetails = ({
       dining_date: slotActive ? slot.date : now.format("YYYY-MM-DD"),
       reservation_time: slotActive ? slot.time : now.format("HH:mm"),
       guest_count: slot?.guests || null,
+      waiting_list: waitingList,
     };
     setLoading(true);
     try {
@@ -444,6 +448,16 @@ const TableDetails = ({
           response?.reservation_id;
         const bookedAt = dayjs(`${param.dining_date}T${param.reservation_time}`);
         const seatsText = `${seletedSeatCount || ""} ${seletedSeatCount === 1 ? "seat" : "seats"}`;
+        // Nothing to order yet: food is ordered once the guests are at the table.
+        if (waitingList) {
+          showToast({
+            title: rid ? `Added to waiting list · #${rid}` : "Added to waiting list",
+            message: `${guest?.name ? `For ${guest.name} · ` : ""}${bookedAt.format("ddd, D MMM [at] h:mm A")} · ${seatsText}`,
+            variant: "success",
+          });
+          fetchHotelbyId(hotelData);
+          return;
+        }
         // Dates, times and the grace period stand out in the message.
         const mark = (text) => <mark className="toast-highlight">{text}</mark>;
         showToast({
@@ -1027,6 +1041,13 @@ const TableDetails = ({
     }
     if (isEditable) {
       handleRemoveThisSeat(table, chair);
+    } else if (isBooking && isAdminView) {
+      // Staff: free seats to book; taken seats for the waiting list.
+      if (adminSeatCap && !chair.is_booking && selectedOnFloor() >= adminSeatCap) {
+        warnSeatCap();
+        return;
+      }
+      handleAddBookingSeat(selectedFloorIndex, table, chair);
     } else if (chair.status === 1 && chair.user_id === auth?.details?.id) {
       handleCancelThisSeat(table, chair);
     } else if (isBooking && chair.status === 4) {
@@ -1057,15 +1078,15 @@ const TableDetails = ({
     }
 
     // Admin with a guest count: fill only the seats still needed.
-    if (adminSeatCap && willSelect && !hasBookedSeats) {
+    if (adminSeatCap && willSelect) {
       const remaining = adminSeatCap - selectedOnFloor();
       if (remaining <= 0) {
         warnSeatCap();
         return;
       }
-      const freeSeats = eligibleSeats.filter((s) => s.status === 4 && !s.is_booking);
-      if (freeSeats.length > remaining) {
-        freeSeats
+      const openSeats = eligibleSeats.filter((s) => !s.is_booking);
+      if (openSeats.length > remaining) {
+        openSeats
           .slice(0, remaining)
           .forEach((seat) => handleAddBookingSeat(selectedFloorIndex, table, seat));
         return;
@@ -1096,7 +1117,7 @@ const TableDetails = ({
       ? "New seat (not saved yet)"
       : chair.is_booking
         ? "Selected"
-        : isMine
+        : isMine && !(isBooking && isAdminView)
           ? `${meta.name} by you — click to cancel`
           : meta.name;
     // Taken seat: when its booking ends (hover / screen readers).
@@ -1140,6 +1161,11 @@ const TableDetails = ({
     { key: "cleaning", label: seatMeta(3).name, color: seatMeta(3).color, variant: "taken" },
   ];
 
+  const noSeats = !seletedSeatCount;
+  // Staff chose seats that are already taken: waiting list only.
+  const takenSelected = (floorToShow?.tables || []).some((table) =>
+    (table.seats || []).some((seat) => seat.is_booking && seat.status !== 4),
+  );
   // In slot mode each guest needs a seat.
   const fewSeats =
     slotActive && Number(slot.guests) > 0 && Number(seletedSeatCount || 0) < Number(slot.guests);
@@ -1151,7 +1177,7 @@ const TableDetails = ({
         ? `No single table seats ${guests} — choose tables one by one until everyone has a seat.`
         : `Showing tables that fit ${guests} ${guests === 1 ? "guest" : "guests"}. Choose a table; we seat you together.`
       : adminSeatCap
-        ? `Choose ${guests} ${guests === 1 ? "seat" : "seats"} for ${guests} ${guests === 1 ? "guest" : "guests"} — any free seats, any table.`
+        ? `Choose ${guests} ${guests === 1 ? "seat" : "seats"} for ${guests} ${guests === 1 ? "guest" : "guests"} — any table. Choose booked seats to add the guest to the waiting list.`
       : isBooking
         ? "Tap seats, or use Select to book a whole table."
         : "View only — open this hotel from Book Table to reserve seats.";
@@ -1534,38 +1560,72 @@ const TableDetails = ({
         )}
       </section>
 
-      {isBooking && enbaleBoooking && (
+      {/* Staff see the bar as soon as a time is picked, so Book now is easy to find. */}
+      {isBooking && (enbaleBoooking || (slotActive && isAdminView)) && (
         <div className="fp-bookbar" role="region" aria-label="Booking summary">
           <div className="fp-bookbar__summary">
             <strong>
-              {seletedSeatCount} {seletedSeatCount === 1 ? "seat" : "seats"} on{" "}
-              {seletedTableCount} {seletedTableCount === 1 ? "table" : "tables"}
+              {noSeats
+                ? "No seats selected"
+                : `${seletedSeatCount} ${seletedSeatCount === 1 ? "seat" : "seats"} on ${seletedTableCount} ${seletedTableCount === 1 ? "table" : "tables"}`}
               {slotActive &&
                 ` · ${dayjs(slot.date).format("ddd, D MMM")} at ${dayjs(`2000-01-01T${slot.time}`).format("h:mm A")}`}
             </strong>
             <span>
               {guestMissing
                 ? "Enter the guest's name above to book"
+                : noSeats
+                ? "Scroll down and tap seats on the floor plan to book"
                 : fewSeats
                 ? `Select ${slot.guests - seletedSeatCount} more ${slot.guests - seletedSeatCount === 1 ? "seat" : "seats"} for ${slot.guests} guests`
+                : takenSelected
+                ? "Includes booked seats — add the guest to the waiting list"
                 : `Floor ${floorToShow?.floor_number} · ${selectedTables
                     .map((table) => `${tableLabel(table)} (${table.count})`)
                     .join(", ")}`}
             </span>
           </div>
           <div className="fp-bookbar__actions">
-            <button type="button" className="fp-btn fp-btn--ghost" onClick={clearSelection}>
+            <button
+              type="button"
+              className="fp-btn fp-btn--ghost"
+              onClick={clearSelection}
+              disabled={noSeats}
+            >
               Clear
             </button>
+            {isAdminView && !isEditable && (
+              <button
+                type="button"
+                className="fp-btn fp-btn--ghost"
+                onClick={() => createBookingTableinSeats(data, { waitingList: true })}
+                disabled={getloading || noSeats || fewSeats || guestMissing}
+                title={
+                  guestMissing
+                    ? "Enter the guest's name first"
+                    : noSeats
+                      ? "Select seats first"
+                      : fewSeats
+                      ? `Select a seat for each of the ${slot.guests} guests`
+                      : "Hold these seats for the guest on the waiting list"
+                }
+              >
+                Add to waiting list
+              </button>
+            )}
             <button
               type="button"
               className="fp-btn fp-btn--primary"
               onClick={() => createBookingTableinSeats(data)}
-              disabled={getloading || fewSeats || guestMissing}
+              disabled={getloading || noSeats || fewSeats || guestMissing || takenSelected}
               title={
                 guestMissing
                   ? "Enter the guest's name first"
-                  : fewSeats
+                  : noSeats
+                    ? "Select seats first"
+                  : takenSelected
+                    ? "These seats are booked — use Add to waiting list"
+                    : fewSeats
                     ? `Select a seat for each of the ${slot.guests} guests`
                     : undefined
               }

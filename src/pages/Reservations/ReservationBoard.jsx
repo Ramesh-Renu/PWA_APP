@@ -123,9 +123,11 @@ const STATUS = {
   PENDING: 5,
   CLEANING: 6,
   SERVING: 7,
+  WAITING: 8,
 };
 const FLOW_ORDER = [
   STATUS.PENDING,
+  STATUS.WAITING,
   STATUS.CONFIRMED,
   STATUS.SEATED,
   STATUS.SERVING,
@@ -136,24 +138,27 @@ const FLOW_ORDER = [
 const LOCKED_STATUSES = [STATUS.COMPLETED, STATUS.CANCELLED];
 // Columns whose cards are listed by dining time (earliest first).
 const TIME_SORTED_STATUSES = [
+  STATUS.WAITING,
   STATUS.CONFIRMED,
   STATUS.SEATED,
   STATUS.SERVING,
   STATUS.CLEANING,
 ];
 // Food is ordered only while guests are at the table: not before they arrive
-// (Pending, Confirmed), nor once they have left (Cleaning, Completed, Cancelled).
+// (Pending, Waiting, Confirmed), nor once they have left (Cleaning, Completed,
+// Cancelled).
 const NO_ORDER_STATUSES = [
   STATUS.PENDING,
+  STATUS.WAITING,
   STATUS.CONFIRMED,
   STATUS.CLEANING,
   STATUS.COMPLETED,
   STATUS.CANCELLED,
 ];
 // Guests can only be seated / served once their booking time has come
-// (up to 15 minutes early). The API applies the same rule.
+// (up to 30 minutes early). The API applies the same rule.
 const ARRIVAL_STATUSES = [STATUS.SEATED, STATUS.SERVING];
-const EARLY_ARRIVAL_MINUTES = 15;
+const EARLY_ARRIVAL_MINUTES = 30;
 // The server is chosen when a booking is confirmed and can be changed while
 // the guests are at the table; the cleaner is chosen when the table goes to
 // Cleaning. Later columns just show who it was.

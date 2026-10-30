@@ -141,6 +141,7 @@ const BookedTableDetails = ({ data }) => {
   const handleEditDeleteValue = (e, getVal, rowData) => {
     if (
       (rowData?.dining_status > 1 &&
+        rowData?.dining_status !== 8 &&
         e.name.props.children.includes("CANCEL")) ||
       rowData?.dining_status === 4
     )
@@ -244,7 +245,8 @@ const BookedTableDetails = ({ data }) => {
                 .slice(0, 2)
                 .map((word) => word[0].toUpperCase())
                 .join("");
-              const canCancel = !(row?.dining_status > 1);
+              // Not yet seated (a waiting list entry, status 8, isn't either).
+              const canCancel = !(row?.dining_status > 1) || row?.dining_status === 8;
 
               return (
                 <article className="hl-card" key={row.id}>
