@@ -21,6 +21,21 @@ export default defineConfig(({ mode }) => {
   optimizeDeps: {
     include: ["react", "react-dom", "@chartkitjs/chartlib/react"],
   },
+  build: {
+    target: "es2020",
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          mui: ["@mui/material", "@mui/icons-material", "@emotion/react", "@emotion/styled"],
+          chart: ["@chartkitjs/chartlib"],
+          table: ["@tanstack/react-table", "@tanstack/react-virtual"],
+          bootstrap: ["bootstrap", "react-bootstrap"],
+          utils: ["axios", "dayjs", "lucide-react", "react-icons"],
+        },
+      },
+    },
+  },
   resolve: {
     // One React for the app and every library that uses hooks.
     dedupe: ["react", "react-dom"],

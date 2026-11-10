@@ -172,9 +172,11 @@
           font-weight: 500;
           line-height: 100%;
           background-color: #a7931f;
-          background-image: url("../../assets/images/sidenav/table-image.svg"); /* Set your image URL */
-          background-size: cover; /* Make the image cover the entire container */
-          background-repeat: no-repeat; /* Prevent image repetition */
+          background-image:
+            radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.22), transparent 18%),
+            linear-gradient(135deg, rgba(202, 157, 47, 0.98), rgba(142, 109, 28, 0.92));
+          background-size: cover;
+          background-repeat: no-repeat;
           background-position: center center;
         }
         &.chairBooked {

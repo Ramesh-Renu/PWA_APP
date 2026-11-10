@@ -79,7 +79,7 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
   const [search, setSearch] = useState("");
   // Filters: diet ("" | "veg" | "nonveg"), available dishes only, menu category.
   const [diet, setDiet] = useState("");
-  const [availableOnly, setAvailableOnly] = useState(false);
+  const [availableOnly, setAvailableOnly] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState("");
 
   // Location / area names shown under each restaurant's name.

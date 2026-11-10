@@ -5,7 +5,6 @@ import unChecked from "assets/images/unchecked.png";
 import redCrossMark from "assets/images/red_cross_mark.svg";
 import warningIcon from "assets/images/warning_icon.svg";
 import closeIcon from "assets/images/close-icon.svg";
-import loginBackground from "assets/images/login-background.svg";
 import accessRequired from "assets/images/accessRequired.svg";
 import loginBanner from "assets/images/login-banner.png";
 import radioChecked from "assets/images/radio-uncheck.svg";
@@ -35,7 +34,6 @@ import hotelCreate from "assets/images/sidenav/hotel_create.svg";
 import tableBookedList from "assets/images/sidenav/table_booked_list.svg";
 import tableBookedListActive from "assets/images/sidenav/table_booked_list_active.svg";
 import hotelPlaceholderImage from "assets/images/hotel-placeholder-image.jpg";
-import tableImage  from "assets/images/sidenav/table-image.svg";
 
 import checkedBlueIcon from "assets/images/checked_blue.png";
 import unCheckedBlueIcon from "assets/images/unChecked_blue.png";
@@ -60,7 +58,6 @@ export {
   redCrossMark,
   warningIcon,
   closeIcon,
-  loginBackground,
   accessRequired,
   loginBanner,
   radioChecked,
@@ -78,7 +75,6 @@ export {
   tablesIconActive,
   bellIconActive,
   hotelPlaceholderImage,
-  tableImage,
   checkedBlueIcon,
   unCheckedBlueIcon,
   blueBorderUnchecked,

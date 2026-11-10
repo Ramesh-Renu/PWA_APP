@@ -18,8 +18,9 @@
   color: #ffffff;
   background:
     radial-gradient(circle at 85% 15%, rgba(255, 209, 102, 0.18), transparent 35%),
-    linear-gradient(160deg, rgba(8, 62, 56, 0.94), rgba(12, 92, 82, 0.86)),
-    url("../../assets/images/login-banner.png") center / cover no-repeat;
+    radial-gradient(circle at 15% 80%, rgba(255, 255, 255, 0.08), transparent 22%),
+    linear-gradient(160deg, rgba(8, 62, 56, 0.98), rgba(12, 92, 82, 0.9)),
+    linear-gradient(135deg, rgba(10, 70, 62, 0.9), rgba(6, 35, 39, 0.96));
 }
 
 .tableflow-login__logo {
