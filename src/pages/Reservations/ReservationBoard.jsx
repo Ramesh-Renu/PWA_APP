@@ -459,9 +459,10 @@ const ReservationBoard = () => {
       });
     } catch (error) {
       setLocalStatus(reservation.id, previousStatus);
+      const apiMessage = error?.response?.data?.message || error?.message || error;
       showToast({
         title: `Couldn't move reservation #${reservation.id} to ${statusName(statusId)}`,
-        message: error,
+        message: apiMessage,
         variant: "danger",
       });
     }

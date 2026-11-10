@@ -487,8 +487,9 @@ const TableDetails = ({
       }
     } catch (error) {
       console.error("Error creating hotel:", error);
+      const apiMessage = error?.response?.data?.message || error?.message || error;
       showToast({
-        message: error,
+        message: apiMessage,
         variant: "danger",
       });
       // Seats taken meanwhile: reload the plan so they show as booked.
@@ -1561,21 +1562,17 @@ const TableDetails = ({
       </section>
 
       {/* Staff see the bar as soon as a time is picked, so Book now is easy to find. */}
-      {isBooking && (enbaleBoooking || (slotActive && isAdminView)) && (
+      {isBooking && !noSeats && (enbaleBoooking || (slotActive && isAdminView)) && (
         <div className="fp-bookbar" role="region" aria-label="Booking summary">
           <div className="fp-bookbar__summary">
             <strong>
-              {noSeats
-                ? "No seats selected"
-                : `${seletedSeatCount} ${seletedSeatCount === 1 ? "seat" : "seats"} on ${seletedTableCount} ${seletedTableCount === 1 ? "table" : "tables"}`}
+              {`${seletedSeatCount} ${seletedSeatCount === 1 ? "seat" : "seats"} on ${seletedTableCount} ${seletedTableCount === 1 ? "table" : "tables"}`}
               {slotActive &&
                 ` · ${dayjs(slot.date).format("ddd, D MMM")} at ${dayjs(`2000-01-01T${slot.time}`).format("h:mm A")}`}
             </strong>
             <span>
               {guestMissing
                 ? "Enter the guest's name above to book"
-                : noSeats
-                ? "Scroll down and tap seats on the floor plan to book"
                 : fewSeats
                 ? `Select ${slot.guests - seletedSeatCount} more ${slot.guests - seletedSeatCount === 1 ? "seat" : "seats"} for ${slot.guests} guests`
                 : takenSelected
@@ -1603,11 +1600,11 @@ const TableDetails = ({
                 title={
                   guestMissing
                     ? "Enter the guest's name first"
-                    : noSeats
-                      ? "Select seats first"
-                      : fewSeats
+                    : fewSeats
                       ? `Select a seat for each of the ${slot.guests} guests`
-                      : "Hold these seats for the guest on the waiting list"
+                      : takenSelected
+                        ? "These seats are booked — use Add to waiting list"
+                        : undefined
                 }
               >
                 Add to waiting list
@@ -1621,13 +1618,11 @@ const TableDetails = ({
               title={
                 guestMissing
                   ? "Enter the guest's name first"
-                  : noSeats
-                    ? "Select seats first"
                   : takenSelected
                     ? "These seats are booked — use Add to waiting list"
                     : fewSeats
-                    ? `Select a seat for each of the ${slot.guests} guests`
-                    : undefined
+                      ? `Select a seat for each of the ${slot.guests} guests`
+                      : undefined
               }
             >
               Book now
