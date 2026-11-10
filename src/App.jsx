@@ -20,6 +20,7 @@ const Home = lazy(() => import("pages/HomePage"));
 const Dashboard = lazy(() => import("pages/Dashboard"));
 const CreateHotel = lazy(() => import("pages/Hotel/CreateHotel"));
 const BookTables = lazy(() => import("pages/BookTables"));
+const NotificationsPage = lazy(() => import("pages/Notifications/NotificationsPage"));
 const HotelDetails = lazy(() => import("pages/TableDetails/HotelDetails"));
 const NotFound = lazy(() => import("pages/NotFound/NotFound"));
 const BookedTableDetails = lazy(
@@ -169,6 +170,7 @@ const App = () => {
                 <Route path="/dashboard" element={sharedPage("dashboard", <Dashboard />)} />
                 <Route path="/hotellist" element={sharedPage("hotels", <CreateHotel />)} />
                 <Route path="/book-table" element={<BookTables />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
                 <Route
                   path="/book-table/details/:id"
                   element={<HotelDetails />}

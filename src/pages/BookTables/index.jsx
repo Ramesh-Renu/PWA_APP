@@ -23,6 +23,17 @@ import { renderArea, renderLocation } from "utils/common";
 import ReservationPage from "pages/BoockedList/ReservationPage";
 import OrderHistory from "pages/OrderHistory/OrderHistory";
 import CustomerMenu from "./CustomerMenu";
+import { getFavoriteHotels, isFavoriteHotel, toggleFavoriteHotel } from "utils/favorites";
+import {
+  formatReminderLabel,
+  getReminderSettings,
+  requestBrowserNotificationPermission,
+  saveNotificationHistory,
+  saveReminderSettings,
+  sendBrowserReminder,
+} from "utils/reminders";
+import { getLoyaltySummary } from "utils/loyalty";
+import { getActivePromotion, getRedeemedPromotionIds, redeemPromotion } from "utils/promotions";
 
 const TABS = [
   {
@@ -85,6 +96,9 @@ const BookTables = () => {
   const [loadingMenus, setLoadingMenus] = useState(false);
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState(() => getFavoriteHotels());
+  const [reminderSettings, setReminderSettings] = useState(() => getReminderSettings());
+  const [redeemedPromos, setRedeemedPromos] = useState(() => getRedeemedPromotionIds());
   const searchInputRef = useRef(null);
 
   useEffect(() => {
@@ -109,10 +123,122 @@ const BookTables = () => {
       )
       .sort((a, b) => new Date(a.dining_date) - new Date(b.dining_date))[0];
 
+  const nextBooking = useMemo(
+    () =>
+      [...myBookings]
+        .filter((row) => ![3, 4].includes(row.dining_status))
+        .sort((a, b) => new Date(a.dining_date) - new Date(b.dining_date))[0],
+    [myBookings],
+  );
+
+  const favoriteHotels = useMemo(
+    () => hotels.filter((hotel) => favoriteIds.includes(String(hotel.id))),
+    [favoriteIds, hotels],
+  );
+
+  const guestStats = useMemo(() => {
+    const upcomingCount = myBookings.filter(
+      (row) => ![3, 4].includes(row.dining_status),
+    ).length;
+    const memberDate =
+      auth?.details?.created_at || auth?.details?.createdAt || null;
+
+    return {
+      upcomingCount,
+      totalBookings: myBookings.length,
+      savedPlaces: favoriteHotels.length,
+      memberSince: memberDate ? dayjs(memberDate).format("MMM YYYY") : "New guest",
+    };
+  }, [auth?.details?.created_at, auth?.details?.createdAt, favoriteHotels.length, myBookings]);
+
+  const loyalty = useMemo(
+    () => getLoyaltySummary(guestStats.totalBookings, guestStats.savedPlaces),
+    [guestStats.savedPlaces, guestStats.totalBookings],
+  );
+  const activePromotion = useMemo(
+    () => getActivePromotion(guestStats.totalBookings, guestStats.savedPlaces, redeemedPromos),
+    [guestStats.savedPlaces, guestStats.totalBookings, redeemedPromos],
+  );
+
+  const hotelsById = useMemo(
+    () => Object.fromEntries(hotels.map((hotel) => [String(hotel.id), hotel])),
+    [hotels],
+  );
+
+  const handleRedeemPromotion = (promo) => {
+    if (!promo) return;
+
+    redeemPromotion(promo.id);
+    setRedeemedPromos(getRedeemedPromotionIds());
+    showToast({ message: `${promo.code} is now active on your next booking.`, variant: "success" });
+  };
+
+  const notifyGuestForBooking = (booking) => {
+    const hotelName = hotelsById[String(booking.hotel_id)]?.hotel_name || "Your table";
+    const title = "Reservation reminder";
+    const body = `${hotelName} booking starts ${dayjs(booking.dining_date).format("ddd, D MMM, h:mm A")}.`;
+
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+      sendBrowserReminder({ title, body });
+    }
+
+    saveNotificationHistory({ title, message: body, variant: "success" });
+    showToast({ message: body, variant: "success", title });
+  };
+
+  const updateReminder = async (key, value) => {
+    const next = saveReminderSettings({ [key]: value });
+    setReminderSettings(next);
+
+    if (key === "push" && value) {
+      const permission = await requestBrowserNotificationPermission();
+      if (!permission.granted) {
+        showToast({
+          title: "Notifications blocked",
+          message: "Browser notifications are off. You can still see reminders in-app.",
+          variant: "warning",
+        });
+        return;
+      }
+
+      if (nextBooking) {
+        notifyGuestForBooking(nextBooking);
+      } else {
+        showToast({
+          title: "Reminder enabled",
+          message: "We will show a browser reminder when your next booking reaches the selected lead time.",
+          variant: "success",
+        });
+      }
+    }
+  };
+
   useEffect(() => {
     if (activeTab === "menu" && menus.length === 0) loadMenus();
     if (activeTab === "orders") loadOrders();
   }, [activeTab]);
+
+  useEffect(() => {
+    if (!nextBooking || !reminderSettings.push || !reminderSettings.leadMinutes) return undefined;
+    if (!("Notification" in window)) return undefined;
+    if (Notification.permission !== "granted") return undefined;
+
+    const leadMs = Number(reminderSettings.leadMinutes) * 60 * 1000;
+    const bookingTime = new Date(nextBooking.dining_date).getTime();
+    const triggerTime = bookingTime - leadMs;
+    const now = Date.now();
+
+    if (triggerTime <= now) {
+      notifyGuestForBooking(nextBooking);
+      return undefined;
+    }
+
+    const timeoutId = setTimeout(() => {
+      notifyGuestForBooking(nextBooking);
+    }, triggerTime - now);
+
+    return () => clearTimeout(timeoutId);
+  }, [nextBooking, reminderSettings.leadMinutes, reminderSettings.push, hotelsById]);
 
   const fetchHotels = async () => {
     setLoadingHotels(true);
@@ -201,6 +327,11 @@ const BookTables = () => {
       },
     });
 
+  const toggleFavorite = (hotelId) => {
+    toggleFavoriteHotel(hotelId);
+    setFavoriteIds(getFavoriteHotels());
+  };
+
   const hotelPlace = (hotel) =>
     [
       renderArea(hotel?.area_id, areaList?.data || [])[0]?.name,
@@ -228,11 +359,6 @@ const BookTables = () => {
     </nav>
   );
 
-  const hotelsById = useMemo(
-    () => Object.fromEntries(hotels.map((hotel) => [String(hotel.id), hotel])),
-    [hotels],
-  );
-
   return (
     <section className="cx-page">
       <header className="cx-hero">
@@ -245,6 +371,164 @@ const BookTables = () => {
 
       {activeTab === "availability" && (
         <div className="cx-section">
+          {nextBooking && (
+            <div className="ui-alert ui-alert--info">
+              <div>
+                <span className="ui-kicker">Next reservation</span>
+                <p>
+                  {hotelsById[String(nextBooking.hotel_id)]?.hotel_name || "Your table"} on {dayjs(nextBooking.dining_date).format("ddd, D MMM")}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="ui-btn ui-btn--ghost ui-btn--sm"
+                onClick={() => selectTab("reservations")}
+              >
+                View booking
+              </button>
+            </div>
+          )}
+
+          <div className="ui-guest-profile">
+            <div className="ui-guest-profile__identity">
+              <div className="ui-guest-profile__avatar" aria-hidden>
+                {initialsOf(auth?.details?.name || "Guest") || "G"}
+              </div>
+              <div>
+                <span className="ui-kicker">Guest profile</span>
+                <h3>{auth?.details?.name || "Guest"}</h3>
+              </div>
+            </div>
+
+            <div className="ui-guest-profile__stats">
+              <div>
+                <strong>{guestStats.upcomingCount}</strong>
+                <span>Upcoming</span>
+              </div>
+              <div>
+                <strong>{guestStats.totalBookings}</strong>
+                <span>Total bookings</span>
+              </div>
+              <div>
+                <strong>{guestStats.savedPlaces}</strong>
+                <span>Saved places</span>
+              </div>
+              <div>
+                <strong>{guestStats.memberSince}</strong>
+                <span>Member since</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="ui-loyalty-card">
+            <div className="ui-loyalty-card__header">
+              <span className="ui-kicker">Loyalty</span>
+              <span className="ui-loyalty-card__tier">{loyalty.tier}</span>
+            </div>
+            <div className="ui-loyalty-card__body">
+              <div>
+                <strong>{loyalty.points}</strong>
+                <span>points</span>
+              </div>
+              <div>
+                <strong>{loyalty.perks}</strong>
+                <span>current perk</span>
+              </div>
+            </div>
+            {loyalty.nextTier && (
+              <p>
+                {loyalty.nextTier} unlocks at {loyalty.nextTarget} bookings.
+              </p>
+            )}
+          </div>
+
+          {activePromotion && (
+            <div className="ui-promo-card">
+              <div className="ui-promo-card__copy">
+                <span className="ui-kicker">Exclusive offer</span>
+                <h3>{activePromotion.label}</h3>
+                <p>
+                  Use code <strong>{activePromotion.code}</strong> on your next reservation.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="ui-btn ui-btn--primary ui-btn--sm"
+                onClick={() => handleRedeemPromotion(activePromotion)}
+              >
+                Use offer
+              </button>
+            </div>
+          )}
+
+          <div className="ui-reminder-card">
+            <div className="ui-reminder-card__body">
+              <span className="ui-kicker">Reservation reminders</span>
+              <p>
+                {nextBooking
+                  ? `We'll remind you ${formatReminderLabel(reminderSettings.leadMinutes)} for your next booking.`
+                  : `Set a reminder so you never miss your table.`}
+              </p>
+            </div>
+
+            <div className="ui-reminder-card__actions">
+              {[
+                { key: "push", label: "Push" },
+                { key: "email", label: "Email" },
+                { key: "sms", label: "SMS" },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={reminderSettings[key] ? "ui-toggle is-on" : "ui-toggle"}
+                  onClick={() => updateReminder(key, !reminderSettings[key])}
+                >
+                  <span className="ui-toggle__track" aria-hidden>
+                    <span className="ui-toggle__thumb" />
+                  </span>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="ui-reminder-card__options">
+              {[15, 30, 60, 120].map((minutes) => (
+                <button
+                  key={minutes}
+                  type="button"
+                  className={
+                    reminderSettings.leadMinutes === minutes
+                      ? "ui-reminder-chip is-selected"
+                      : "ui-reminder-chip"
+                  }
+                  onClick={() => updateReminder("leadMinutes", minutes)}
+                >
+                  {formatReminderLabel(minutes)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {favoriteHotels.length > 0 && (
+            <div className="ui-favorite-strip">
+              <div className="ui-favorite-strip__header">
+                <span className="ui-kicker">Saved places</span>
+              </div>
+              <div className="ui-favorite-strip__list">
+                {favoriteHotels.map((hotel) => (
+                  <button
+                    key={hotel.id}
+                    type="button"
+                    className="ui-favorite-pill"
+                    onClick={() => openHotel(hotel)}
+                  >
+                    {hotel.hotel_name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <label className="ui-search cx-search">
             <SearchRounded fontSize="small" aria-hidden />
             <input
@@ -280,6 +564,18 @@ const BookTables = () => {
                       <h3>{hotel.hotel_name || "Restaurant"}</h3>
                       {hotelPlace(hotel) && <p>{hotelPlace(hotel)}</p>}
                     </div>
+                    <button
+                      type="button"
+                      className={`ui-btn ui-btn--sm ${isFavoriteHotel(hotel.id) ? "ui-btn--primary" : "ui-btn--ghost"}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggleFavorite(hotel.id);
+                      }}
+                      aria-pressed={isFavoriteHotel(hotel.id)}
+                      aria-label={`${isFavoriteHotel(hotel.id) ? "Remove" : "Save"} ${hotel.hotel_name || "restaurant"} from favorites`}
+                    >
+                      {isFavoriteHotel(hotel.id) ? "Saved" : "Save"}
+                    </button>
                   </div>
 
                   {hotel.address && (

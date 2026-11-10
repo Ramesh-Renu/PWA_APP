@@ -18,6 +18,7 @@ import useAuth from "hooks/useAuth";
 import { getHotelbyid } from "services";
 import MenuList from "pages/Menu/MenuList";
 import { isStaffRole } from "utils/permissions";
+import { isFavoriteHotel, toggleFavoriteHotel } from "utils/favorites";
 
 const HotelDetails = () => {
   const { id } = useParams();
@@ -43,6 +44,7 @@ const HotelDetails = () => {
   });
 
   const [showMenuList, setShowMenuList] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(isFavoriteHotel(id));
   // Free seats on the floor shown in the plan at the chosen time.
   const [floorFreeSeats, setFloorFreeSeats] = useState(null);
   const [{ data: auth }] = useAuth();
@@ -76,6 +78,10 @@ const HotelDetails = () => {
       getAllLocation();
     }
   }, []);
+
+  useEffect(() => {
+    setIsFavorite(isFavoriteHotel(id));
+  }, [id]);
 
   useEffect(() => {
     if (location?.state?.isEditable) {
@@ -166,6 +172,20 @@ const HotelDetails = () => {
               </span>
             )}
             {areaName && <span className="hd-chip">{areaName}</span>}
+          </div>
+
+          <div className="hd-hero__actions-row">
+            <button
+              type="button"
+              className={`ui-btn ui-btn--sm ${isFavorite ? "ui-btn--primary" : "ui-btn--ghost"}`}
+              onClick={() => {
+                toggleFavoriteHotel(id);
+                setIsFavorite(isFavoriteHotel(id));
+              }}
+              aria-pressed={isFavorite}
+            >
+              {isFavorite ? "Saved" : "Save restaurant"}
+            </button>
           </div>
 
           <p className="hd-hero__address">

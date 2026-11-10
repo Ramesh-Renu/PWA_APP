@@ -19,6 +19,7 @@ import {
   ManageAccountsOutlined,
   PersonOffOutlined,
   MenuRounded,
+  NotificationsOutlined,
   PlaceOutlined,
   ReceiptLongOutlined,
   RestaurantMenuOutlined,
@@ -88,6 +89,7 @@ const CUSTOMER_LINKS = [
   { label: "Menu", to: "/book-table?tab=menu", icon: RestaurantMenuOutlined, tab: "menu" },
   { label: "My bookings", to: "/book-table?tab=reservations", icon: EventNoteOutlined, tab: "reservations" },
   { label: "My orders", to: "/book-table?tab=orders", icon: ReceiptLongOutlined, tab: "orders" },
+  { label: "Notifications", to: "/notifications", icon: NotificationsOutlined, match: /^\/notifications/ },
 ];
 
 const readCollapsed = () => {

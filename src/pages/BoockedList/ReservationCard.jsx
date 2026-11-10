@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import dayjs from "dayjs";
 import { EventAvailableOutlined } from "@mui/icons-material";
+import { getAverageRating, getHotelReviews, saveHotelReview } from "utils/reviews";
 
 const initialsOf = (name = "") =>
   name
@@ -17,9 +18,33 @@ const ReservationCard = ({ reservation, status, canCancel, isPast, onView, onCan
     0,
   );
   const hotelName = reservation.hotel?.hotel_name || "Restaurant";
+  const hotelId = reservation.hotel_id ?? reservation.hotel?.id ?? reservation.id;
   // Table codes from the API (e.g. "SACT0001").
   const codes = tables.map((table) => table.table_code).filter(Boolean);
   const dining = reservation.dining_date ? dayjs(reservation.dining_date) : null;
+  const ratingSummary = useMemo(
+    () => ({
+      average: getAverageRating(hotelId),
+      count: getHotelReviews(hotelId).length,
+    }),
+    [hotelId],
+  );
+  const [localRating, setLocalRating] = useState(() => {
+    const reviews = getHotelReviews(hotelId);
+    return reviews[0]?.rating || 0;
+  });
+
+  const handleRate = (nextValue) => {
+    const review = saveHotelReview(hotelId, {
+      rating: nextValue,
+      comment: "",
+      guestName: "Guest",
+    });
+
+    if (review) {
+      setLocalRating(nextValue);
+    }
+  };
 
   return (
     <article className="cx-card cx-booking">
@@ -71,6 +96,29 @@ const ReservationCard = ({ reservation, status, canCancel, isPast, onView, onCan
           {seatCount === 1 ? "seat" : "seats"}
         </li>
       </ul>
+
+      {isPast && (
+        <div className="cx-review-inline" aria-label={`Rate ${hotelName}`}>
+          <div className="cx-review-inline__stars" role="radiogroup" aria-label="Rate your experience">
+            {[1, 2, 3, 4, 5].map((value) => (
+              <button
+                key={value}
+                type="button"
+                className={value <= (localRating || 0) ? "is-active" : ""}
+                aria-label={`Rate ${value} out of 5`}
+                onClick={() => handleRate(value)}
+              >
+                ★
+              </button>
+            ))}
+          </div>
+          <span>
+            {ratingSummary.count > 0
+              ? `${ratingSummary.average.toFixed(1)} avg · ${ratingSummary.count} review${ratingSummary.count === 1 ? "" : "s"}`
+              : "Rate your visit"}
+          </span>
+        </div>
+      )}
 
       <div className="cx-card__actions">
         {canCancel && (
