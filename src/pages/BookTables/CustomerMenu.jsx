@@ -517,7 +517,8 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
                         <button
                           type="button"
                           className={`cx-dish__prefs${hasPreferences(prefsOf(menu)) ? " is-set" : ""}`}
-                          onClick={() => openPrefs(menu)}
+                          onClick={() => (menu.is_available ? openPrefs(menu) : undefined)}
+                          disabled={!menu.is_available}
                           title={preferencesToNote(prefsOf(menu)) || "Spice, Ajinomoto, oil…"}
                         >
                           <TuneRounded fontSize="inherit" aria-hidden />
@@ -527,7 +528,7 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
                       <div className="cx-dish__foot">
                         <strong>{money(menu.price)}</strong>
                         {!menu.is_available ? (
-                          <span className="ui-chip">Unavailable</span>
+                          <span className="ui-chip" aria-disabled="true">Unavailable</span>
                         ) : qty > 0 ? (
                           <span className="dish-card__qty">
                             <button
@@ -551,6 +552,7 @@ const CustomerMenu = ({ menus = [], loading = false, onBook, onOrdered }) => {
                             type="button"
                             className="dish-card__add"
                             onClick={() => addFirst(menu)}
+                            disabled={!menu.is_available}
                           >
                             Add
                           </button>
