@@ -21,6 +21,9 @@ export const getReminderSettings = () => {
 export const saveReminderSettings = (patch = {}) => {
   const next = { ...getReminderSettings(), ...patch };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("table-booking-reminder-settings-updated"));
+  }
   return next;
 };
 
@@ -58,16 +61,20 @@ export const getNotificationHistory = () => {
 export const saveNotificationHistory = (entry) => {
   if (!entry || !entry.title) return [];
 
+  const history = getNotificationHistory();
+  if (entry.key && history.some((item) => item.key === entry.key)) return history;
+
   const next = [
     {
-      id: Date.now(),
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       createdAt: new Date().toISOString(),
       ...entry,
     },
-    ...getNotificationHistory(),
+    ...history,
   ].slice(0, 25);
 
   localStorage.setItem(NOTIFICATION_HISTORY_KEY, JSON.stringify(next));
+  window.dispatchEvent(new Event("table-booking-notifications-updated"));
   return next;
 };
 

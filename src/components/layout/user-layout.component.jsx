@@ -6,6 +6,7 @@ import { useGlobalContext } from "store/context/GlobalProvider";
 import useAuth from "hooks/useAuth";
 import InstallAppBanner from "components/common/InstallApp";
 import AppInstallsBadge from "components/common/AppInstallsBadge";
+import ReservationReminderMonitor from "components/common/ReservationReminderMonitor";
 import { reportInstalledDevice } from "utils/pwaInstall";
 import { isStaffRole } from "utils/permissions";
 
@@ -40,6 +41,7 @@ const UserLayout = () => {
 
   return (
     <Fragment>
+      <ReservationReminderMonitor />
       {/* <Header /> */}
       <div className="app-shell">
         <SideNav />

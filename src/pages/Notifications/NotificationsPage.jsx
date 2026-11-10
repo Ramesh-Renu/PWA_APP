@@ -1,10 +1,23 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { NotificationsOutlined, HourglassEmptyOutlined } from "@mui/icons-material";
+import { NotificationsOutlined } from "@mui/icons-material";
 import { getNotificationHistory } from "utils/reminders";
 
 const NotificationsPage = () => {
-  const notifications = useMemo(() => getNotificationHistory(), []);
+  const [notifications, setNotifications] = useState(() => getNotificationHistory());
+
+  useEffect(() => {
+    const refresh = () => setNotifications(getNotificationHistory());
+    window.addEventListener("storage", refresh);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("table-booking-notifications-updated", refresh);
+
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("table-booking-notifications-updated", refresh);
+    };
+  }, []);
 
   return (
     <section className="ui-page">

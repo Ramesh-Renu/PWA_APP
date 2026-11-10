@@ -28,9 +28,7 @@ import {
   formatReminderLabel,
   getReminderSettings,
   requestBrowserNotificationPermission,
-  saveNotificationHistory,
   saveReminderSettings,
-  sendBrowserReminder,
 } from "utils/reminders";
 import { getLoyaltySummary } from "utils/loyalty";
 import { getActivePromotion, getRedeemedPromotionIds, redeemPromotion } from "utils/promotions";
@@ -126,7 +124,11 @@ const BookTables = () => {
   const nextBooking = useMemo(
     () =>
       [...myBookings]
-        .filter((row) => ![3, 4].includes(row.dining_status))
+        .filter(
+          (row) =>
+            ![3, 4].includes(Number(row.dining_status)) &&
+            new Date(row.dining_date).getTime() > Date.now(),
+        )
         .sort((a, b) => new Date(a.dining_date) - new Date(b.dining_date))[0],
     [myBookings],
   );
@@ -173,19 +175,6 @@ const BookTables = () => {
     showToast({ message: `${promo.code} is now active on your next booking.`, variant: "success" });
   };
 
-  const notifyGuestForBooking = (booking) => {
-    const hotelName = hotelsById[String(booking.hotel_id)]?.hotel_name || "Your table";
-    const title = "Reservation reminder";
-    const body = `${hotelName} booking starts ${dayjs(booking.dining_date).format("ddd, D MMM, h:mm A")}.`;
-
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-      sendBrowserReminder({ title, body });
-    }
-
-    saveNotificationHistory({ title, message: body, variant: "success" });
-    showToast({ message: body, variant: "success", title });
-  };
-
   const updateReminder = async (key, value) => {
     const next = saveReminderSettings({ [key]: value });
     setReminderSettings(next);
@@ -201,15 +190,13 @@ const BookTables = () => {
         return;
       }
 
-      if (nextBooking) {
-        notifyGuestForBooking(nextBooking);
-      } else {
-        showToast({
-          title: "Reminder enabled",
-          message: "We will show a browser reminder when your next booking reaches the selected lead time.",
-          variant: "success",
-        });
-      }
+      showToast({
+        title: "Reminder enabled",
+        message: nextBooking
+          ? `We will remind you ${formatReminderLabel(next.leadMinutes)} before your next booking.`
+          : "We will remind you when you have an upcoming booking.",
+        variant: "success",
+      });
     }
   };
 
@@ -217,28 +204,6 @@ const BookTables = () => {
     if (activeTab === "menu" && menus.length === 0) loadMenus();
     if (activeTab === "orders") loadOrders();
   }, [activeTab]);
-
-  useEffect(() => {
-    if (!nextBooking || !reminderSettings.push || !reminderSettings.leadMinutes) return undefined;
-    if (!("Notification" in window)) return undefined;
-    if (Notification.permission !== "granted") return undefined;
-
-    const leadMs = Number(reminderSettings.leadMinutes) * 60 * 1000;
-    const bookingTime = new Date(nextBooking.dining_date).getTime();
-    const triggerTime = bookingTime - leadMs;
-    const now = Date.now();
-
-    if (triggerTime <= now) {
-      notifyGuestForBooking(nextBooking);
-      return undefined;
-    }
-
-    const timeoutId = setTimeout(() => {
-      notifyGuestForBooking(nextBooking);
-    }, triggerTime - now);
-
-    return () => clearTimeout(timeoutId);
-  }, [nextBooking, reminderSettings.leadMinutes, reminderSettings.push, hotelsById]);
 
   const fetchHotels = async () => {
     setLoadingHotels(true);
